@@ -570,9 +570,9 @@ function ChecklistTab({
         </div>
       </CardHeader>
       <CardContent>
-        <div className="overflow-x-auto rounded-lg border border-border">
+        <div className="max-h-[62dvh] overflow-auto rounded-lg border border-border">
           <table className="w-full min-w-[1180px] text-left text-sm">
-            <thead className="bg-surface-muted text-xs uppercase tracking-wide text-muted-foreground">
+            <thead className="sticky top-0 z-20 bg-surface-muted text-xs uppercase tracking-wide text-muted-foreground">
               <tr>
                 <th className="sticky left-0 z-10 bg-surface-muted px-3 py-2">Checklist item</th>
                 <th className="px-3 py-2">Area</th>
@@ -1449,14 +1449,14 @@ function SummaryReadinessPanel({ items, completion }: { items: SummaryReadinessI
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
-              <CardTitle>Summary readiness</CardTitle>
+              <CardTitle className="min-w-0">Summary readiness</CardTitle>
               <Badge tone="info">{completion}% complete</Badge>
               <Badge tone={blockedCount ? "danger" : "success"}>{blockedCount} blocked</Badge>
               <Badge tone={reviewCount ? "warning" : "success"}>{reviewCount} review</Badge>
             </div>
             <CardDescription className="mt-1">Connected with discharge checklist, MAR, nursing, billing, pending reports, and summary approval.</CardDescription>
           </div>
-          <Button variant="outline" onClick={() => toast.info("Checklist-connected validation completed")}>
+          <Button className="w-full sm:w-auto" variant="outline" onClick={() => toast.info("Checklist-connected validation completed")}>
             <ShieldCheck className="h-4 w-4" />
             Validate
           </Button>
@@ -1464,17 +1464,19 @@ function SummaryReadinessPanel({ items, completion }: { items: SummaryReadinessI
         <div className="h-2 overflow-hidden rounded-full bg-surface-muted">
           <div className="h-full rounded-full bg-primary" style={{ width: `${completion}%` }} />
         </div>
-        <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
+        <div className="grid min-w-0 gap-2 md:grid-cols-2 xl:grid-cols-3">
           {items.map((item) => (
-            <div className="rounded-md border border-border bg-background p-2" key={item.label}>
-              <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0 rounded-md border border-border bg-background p-2" key={item.label}>
+              <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
                 <div className="min-w-0">
-                  <div className="truncate text-xs font-semibold text-foreground">{item.label}</div>
-                  <div className="mt-0.5 truncate text-[11px] text-muted-foreground">{item.source} - {item.detail}</div>
+                  <div className="break-words text-xs font-semibold text-foreground">{item.label}</div>
+                  <div className="mt-0.5 break-words text-[11px] text-muted-foreground">{item.source} - {item.detail}</div>
                 </div>
-                <StatusPill tone={summaryReadinessTone(item.status)}>{item.status}</StatusPill>
+                <div className="shrink-0">
+                  <StatusPill tone={summaryReadinessTone(item.status)}>{item.status}</StatusPill>
+                </div>
               </div>
-              <div className="mt-2 flex flex-wrap justify-end gap-2">
+              <div className="mt-2 grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:justify-end">
                 <Button size="sm" variant="outline" onClick={() => setPreviewDocument(item.evidence)}>
                   <Eye className="h-3.5 w-3.5" />
                   Preview
@@ -1926,7 +1928,7 @@ function SummaryVital({ label, value }: { label: string; value: string }) {
 
 function PremiumLabTable({ rows }: { rows: ReturnType<typeof getPremiumLabRows> }) {
   return (
-    <div className="overflow-hidden rounded-lg border border-border">
+    <div className="overflow-x-auto rounded-lg border border-border">
       <table className="w-full min-w-[760px] text-left text-xs">
         <thead className="bg-surface-muted text-muted-foreground">
           <tr>
