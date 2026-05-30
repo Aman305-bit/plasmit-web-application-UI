@@ -574,7 +574,7 @@ function ChecklistTab({
           <table className="w-full min-w-[1180px] text-left text-sm">
             <thead className="sticky top-0 z-20 bg-surface-muted text-xs uppercase tracking-wide text-muted-foreground">
               <tr>
-                <th className="sticky left-0 z-10 bg-surface-muted px-3 py-2">Checklist item</th>
+                <th className="px-3 py-2">Checklist item</th>
                 <th className="px-3 py-2">Area</th>
                 <th className="px-3 py-2">Owner</th>
                 <th className="px-3 py-2">Source</th>
@@ -590,7 +590,7 @@ function ChecklistTab({
                 const evidence = buildChecklistEvidenceDocument(item);
                 return (
                   <tr className="border-t border-border hover:bg-surface-muted/60" key={item.id}>
-                    <td className="sticky left-0 z-10 bg-surface px-3 py-2 font-medium text-foreground">{item.label}</td>
+                    <td className="px-3 py-2 font-medium text-foreground">{item.label}</td>
                     <td className="px-3 py-2 text-muted-foreground">{item.category}</td>
                     <td className="px-3 py-2 text-muted-foreground">{item.ownerRole}</td>
                     <td className="px-3 py-2">
