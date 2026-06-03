@@ -1,21 +1,43 @@
 import type { ReactNode } from "react";
 import type { LucideIcon } from "lucide-react";
 
-export type BundleCategory = "Actions" | "Forms" | "Layout" | "Feedback" | "Data";
+export type BundleCategory =
+  | "Actions"
+  | "Forms"
+  | "Layout"
+  | "Data"
+  | "Foundation"
+  | "Data Display"
+  | "Feedback"
+  | "Healthcare"
+  | "Workflow"
+  | "Settings";
 
 export type BundlePreviewApi = {
   openDrawer: () => void;
-  showToast: () => void;
+  openModal: () => void;
+  showToast: (message?: unknown) => void;
+};
+
+export type BundleSection = {
+  title: string;
+  description: string;
+  examples: string[];
 };
 
 export type BundleItem = {
   id: string;
-  category: BundleCategory;
+  label?: string;
   title: string;
   description: string;
+  category: BundleCategory;
   icon: LucideIcon;
-  code: string;
-  renderPreview: (api: BundlePreviewApi) => ReactNode;
+  count?: number;
+  keywords?: string[];
+  sections?: BundleSection[];
+  usage?: string;
+  code?: string;
+  renderPreview?: (api: BundlePreviewApi) => ReactNode;
 };
 
 export const fieldClass =
