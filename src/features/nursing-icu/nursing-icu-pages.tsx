@@ -26,6 +26,7 @@ import {
   Syringe,
   TestTube2,
   UserRound,
+  X,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -160,7 +161,7 @@ const pageMeta: Record<NursingIcuPageId, { title: string; description: string; i
   "shift-handover": { title: "Shift Handover", description: "Outgoing and incoming nurse handover with checklist, pending tasks, IV fluids, transfusion, alerts, and acknowledgement.", icon: ClipboardCheck },
   tasks: { title: "Nurse Task List", description: "Task board for medication, vitals, IV checks, transfusion monitoring, sample collection, hygiene, and documentation.", icon: ListChecks },
   "monitoring-chart": { title: "ICU Monitoring Chart", description: "24-hour ICU chart with vitals, GCS, oxygen support, ventilator status, urine output, medications, notes, and audit cues.", icon: Activity },
-  vitals: { title: "Vitals Charting", description: "Capture vitals, oxygen support, GCS, pain score, blood sugar, weight, notes, trends, and abnormal highlights.", icon: HeartPulse },
+  vitals: { title: "Nurse Entry", description: "Capture vitals, oxygen support, GCS, pain score, blood sugar, weight, notes, trends, and abnormal highlights.", icon: HeartPulse },
   "nurse-review": { title: "Nurse Review", description: "Review nurse-entered ICU vitals, apply date/time filters, and view, edit, or delete observation records.", icon: ClipboardCheck },
   "intake-output": { title: "Intake / Output Chart", description: "Shift-wise and 24-hour fluid balance across oral, IV, blood products, tube feeds, urine, drain, vomit, and losses.", icon: Droplets },
   "medication-administration": { title: "Medication Administration", description: "eMAR for due, administered, held, skipped, late, and high-risk double verification medication workflows.", icon: Pill },
@@ -220,7 +221,7 @@ const nursingIcuTabGroups: Array<{
     title: "Monitoring",
     tabs: [
       { id: "monitoring-chart", label: "24h Chart", route: "/nursing-icu/monitoring-chart" },
-      { id: "vitals", label: "Vitals", route: "/nursing-icu/vitals" },
+      { id: "vitals", label: "Nurse Entry", route: "/nursing-icu/vitals" },
       { id: "nurse-review", label: "Nurse Review", route: "/nursing-icu/nurse-review" },
       { id: "intake-output", label: "Intake / Output", route: "/nursing-icu/intake-output" },
     ],
@@ -489,7 +490,7 @@ function FilterPanel({
           <span className="font-medium text-foreground">Search patient / bed / source</span>
           <Input placeholder="Search ICU patient, MRN, bed..." value={search} onChange={(event) => setSearch(event.target.value)} />
         </label>
-        <NativeSelect label="ICU unit" value={unit} onChange={setUnit} options={["All ICU units", "Medical ICU", "Cardiac ICU", "Neuro ICU"]} />
+        <NativeSelect label="ICU unit" value={unit} onChange={setUnit} options={["All ICU units", "General ICU", "Medical ICU", "Cardiothoracic ICU", "Pediatric ICU", "Neuro ICU"]} />
         <NativeSelect label="Patient status" value={status} onChange={setStatus} options={["All status", "Critical", "Ventilated", "Stable ICU care", "Ready for transfer", "Discharge ordered", "Death workflow"]} />
         <Button variant="outline" onClick={() => {
           setSearch("");
@@ -530,7 +531,7 @@ function Dashboard({ patients }: { patients: IcuPatient[] }) {
     { label: "ICU Monitor", route: "/nursing-icu/monitoring-chart" },
     { label: "Clinical History", route: "/nursing-icu/patient-board?view=clinical-history" },
     { label: "Patient Overview", route: "/nursing-icu/patient-board?view=overview" },
-    { label: "Vital Signs", route: "/nursing-icu/vitals" },
+    { label: "Nurse Entry", route: "/nursing-icu/vitals" },
     { label: "Ventilation", route: "/nursing-icu/monitoring-chart?view=ventilation" },
     { label: "Input / Output", route: "/nursing-icu/intake-output" },
     { label: "Fluid Balance Graph", route: "/nursing-icu/intake-output?view=fluid-balance" },
@@ -546,7 +547,7 @@ function Dashboard({ patients }: { patients: IcuPatient[] }) {
         <IcuClassicTabs tabs={dashboardTabs} />
 
         <div className="flex gap-2 overflow-x-auto border-b border-slate-200 bg-white px-3 py-2">
-          <DashboardCommandMetric label="ICU census" value={`${occupiedBeds}/6`} tone="info" />
+          <DashboardCommandMetric label="ICU census" value={`${occupiedBeds}/24`} tone="info" />
           <DashboardCommandMetric label="Critical" value={critical} tone={critical ? "critical" : "success"} />
           <DashboardCommandMetric label="Ventilator" value={ventilated} tone={ventilated ? "purple" : "success"} />
           <DashboardCommandMetric label="Medication due" value={dueMedication} tone={dueMedication ? "danger" : "success"} />
@@ -562,7 +563,7 @@ function Dashboard({ patients }: { patients: IcuPatient[] }) {
             <Input className="h-9 border-slate-300 bg-white text-sm" placeholder="Search ICU patient, MRN, bed..." value={query} onChange={(event) => setQuery(event.target.value)} />
           </label>
           <NativeSelect label="Risk filter" value={riskFilter} onChange={setRiskFilter} options={["All risk", "Critical", "Ventilator", "Medication due", "Alerts", "Ready for transfer", "Stable ICU care"]} />
-          <NativeSelect label="ICU unit" value={unitFilter} onChange={setUnitFilter} options={["All units", "Medical ICU", "Cardiac ICU", "Neuro ICU"]} />
+          <NativeSelect label="ICU unit" value={unitFilter} onChange={setUnitFilter} options={["All units", "General ICU", "Medical ICU", "Cardiothoracic ICU", "Pediatric ICU", "Neuro ICU"]} />
           <div className="grid grid-cols-2 gap-2">
             {(["Compact", "Comfortable"] as const).map((mode) => (
               <Button key={mode} variant={density === mode ? "default" : "outline"} onClick={() => setDensity(mode)}>{mode}</Button>
@@ -591,11 +592,11 @@ function IcuUnitCommandSelector({ activeUnit, onSelect }: { activeUnit: string; 
       <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
         <div>
           <p className="text-sm font-bold text-slate-950">ICU unit command</p>
-          <p className="text-xs text-slate-500">Select who is commanding Medical, Cardiac, or Neuro ICU. Matrix and queues follow the selected unit.</p>
+          <p className="text-xs text-slate-500">Select who is commanding General, Medical, Cardiothoracic, Pediatric, or Neuro ICU. Matrix and queues follow the selected unit.</p>
         </div>
         <span className="rounded-full border border-sky-300 bg-sky-50 px-3 py-1 text-xs font-bold text-sky-700">{activeUnit}</span>
       </div>
-      <div className="grid gap-2 md:grid-cols-2 2xl:grid-cols-4">
+      <div className="grid gap-2 md:grid-cols-2 2xl:grid-cols-3">
         {rows.map((row) => {
           const active = activeUnit === row.value;
           return (
@@ -634,9 +635,11 @@ function IcuUnitCommandSelector({ activeUnit, onSelect }: { activeUnit: string; 
 
 function buildIcuUnitCommandRows() {
   const unitMeta = [
-    { value: "All units", label: "All ICUs", commander: "ICU Head / COO overview", headNurse: "Head Nurse Sana", focus: "Combined census, alerts, staffing, and bed pressure", beds: "12 beds", tone: "info" as DashboardCellTone },
+    { value: "All units", label: "All ICUs", commander: "ICU Head / COO overview", headNurse: "Head Nurse Sana", focus: "Combined census, alerts, staffing, and bed pressure", beds: "24 beds", tone: "info" as DashboardCellTone },
+    { value: "General ICU", label: "General ICU", commander: "Dr. Aman Verma", headNurse: "Unit Nurse Sana", focus: "Mixed medical-surgical ICU care, step-down readiness, routine critical monitoring", beds: "6 beds", tone: "success" as DashboardCellTone },
     { value: "Medical ICU", label: "Medical ICU", commander: "Dr. Sameer Mehta", headNurse: "Unit Nurse Priya", focus: "Sepsis, DKA, renal/fluid balance, transfer readiness", beds: "6 beds", tone: "warning" as DashboardCellTone },
-    { value: "Cardiac ICU", label: "Cardiac ICU", commander: "Dr. Neha Malik", headNurse: "Unit Nurse Meera", focus: "Post CABG, ventilator, ABG, transfusion watch", beds: "4 beds", tone: "purple" as DashboardCellTone },
+    { value: "Cardiothoracic ICU", label: "Cardiothoracic ICU", commander: "Dr. Neha Malik", headNurse: "Unit Nurse Meera", focus: "Post CABG, ventilator, ABG, transfusion watch", beds: "4 beds", tone: "purple" as DashboardCellTone },
+    { value: "Pediatric ICU", label: "Pediatric ICU", commander: "Dr. Kavita Rao", headNurse: "Unit Nurse Sana", focus: "Pediatric sepsis, oxygen escalation, family counselling, weight-based medicine", beds: "4 beds", tone: "info" as DashboardCellTone },
     { value: "Neuro ICU", label: "Neuro ICU", commander: "Dr. Imran Shah", headNurse: "Unit Nurse Priya", focus: "GCS, CT pending, neuro observation, aspiration risk", beds: "4 beds", tone: "success" as DashboardCellTone },
   ];
 
@@ -1226,6 +1229,27 @@ function ProgressNotesCommand() {
 }
 
 type CarePlanTaskStatus = "Pending acknowledgement" | "Accepted" | "In progress" | "Completed" | "Escalated";
+type CarePlanActionKind = "order" | "task";
+
+type CarePlanActionRequest = {
+  kind: CarePlanActionKind;
+  id: string;
+  title: string;
+  subtitle: string;
+  owner: string;
+  priority: IcuPriority;
+  currentStatus: CarePlanTaskStatus;
+  nextStatus: CarePlanTaskStatus;
+  detail?: string;
+};
+
+type CarePlanActionPayload = {
+  reason: string;
+  note: string;
+  actionTime: string;
+  followUpTime: string;
+  escalatedTo: string;
+};
 
 type CarePlanDraft = {
   doctorOrders: string;
@@ -1258,6 +1282,118 @@ type CarePlanTaskRow = {
 };
 
 type CarePlanWorkspaceTab = "context" | "orders" | "care-plan" | "tasks" | "review";
+type ClinicalActionType = "Problem" | "Care Plan" | "Doctor Assessment" | "Ventilator" | "Infection" | "Nutrition" | "Disposition";
+
+type ClinicalActionRecord = {
+  id: string;
+  patientId: string;
+  type: ClinicalActionType;
+  scenario: string;
+  owner: string;
+  priority: IcuPriority;
+  dueTime: string;
+  status: "Draft" | "Active" | "Signed";
+  goal: string;
+  assessment: string;
+  plan: string;
+  createdAt: string;
+};
+
+type ClinicalActionModalPayload = Omit<ClinicalActionRecord, "id" | "patientId" | "type" | "createdAt"> & {
+  createTask: boolean;
+};
+
+type VentilatorType =
+  | "Invasive Mechanical Ventilator"
+  | "Non-Invasive Ventilator - NIV"
+  | "High-Frequency Ventilator"
+  | "Transport / Portable Ventilator"
+  | "Negative Pressure Ventilator";
+
+type VentilatorField = {
+  key: string;
+  label: string;
+  defaultValue: string;
+};
+
+type VentilatorTypeConfig = {
+  modes: string[];
+  fields: VentilatorField[];
+  checks: string[];
+};
+
+type VentilatorSettingMap = Record<string, string>;
+
+const ventilatorTypeOptions: VentilatorType[] = [
+  "Invasive Mechanical Ventilator",
+  "Non-Invasive Ventilator - NIV",
+  "High-Frequency Ventilator",
+  "Transport / Portable Ventilator",
+  "Negative Pressure Ventilator",
+];
+
+const ventilatorTypeConfig: Record<VentilatorType, VentilatorTypeConfig> = {
+  "Invasive Mechanical Ventilator": {
+    modes: ["Volume-Controlled (VC)", "Pressure-Controlled (PC)", "Assist Control (AC)", "SIMV", "PSV"],
+    fields: [
+      { key: "airway", label: "Airway access", defaultValue: "Endotracheal tube" },
+      { key: "fio2", label: "FiO2", defaultValue: "40%" },
+      { key: "peep", label: "PEEP", defaultValue: "5 cmH2O" },
+      { key: "target", label: "VT / pressure target", defaultValue: "VT 6 ml/kg" },
+      { key: "rate", label: "RR / support", defaultValue: "16/min" },
+      { key: "trigger", label: "I:E / trigger", defaultValue: "1:2, trigger checked" },
+    ],
+    checks: ["ABG reviewed", "ET depth / cuff pressure verified", "Alarm limits set", "Suction and oral care ready", "VAP bundle active", "Sedation target documented"],
+  },
+  "Non-Invasive Ventilator - NIV": {
+    modes: ["CPAP", "BiPAP"],
+    fields: [
+      { key: "interface", label: "Interface", defaultValue: "Full-face mask" },
+      { key: "ipap", label: "IPAP / pressure support", defaultValue: "12 cmH2O" },
+      { key: "epap", label: "EPAP / CPAP", defaultValue: "6 cmH2O" },
+      { key: "fio2", label: "FiO2", defaultValue: "35%" },
+      { key: "backupRate", label: "Backup rate", defaultValue: "12/min" },
+      { key: "leak", label: "Leak / tolerance", defaultValue: "Leak acceptable, patient tolerating" },
+    ],
+    checks: ["Mask fit and leak checked", "Aspiration risk reviewed", "Skin pressure points checked", "SpO2 / ABG target set", "Escalation criteria documented"],
+  },
+  "High-Frequency Ventilator": {
+    modes: ["HFOV - High-Frequency Oscillatory Ventilation", "HFJV - High-Frequency Jet Ventilation"],
+    fields: [
+      { key: "fio2", label: "FiO2", defaultValue: "50%" },
+      { key: "map", label: "Mean airway pressure", defaultValue: "18 cmH2O" },
+      { key: "amplitude", label: "Amplitude / delta P", defaultValue: "30" },
+      { key: "frequency", label: "Frequency", defaultValue: "8 Hz" },
+      { key: "abgDue", label: "ABG review", defaultValue: "Repeat ABG in 30 min" },
+      { key: "rtOwner", label: "RT / doctor review", defaultValue: "Respiratory therapist + duty doctor" },
+    ],
+    checks: ["Oscillator / jet circuit checked", "ABG schedule confirmed", "Chest movement assessed", "Sedation / paralysis plan reviewed", "Alarm limits set"],
+  },
+  "Transport / Portable Ventilator": {
+    modes: ["Portable VC", "Portable PC", "Portable CPAP", "Portable BiPAP", "Manual standby"],
+    fields: [
+      { key: "destination", label: "Destination", defaultValue: "CT / OT / inter-unit transfer" },
+      { key: "fio2", label: "FiO2", defaultValue: "50%" },
+      { key: "battery", label: "Battery", defaultValue: "Battery > 80%" },
+      { key: "oxygen", label: "Oxygen source", defaultValue: "Cylinder pressure checked" },
+      { key: "monitor", label: "Transport monitor", defaultValue: "SpO2, ECG, BP attached" },
+      { key: "escort", label: "Escort staff", defaultValue: "Doctor / nurse / RT assigned" },
+    ],
+    checks: ["Battery and oxygen checked", "Emergency bag ready", "Portable alarms set", "Escort staff confirmed", "Receiving area informed"],
+  },
+  "Negative Pressure Ventilator": {
+    modes: ["Tank ventilator", "Cuirass / shell ventilator", "Poncho / chest shell"],
+    fields: [
+      { key: "interface", label: "Interface", defaultValue: "Shell seal checked" },
+      { key: "pressure", label: "Negative pressure", defaultValue: "-20 cmH2O" },
+      { key: "cycle", label: "Cycle rate", defaultValue: "12/min" },
+      { key: "skin", label: "Skin / seal review", defaultValue: "No pressure injury" },
+      { key: "monitoring", label: "Monitoring", defaultValue: "SpO2 and work of breathing" },
+      { key: "backup", label: "Backup plan", defaultValue: "NIV / invasive escalation available" },
+    ],
+    checks: ["Seal and skin checked", "Emergency escalation plan ready", "Aspiration risk reviewed", "Monitoring frequency set", "Specialist review documented"],
+  },
+};
 
 const carePlanTemplates: CarePlanTemplate[] = [
   {
@@ -1340,6 +1476,10 @@ function OrdersCarePlansCommand() {
   const [planStatus, setPlanStatus] = React.useState<"Draft" | "Active">("Draft");
   const [draft, setDraft] = React.useState<CarePlanDraft>(() => buildCarePlanDraft(carePlanTemplates[0], icuPatients[0]));
   const [generatedTasks, setGeneratedTasks] = React.useState<CarePlanTaskRow[]>([]);
+  const [clinicalActions, setClinicalActions] = React.useState<ClinicalActionRecord[]>([]);
+  const [activeClinicalAction, setActiveClinicalAction] = React.useState<ClinicalActionType | null>(null);
+  const [pendingCarePlanAction, setPendingCarePlanAction] = React.useState<CarePlanActionRequest | null>(null);
+  const [carePlanActionNotes, setCarePlanActionNotes] = React.useState<Record<string, string[]>>({});
   const [taskStatusOverrides, setTaskStatusOverrides] = React.useState<Record<string, CarePlanTaskStatus>>({});
   const [orderStatusOverrides, setOrderStatusOverrides] = React.useState<Record<string, CarePlanTaskStatus>>({});
 
@@ -1394,6 +1534,7 @@ function OrdersCarePlansCommand() {
       }));
     return [...generatedTasks.filter((task) => task.patientId === patientId), ...baseTasks];
   }, [generatedTasks, patientId, taskStatusOverrides]);
+  const patientClinicalActions = clinicalActions.filter((action) => action.patientId === patientId);
 
   const selectPatient = (nextPatientId: string) => {
     const nextPatient = icuPatients.find((row) => row.id === nextPatientId) ?? icuPatients[0];
@@ -1420,6 +1561,27 @@ function OrdersCarePlansCommand() {
     toast.success(`Order ${status.toLowerCase()}`);
   };
 
+  const openCarePlanAction = (request: CarePlanActionRequest) => {
+    setPendingCarePlanAction(request);
+  };
+
+  const confirmCarePlanAction = (payload: CarePlanActionPayload) => {
+    const request = pendingCarePlanAction;
+    if (!request) return;
+    const key = `${request.kind}:${request.id}`;
+    const note = [
+      `${payload.actionTime}: ${request.nextStatus}`,
+      payload.reason,
+      payload.escalatedTo ? `To ${payload.escalatedTo}` : "",
+      payload.followUpTime ? `Follow-up ${payload.followUpTime}` : "",
+      payload.note,
+    ].filter(Boolean).join(" | ");
+    if (request.kind === "order") updateOrderStatus(request.id, request.nextStatus);
+    if (request.kind === "task") updateTaskStatus(request.id, request.nextStatus);
+    setCarePlanActionNotes((current) => ({ ...current, [key]: [note, ...(current[key] ?? [])] }));
+    setPendingCarePlanAction(null);
+  };
+
   const generateTasks = () => {
     const tasks = parseCarePlanTasks(draft.nursingTasks);
     if (!tasks.length) {
@@ -1443,6 +1605,44 @@ function OrdersCarePlansCommand() {
     toast.success(`${rows.length} nursing task(s) generated for ${patient.patientName}`);
   };
 
+  const saveClinicalAction = (payload: ClinicalActionModalPayload) => {
+    const actionType = activeClinicalAction;
+    if (!actionType) return;
+    const actionRecord: ClinicalActionRecord = {
+      id: `clinical-action-${Date.now()}`,
+      patientId: patient.id,
+      type: actionType,
+      scenario: payload.scenario,
+      owner: payload.owner,
+      priority: payload.priority,
+      dueTime: payload.dueTime,
+      status: payload.status,
+      goal: payload.goal,
+      assessment: payload.assessment,
+      plan: payload.plan,
+      createdAt: "Now",
+    };
+    setClinicalActions((current) => [actionRecord, ...current]);
+    setDraft((current) => appendClinicalActionToCarePlan(current, actionRecord));
+    if (payload.createTask) {
+      setGeneratedTasks((current) => [{
+        id: `clinical-action-task-${Date.now()}`,
+        patientId: patient.id,
+        patient: `${patient.bedNo} - ${patient.patientName}`,
+        source: `${actionType} modal`,
+        task: payload.plan,
+        owner: patient.assignedWardNurse,
+        priority: payload.priority,
+        dueTime: payload.dueTime,
+        status: "Pending acknowledgement",
+        escalation: payload.goal,
+      }, ...current]);
+    }
+    setPlanStatus("Active");
+    setActiveClinicalAction(null);
+    toast.success(`${actionType} saved for ${patient.patientName}`);
+  };
+
   const pendingTasks = patientTaskRows.filter((row) => !["Completed"].includes(row.status)).length;
   const openOrders = patientOrderRows.filter((row) => row.status !== "Completed").length;
   const generatedTaskCount = generatedTasks.filter((task) => task.patientId === patientId).length;
@@ -1455,46 +1655,54 @@ function OrdersCarePlansCommand() {
     { id: "orders", label: "Orders", icon: ClipboardCheck, badge: String(openOrders), tone: openOrders ? "warning" : "success" },
     { id: "care-plan", label: "Care Plan", icon: FileText, badge: planStatus, tone: planStatus === "Active" ? "success" : "info" },
     { id: "tasks", label: "Tasks", icon: ListChecks, badge: String(pendingTasks), tone: pendingTasks ? "warning" : "success" },
-    { id: "review", label: "Review", icon: CheckCircle2, badge: String(generatedTaskCount), tone: generatedTaskCount ? "success" : "muted" },
+    { id: "review", label: "Review", icon: CheckCircle2, badge: String(generatedTaskCount + patientClinicalActions.length), tone: generatedTaskCount || patientClinicalActions.length ? "success" : "muted" },
   ];
 
   return (
-    <div className="grid gap-4 xl:grid-cols-[330px_minmax(0,1fr)]">
-      <Card className="h-fit">
-        <CardHeader>
-          <div>
-            <CardTitle>Orders & Care Plans</CardTitle>
-            <CardDescription>Patient-first workflow with simple side tabs.</CardDescription>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <PatientSelect label="Patient" value={patientId} onChange={selectPatient} patients={icuPatients} />
-          <div className="space-y-2 rounded-md border border-border bg-surface-muted p-2">
-            {carePlanTabs.map((tab) => {
-              const Icon = tab.icon;
-              return (
-                <button
-                  className={cn(
-                    "flex w-full items-center justify-between gap-3 rounded-md border p-3 text-left text-sm transition",
-                    activeTab === tab.id ? "border-primary bg-primary/5 text-foreground" : "border-border bg-background text-muted-foreground hover:bg-surface-muted",
-                  )}
-                  key={tab.id}
-                  type="button"
-                  onClick={() => setActiveTab(tab.id)}
-                >
-                  <span className="flex min-w-0 items-center gap-2">
-                    <Icon className="h-4 w-4 shrink-0" />
-                    <span className="truncate font-medium">{tab.label}</span>
-                  </span>
-                  <Badge tone={tab.tone}>{tab.badge}</Badge>
-                </button>
-              );
-            })}
-          </div>
-        </CardContent>
-      </Card>
+    <div className="space-y-4">
+      <ClinicalActionCenter
+        actions={patientClinicalActions}
+        onOpenAction={setActiveClinicalAction}
+        patient={patient}
+      />
 
-      <div className="space-y-4">
+      <div className="grid gap-4 lg:grid-cols-[300px_minmax(0,1fr)]">
+        <Card className="h-fit">
+          <CardHeader>
+            <div>
+              <CardTitle>Orders & Care Plans</CardTitle>
+              <CardDescription>Patient-first workflow with simple side tabs.</CardDescription>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <PatientSelect label="Patient" value={patientId} onChange={selectPatient} patients={icuPatients} />
+            <div className="space-y-2 rounded-md border border-border bg-surface-muted p-2">
+              {carePlanTabs.map((tab) => {
+                const Icon = tab.icon;
+                return (
+                  <button
+                    className={cn(
+                      "flex w-full items-center justify-between gap-3 rounded-md border p-3 text-left text-sm transition",
+                      activeTab === tab.id ? "border-primary bg-primary/5 text-foreground" : "border-border bg-background text-muted-foreground hover:bg-surface-muted",
+                    )}
+                    key={tab.id}
+                    type="button"
+                    onClick={() => setActiveTab(tab.id)}
+                  >
+                    <span className="flex min-w-0 items-center gap-2">
+                      <Icon className="h-4 w-4 shrink-0" />
+                      <span className="truncate font-medium">{tab.label}</span>
+                    </span>
+                    <Badge tone={tab.tone}>{tab.badge}</Badge>
+                  </button>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+
+        <div className="space-y-4">
+
         {activeTab === "context" ? (
           <CommandSection title="Patient Context" description="Confirm patient, risk, care team, and current alerts before acting on orders.">
             <PatientMiniCard patient={patient} />
@@ -1534,10 +1742,11 @@ function OrdersCarePlansCommand() {
                   status={row.status}
                   subtitle={`${row.orderType} | ${row.frequency} | Safety: ${row.safety}`}
                   title={row.order}
-                  onAccept={() => updateOrderStatus(row.id, "Accepted")}
-                  onComplete={() => updateOrderStatus(row.id, "Completed")}
-                  onEscalate={() => updateOrderStatus(row.id, "Escalated")}
-                  onStart={() => updateOrderStatus(row.id, "In progress")}
+                  actionNotes={carePlanActionNotes[`order:${row.id}`]}
+                  onAccept={() => openCarePlanAction({ kind: "order", id: row.id, title: row.order, subtitle: `${row.orderType} | ${row.frequency}`, owner: row.owner, priority: row.priority, currentStatus: row.status, nextStatus: "Accepted" })}
+                  onComplete={() => openCarePlanAction({ kind: "order", id: row.id, title: row.order, subtitle: `${row.orderType} | ${row.frequency}`, owner: row.owner, priority: row.priority, currentStatus: row.status, nextStatus: "Completed" })}
+                  onEscalate={() => openCarePlanAction({ kind: "order", id: row.id, title: row.order, subtitle: `${row.orderType} | ${row.frequency}`, owner: row.owner, priority: row.priority, currentStatus: row.status, nextStatus: "Escalated" })}
+                  onStart={() => openCarePlanAction({ kind: "order", id: row.id, title: row.order, subtitle: `${row.orderType} | ${row.frequency}`, owner: row.owner, priority: row.priority, currentStatus: row.status, nextStatus: "In progress" })}
                 />
               ))}
               {!patientOrderRows.length ? <EmptyCarePlanPanel title="No orders for selected filter" detail="Change patient or order type." /> : null}
@@ -1581,10 +1790,11 @@ function OrdersCarePlansCommand() {
                   subtitle={`${row.source} | Due ${row.dueTime}`}
                   title={row.task}
                   detail={row.escalation}
-                  onAccept={() => updateTaskStatus(row.id, "Accepted")}
-                  onComplete={() => updateTaskStatus(row.id, "Completed")}
-                  onEscalate={() => updateTaskStatus(row.id, "Escalated")}
-                  onStart={() => updateTaskStatus(row.id, "In progress")}
+                  actionNotes={carePlanActionNotes[`task:${row.id}`]}
+                  onAccept={() => openCarePlanAction({ kind: "task", id: row.id, title: row.task, subtitle: `${row.source} | Due ${row.dueTime}`, owner: row.owner, priority: row.priority, currentStatus: row.status, nextStatus: "Accepted", detail: row.escalation })}
+                  onComplete={() => openCarePlanAction({ kind: "task", id: row.id, title: row.task, subtitle: `${row.source} | Due ${row.dueTime}`, owner: row.owner, priority: row.priority, currentStatus: row.status, nextStatus: "Completed", detail: row.escalation })}
+                  onEscalate={() => openCarePlanAction({ kind: "task", id: row.id, title: row.task, subtitle: `${row.source} | Due ${row.dueTime}`, owner: row.owner, priority: row.priority, currentStatus: row.status, nextStatus: "Escalated", detail: row.escalation })}
+                  onStart={() => openCarePlanAction({ kind: "task", id: row.id, title: row.task, subtitle: `${row.source} | Due ${row.dueTime}`, owner: row.owner, priority: row.priority, currentStatus: row.status, nextStatus: "In progress", detail: row.escalation })}
                 />
               ))}
               {!patientTaskRows.length ? <EmptyCarePlanPanel title="No nursing tasks" detail="Generate tasks from the selected care plan." /> : null}
@@ -1609,6 +1819,7 @@ function OrdersCarePlansCommand() {
                 ["Owner", patient.assignedWardNurse],
               ]} />
             </div>
+            <ClinicalActionLog actions={patientClinicalActions} />
             <div className="grid gap-2 sm:grid-cols-3">
               <Button variant="outline" onClick={() => setActiveTab("orders")}>Review orders</Button>
               <Button variant="outline" onClick={() => setActiveTab("care-plan")}>Edit plan</Button>
@@ -1617,8 +1828,624 @@ function OrdersCarePlansCommand() {
           </CommandSection>
         ) : null}
       </div>
+      </div>
+      <ClinicalActionModal
+        key={activeClinicalAction ?? "clinical-action-closed"}
+        actionType={activeClinicalAction}
+        open={Boolean(activeClinicalAction)}
+        patient={patient}
+        onOpenChange={(open) => {
+          if (!open) setActiveClinicalAction(null);
+        }}
+        onSave={saveClinicalAction}
+      />
+      <CarePlanActionDialog
+        key={pendingCarePlanAction ? `${pendingCarePlanAction.kind}-${pendingCarePlanAction.id}-${pendingCarePlanAction.nextStatus}` : "care-plan-action-closed"}
+        request={pendingCarePlanAction}
+        open={Boolean(pendingCarePlanAction)}
+        patient={patient}
+        onOpenChange={(open) => {
+          if (!open) setPendingCarePlanAction(null);
+        }}
+        onConfirm={confirmCarePlanAction}
+      />
     </div>
   );
+}
+
+function ClinicalActionCenter({
+  actions,
+  onOpenAction,
+  patient,
+}: {
+  actions: ClinicalActionRecord[];
+  onOpenAction: (type: ClinicalActionType) => void;
+  patient: IcuPatient;
+}) {
+  const actionButtons: Array<{ type: ClinicalActionType; icon: typeof FileText; tone: StatusTone }> = [
+    { type: "Problem", icon: AlertTriangle, tone: "critical" },
+    { type: "Care Plan", icon: ClipboardCheck, tone: "info" },
+    { type: "Doctor Assessment", icon: Stethoscope, tone: "success" },
+    { type: "Ventilator", icon: Activity, tone: patient.ventilatorStatus === "Room air" ? "muted" : "warning" },
+    { type: "Infection", icon: TestTube2, tone: "danger" },
+    { type: "Nutrition", icon: Droplets, tone: "warning" },
+    { type: "Disposition", icon: ArrowRightLeft, tone: "info" },
+  ];
+
+  return (
+    <Card>
+      <CardContent className="p-3">
+        <div className="flex flex-col gap-3 xl:flex-row xl:items-center">
+          <div className="flex shrink-0 items-center justify-between gap-3 xl:w-56">
+            <div>
+              <p className="text-sm font-semibold text-foreground">Clinical actions</p>
+              <p className="mt-1 text-xs text-muted-foreground">{patient.bedNo} | {actions.length} saved</p>
+            </div>
+            <Badge tone={actions.length ? "success" : "muted"}>{actions.length}</Badge>
+          </div>
+          <div className="flex min-w-0 gap-2 overflow-x-auto">
+          {actionButtons.map((item) => {
+            const Icon = item.icon;
+            return (
+              <Button
+                className="h-10 shrink-0 justify-start"
+                key={item.type}
+                variant="outline"
+                onClick={() => onOpenAction(item.type)}
+              >
+                <Icon className={cn("h-4 w-4", toneTextClass(item.tone))} />
+                {item.type}
+              </Button>
+            );
+          })}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function ClinicalActionModal({
+  actionType,
+  open,
+  patient,
+  onOpenChange,
+  onSave,
+}: {
+  actionType: ClinicalActionType | null;
+  open: boolean;
+  patient: IcuPatient;
+  onOpenChange: (open: boolean) => void;
+  onSave: (payload: ClinicalActionModalPayload) => void;
+}) {
+  const config = getClinicalActionConfig(actionType ?? "Care Plan", patient);
+  const [scenario, setScenario] = React.useState(config.scenarios[0]);
+  const [owner, setOwner] = React.useState(config.defaultOwner);
+  const [priority, setPriority] = React.useState<IcuPriority>(config.defaultPriority);
+  const [dueTime, setDueTime] = React.useState(config.defaultDueTime);
+  const [status, setStatus] = React.useState<ClinicalActionRecord["status"]>("Active");
+  const [goal, setGoal] = React.useState(config.defaultGoal);
+  const [assessment, setAssessment] = React.useState(config.defaultAssessment);
+  const [plan, setPlan] = React.useState(config.defaultPlan);
+  const [createTask, setCreateTask] = React.useState(config.createTaskDefault);
+  const initialVentilatorType = inferVentilatorType(patient.ventilatorStatus);
+  const initialVentilatorMode = ventilatorTypeConfig[initialVentilatorType].modes[0];
+  const [ventilatorType, setVentilatorType] = React.useState<VentilatorType>(initialVentilatorType);
+  const [ventilatorMode, setVentilatorMode] = React.useState(initialVentilatorMode);
+  const [ventilatorSettings, setVentilatorSettings] = React.useState<VentilatorSettingMap>(() => buildVentilatorSettings(initialVentilatorType, initialVentilatorMode));
+  const [ventilatorChecks, setVentilatorChecks] = React.useState<Record<string, boolean>>({});
+  const ventilatorCheckLabels = actionType === "Ventilator" ? ventilatorTypeConfig[ventilatorType].checks : [];
+  const completedVentilatorChecks = ventilatorCheckLabels.filter((label) => ventilatorChecks[label]).length;
+  const canSave = Boolean(scenario && owner && goal.trim() && assessment.trim() && plan.trim());
+
+  if (!actionType) return null;
+
+  const changeVentilatorType = (value: string) => {
+    const nextType = value as VentilatorType;
+    const nextMode = ventilatorTypeConfig[nextType].modes[0];
+    setVentilatorType(nextType);
+    setVentilatorMode(nextMode);
+    setVentilatorSettings(buildVentilatorSettings(nextType, nextMode));
+    setVentilatorChecks({});
+  };
+
+  const changeVentilatorMode = (value: string) => {
+    setVentilatorMode(value);
+    setVentilatorSettings((current) => ({
+      ...buildVentilatorSettings(ventilatorType, value),
+      ...current,
+    }));
+  };
+
+  const updateVentilatorSetting = (key: string, value: string) => {
+    setVentilatorSettings((current) => ({ ...current, [key]: value }));
+  };
+
+  const applyVentilatorTemplate = () => {
+    setGoal(buildVentilatorGoal(ventilatorType, ventilatorMode, patient));
+    setAssessment(buildVentilatorAssessment(ventilatorType, ventilatorMode, ventilatorSettings, patient));
+    setPlan(buildVentilatorPlan(ventilatorType, ventilatorChecks));
+  };
+
+  const save = () => {
+    if (!canSave) {
+      toast.error("Scenario, goal, assessment and plan are required.");
+      return;
+    }
+    const ventilatorAssessment = actionType === "Ventilator" && !assessment.includes("Ventilator type:")
+      ? `${assessment}\n${buildVentilatorAssessment(ventilatorType, ventilatorMode, ventilatorSettings, patient)}`
+      : assessment;
+    const ventilatorPlan = actionType === "Ventilator" && !plan.includes("Ventilator checklist:")
+      ? `${plan}\n${buildVentilatorPlan(ventilatorType, ventilatorChecks)}`
+      : plan;
+    onSave({ scenario, owner, priority, dueTime, status, goal, assessment: ventilatorAssessment, plan: ventilatorPlan, createTask });
+  };
+
+  return (
+    <Dialog.Root open={open} onOpenChange={onOpenChange}>
+      <Dialog.Portal>
+        <Dialog.Overlay className="fixed inset-0 z-50 bg-black/40 backdrop-blur-[1px]" />
+        <Dialog.Content className="fixed left-1/2 top-1/2 z-50 flex max-h-[90dvh] w-[min(820px,calc(100vw-24px))] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-lg border border-border bg-surface shadow-soft outline-none">
+          <div className="flex items-start justify-between gap-3 border-b border-border bg-surface-muted px-4 py-3">
+            <div>
+              <Dialog.Title className="text-base font-semibold text-foreground">{actionType} Workflow</Dialog.Title>
+              <Dialog.Description className="mt-1 text-xs text-muted-foreground">
+                {patient.bedNo} - {patient.patientName} | {patient.diagnosis}
+              </Dialog.Description>
+            </div>
+            <Dialog.Close asChild>
+              <Button aria-label="Close clinical action" size="sm" variant="ghost"><X className="h-4 w-4" /></Button>
+            </Dialog.Close>
+          </div>
+
+          <div className="min-h-0 space-y-4 overflow-y-auto p-4">
+            <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+              <ClinicalContextBox label="Status" value={patient.currentStatus} />
+              <ClinicalContextBox label="Ventilator" value={patient.ventilatorStatus} />
+              <ClinicalContextBox label="Doctor" value={patient.admittingDoctor} />
+              <ClinicalContextBox label="Nurse" value={patient.assignedWardNurse} />
+            </div>
+
+            <div className="grid gap-3 md:grid-cols-2">
+              <NativeSelect label="Scenario" value={scenario} onChange={setScenario} options={config.scenarios} />
+              <NativeSelect label="Owner" value={owner} onChange={setOwner} options={config.ownerOptions} />
+              <NativeSelect label="Priority" value={priority} onChange={(value) => setPriority(value as IcuPriority)} options={["Critical", "High", "Medium", "Routine"]} />
+              <NativeSelect label="Status" value={status} onChange={(value) => setStatus(value as ClinicalActionRecord["status"])} options={["Draft", "Active", "Signed"]} />
+              <label className="space-y-1 text-sm">
+                <span className="font-medium text-foreground">Due / review time</span>
+                <Input value={dueTime} onChange={(event) => setDueTime(event.target.value)} />
+              </label>
+              <label className="flex min-h-10 items-center gap-2 rounded-md border border-border bg-background px-3 py-2 text-sm">
+                <input checked={createTask} className="h-4 w-4 rounded border-border" type="checkbox" onChange={(event) => setCreateTask(event.target.checked)} />
+                <span className="font-medium text-foreground">Create nursing task</span>
+              </label>
+            </div>
+
+            {actionType === "Ventilator" ? (
+              <div className="space-y-3 rounded-md border border-info/30 bg-info/5 p-3">
+                <div className="flex flex-wrap items-start justify-between gap-2">
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">Ventilator setup</p>
+                    <p className="mt-1 text-xs text-muted-foreground">Select type, mode, settings, and safety checks before saving the respiratory plan.</p>
+                  </div>
+                  <StatusPill tone={completedVentilatorChecks === ventilatorCheckLabels.length ? "success" : "warning"}>
+                    {completedVentilatorChecks}/{ventilatorCheckLabels.length} checks
+                  </StatusPill>
+                </div>
+
+                <div className="grid gap-3 md:grid-cols-2">
+                  <NativeSelect label="Ventilator type" value={ventilatorType} onChange={changeVentilatorType} options={ventilatorTypeOptions} />
+                  <NativeSelect label="Sub-type / mode" value={ventilatorMode} onChange={changeVentilatorMode} options={ventilatorTypeConfig[ventilatorType].modes} />
+                </div>
+
+                <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                  {ventilatorTypeConfig[ventilatorType].fields.map((field) => (
+                    <label className="space-y-1 text-sm" key={field.key}>
+                      <span className="font-medium text-foreground">{field.label}</span>
+                      <Input value={ventilatorSettings[field.key] ?? ""} onChange={(event) => updateVentilatorSetting(field.key, event.target.value)} />
+                    </label>
+                  ))}
+                </div>
+
+                <div>
+                  <p className="text-sm font-semibold text-foreground">Safety checklist</p>
+                  <div className="mt-2 grid gap-2 md:grid-cols-2">
+                    {ventilatorCheckLabels.map((label) => (
+                      <label className="flex min-h-10 items-center gap-2 rounded-md border border-border bg-background px-3 py-2 text-sm" key={label}>
+                        <input
+                          checked={Boolean(ventilatorChecks[label])}
+                          className="h-4 w-4 rounded border-border"
+                          type="checkbox"
+                          onChange={(event) => setVentilatorChecks((current) => ({ ...current, [label]: event.target.checked }))}
+                        />
+                        <span>{label}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                <Button size="sm" variant="outline" onClick={applyVentilatorTemplate}>
+                  <FileText className="h-4 w-4" />
+                  Apply to notes
+                </Button>
+              </div>
+            ) : null}
+
+            <CarePlanTextArea label="Goal / decision" value={goal} onChange={setGoal} />
+            <CarePlanTextArea label="Assessment / clinical context" value={assessment} onChange={setAssessment} />
+            <CarePlanTextArea label="Plan / action" value={plan} onChange={setPlan} />
+          </div>
+
+          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border bg-surface-muted px-4 py-3">
+            <p className="text-xs text-muted-foreground">
+              {actionType === "Ventilator" ? `${completedVentilatorChecks}/${ventilatorCheckLabels.length} ventilator safety checks selected.` : createTask ? "Saving will also add this to nursing task queue." : "Saving updates clinical workspace only."}
+            </p>
+            <div className="flex gap-2">
+              <Dialog.Close asChild><Button variant="outline">Cancel</Button></Dialog.Close>
+              <Button disabled={!canSave} onClick={save}><CheckCircle2 className="h-4 w-4" />Save workflow</Button>
+            </div>
+          </div>
+        </Dialog.Content>
+      </Dialog.Portal>
+    </Dialog.Root>
+  );
+}
+
+function ClinicalActionLog({ actions, compact }: { actions: ClinicalActionRecord[]; compact?: boolean }) {
+  if (!actions.length) {
+    return <EmptyCarePlanPanel title="No clinical action saved" detail="Use the action buttons above to add structured ICU decisions." />;
+  }
+  return (
+    <div className={cn("grid gap-2", compact ? "lg:grid-cols-3" : "lg:grid-cols-2")}>
+      {actions.map((action) => (
+        <div className="rounded-md border border-border bg-background p-3" key={action.id}>
+          <div className="flex flex-wrap items-start justify-between gap-2">
+            <div>
+              <p className="text-sm font-semibold text-foreground">{action.type}: {action.scenario}</p>
+              <p className="mt-1 text-xs text-muted-foreground">{action.owner} | {action.createdAt} | Due {action.dueTime}</p>
+            </div>
+            <StatusPill tone={action.status === "Signed" ? "success" : action.status === "Active" ? "info" : "warning"}>{action.status}</StatusPill>
+          </div>
+          <p className="mt-2 line-clamp-2 text-xs text-muted-foreground">{action.goal}</p>
+          {!compact ? <p className="mt-2 line-clamp-3 text-xs text-muted-foreground">{action.plan}</p> : null}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function CarePlanActionDialog({
+  request,
+  open,
+  patient,
+  onOpenChange,
+  onConfirm,
+}: {
+  request: CarePlanActionRequest | null;
+  open: boolean;
+  patient: IcuPatient;
+  onOpenChange: (open: boolean) => void;
+  onConfirm: (payload: CarePlanActionPayload) => void;
+}) {
+  const [reason, setReason] = React.useState("Select reason");
+  const [actionTime, setActionTime] = React.useState("Now");
+  const [followUpTime, setFollowUpTime] = React.useState("");
+  const [escalatedTo, setEscalatedTo] = React.useState(() => request?.nextStatus === "Escalated" ? "Select escalation owner" : "No additional notify");
+  const [note, setNote] = React.useState("");
+  const [checks, setChecks] = React.useState<Record<string, boolean>>({});
+
+  if (!request) return null;
+
+  const escalationPlaceholder = "Select escalation owner";
+  const noNotifyOption = "No notification required";
+  const destinationOptions = Array.from(new Set([
+    request.nextStatus === "Escalated" ? escalationPlaceholder : noNotifyOption,
+    patient.dutyDoctor,
+    patient.admittingDoctor,
+    "Head Nurse Sana",
+    "Pharmacy",
+    "Lab / Radiology",
+    "Biomedical",
+  ]));
+  const destinationLabel = request.nextStatus === "Escalated" ? "Escalation owner" : "Communication";
+  const destinationHelper = request.nextStatus === "Escalated"
+    ? "Select the doctor, nurse, or department responsible for this escalation."
+    : "Select only when this update must be shared with another person or department.";
+  const reasons = carePlanActionReasons(request.nextStatus, request.kind);
+  const checkLabels = carePlanActionChecks(request.nextStatus, request.kind);
+  const allChecksComplete = checkLabels.every((label) => checks[label]);
+  const reasonMissing = reason === "Select reason";
+  const noteMissing = (request.nextStatus === "Completed" || reason === "Other") && !note.trim();
+  const escalationMissing = request.nextStatus === "Escalated" && escalatedTo === escalationPlaceholder;
+  const canConfirm = allChecksComplete && !reasonMissing && !noteMissing && !escalationMissing;
+
+  const submit = () => {
+    if (!canConfirm) {
+      toast.error("Complete required reason, checklist and note before updating.");
+      return;
+    }
+    const selectedDestination = escalatedTo === noNotifyOption || escalatedTo === escalationPlaceholder ? "" : escalatedTo;
+    onConfirm({ reason, actionTime, followUpTime, escalatedTo: selectedDestination, note });
+  };
+
+  return (
+    <Dialog.Root open={open} onOpenChange={onOpenChange}>
+      <Dialog.Portal>
+        <Dialog.Overlay className="fixed inset-0 z-50 bg-black/40 backdrop-blur-[1px]" />
+        <Dialog.Content className="fixed left-1/2 top-1/2 z-50 flex max-h-[90dvh] w-[min(760px,calc(100vw-24px))] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-lg border border-border bg-surface shadow-soft outline-none">
+          <div className="flex items-start justify-between gap-3 border-b border-border bg-surface-muted px-4 py-3">
+            <div>
+              <Dialog.Title className="text-base font-semibold text-foreground">{request.nextStatus} {request.kind === "order" ? "order" : "task"}</Dialog.Title>
+              <Dialog.Description className="mt-1 text-xs text-muted-foreground">
+                {patient.bedNo} - {patient.patientName} | Current: {request.currentStatus}
+              </Dialog.Description>
+            </div>
+            <Dialog.Close asChild>
+              <Button aria-label="Close care action" size="sm" variant="ghost"><X className="h-4 w-4" /></Button>
+            </Dialog.Close>
+          </div>
+
+          <div className="min-h-0 space-y-4 overflow-y-auto p-4">
+            <div className="rounded-md border border-border bg-background p-3">
+              <div className="flex flex-wrap items-start justify-between gap-2">
+                <div>
+                  <p className="text-sm font-semibold text-foreground">{request.title}</p>
+                  <p className="mt-1 text-xs text-muted-foreground">{request.subtitle}</p>
+                  {request.detail ? <p className="mt-2 text-xs text-muted-foreground">{request.detail}</p> : null}
+                </div>
+                <div className="flex gap-1">
+                  <Badge tone={toneForPriority(request.priority)}>{request.priority}</Badge>
+                  <StatusPill tone={carePlanTaskTone(request.currentStatus)}>{request.currentStatus}</StatusPill>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-2">
+              <CarePlanDialogField label="Reason">
+                <NativeSelect label="Reason" value={reason} onChange={setReason} options={["Select reason", ...reasons]} />
+              </CarePlanDialogField>
+              <CarePlanDialogField label="Action time">
+                <NativeSelect label="Action time" value={actionTime} onChange={setActionTime} options={["Now", "After patient verification", "After doctor review", "End of shift", "Custom noted below"]} />
+              </CarePlanDialogField>
+              <CarePlanDialogField label="Current owner">
+                <NativeSelect label="Current owner" value={request.owner} onChange={() => undefined} options={[request.owner]} />
+              </CarePlanDialogField>
+              <CarePlanDialogField label={destinationLabel} helper={destinationHelper}>
+                <NativeSelect label={destinationLabel} value={escalatedTo} onChange={setEscalatedTo} options={destinationOptions} />
+              </CarePlanDialogField>
+              <label className="space-y-1 text-sm sm:col-span-2">
+                <span className="font-medium text-foreground">Follow-up / next review</span>
+                <Input placeholder="Next 15 min / next round / after result..." value={followUpTime} onChange={(event) => setFollowUpTime(event.target.value)} />
+              </label>
+            </div>
+
+            <div>
+              <p className="text-sm font-semibold text-foreground">Confirmation checklist</p>
+              <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                {checkLabels.map((label) => (
+                  <label className="flex min-h-11 items-center gap-2 rounded-md border border-border bg-background px-3 py-2 text-sm" key={label}>
+                    <input
+                      checked={Boolean(checks[label])}
+                      className="h-4 w-4 rounded border-border"
+                      type="checkbox"
+                      onChange={(event) => setChecks((current) => ({ ...current, [label]: event.target.checked }))}
+                    />
+                    <span>{label}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <label className="space-y-1 text-sm">
+              <span className="font-medium text-foreground">Action note</span>
+              <textarea
+                className="min-h-24 w-full rounded-md border border-input bg-background p-3 text-sm outline-none focus:ring-2 focus:ring-ring/20"
+                placeholder="Capture patient condition, communication, result, handover note, blocker, or completion evidence..."
+                value={note}
+                onChange={(event) => setNote(event.target.value)}
+              />
+            </label>
+          </div>
+
+          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border bg-surface-muted px-4 py-3">
+            <p className="text-xs text-muted-foreground">{allChecksComplete ? "Checklist complete" : `${checkLabels.filter((label) => checks[label]).length}/${checkLabels.length} checks complete`}</p>
+            <div className="flex gap-2">
+              <Dialog.Close asChild><Button variant="outline">Cancel</Button></Dialog.Close>
+              <Button disabled={!canConfirm} onClick={submit}>
+                <CheckCircle2 className="h-4 w-4" />
+                Confirm {request.nextStatus.toLowerCase()}
+              </Button>
+            </div>
+          </div>
+        </Dialog.Content>
+      </Dialog.Portal>
+    </Dialog.Root>
+  );
+}
+
+function CarePlanDialogField({ label, helper, children }: { label: string; helper?: string; children: React.ReactNode }) {
+  return (
+    <div className="space-y-1.5">
+      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{label}</p>
+      {children}
+      {helper ? <p className="text-[11px] leading-4 text-muted-foreground">{helper}</p> : null}
+    </div>
+  );
+}
+
+function ClinicalContextBox({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-md border border-border bg-background p-3">
+      <p className="text-xs text-muted-foreground">{label}</p>
+      <p className="mt-1 line-clamp-2 text-sm font-semibold text-foreground">{value}</p>
+    </div>
+  );
+}
+
+function getClinicalActionConfig(type: ClinicalActionType, patient: IcuPatient) {
+  const commonOwners = [patient.admittingDoctor, patient.dutyDoctor, patient.assignedWardNurse, patient.assignedUnitNurse, "Head Nurse Sana"];
+  const configs: Record<ClinicalActionType, {
+    scenarios: string[];
+    ownerOptions: string[];
+    defaultOwner: string;
+    defaultPriority: IcuPriority;
+    defaultDueTime: string;
+    defaultGoal: string;
+    defaultAssessment: string;
+    defaultPlan: string;
+    createTaskDefault: boolean;
+  }> = {
+    Problem: {
+      scenarios: ["New active problem", "Worsening existing problem", "Resolved / improving problem", "Procedure-related problem"],
+      ownerOptions: commonOwners,
+      defaultOwner: patient.admittingDoctor,
+      defaultPriority: patient.criticalityScore >= 8 ? "Critical" : "High",
+      defaultDueTime: "Next 30 min",
+      defaultGoal: `Define active issue for ${patient.bedNo} and assign owner.`,
+      defaultAssessment: `${patient.diagnosis}. Latest status: ${patient.currentStatus}.`,
+      defaultPlan: "Update problem list, link monitoring requirement, and create follow-up task if needed.",
+      createTaskDefault: true,
+    },
+    "Care Plan": {
+      scenarios: ["System-wise daily goal", "Nursing care intervention", "Cross-team care plan", "Escalation plan"],
+      ownerOptions: commonOwners,
+      defaultOwner: patient.assignedWardNurse,
+      defaultPriority: "High",
+      defaultDueTime: "Before next round",
+      defaultGoal: "Keep ICU plan clear for doctor, nurse, medication, monitoring, and handover.",
+      defaultAssessment: `${patient.patientName} requires coordinated ICU care plan review.`,
+      defaultPlan: "Document goal, owner, due time, review frequency, and handover item.",
+      createTaskDefault: true,
+    },
+    "Doctor Assessment": {
+      scenarios: ["Daily ICU assessment", "Post-event assessment", "Result review assessment", "Transfer readiness assessment"],
+      ownerOptions: [patient.admittingDoctor, patient.dutyDoctor, patient.consultingDoctor],
+      defaultOwner: patient.admittingDoctor,
+      defaultPriority: "High",
+      defaultDueTime: "Current round",
+      defaultGoal: "Complete doctor assessment and update clinical decision.",
+      defaultAssessment: "Vitals, labs, medication, oxygen support, urine output, lines/devices, and pending reports reviewed.",
+      defaultPlan: "Update orders, care plan, nursing instructions, escalation criteria, and family update need.",
+      createTaskDefault: false,
+    },
+    Ventilator: {
+      scenarios: ["Ventilator setting review", "Weaning readiness", "VAP bundle", "Oxygen support escalation", "Transport ventilation", "High-frequency ventilation"],
+      ownerOptions: [patient.admittingDoctor, patient.dutyDoctor, "Respiratory Therapist", patient.assignedWardNurse],
+      defaultOwner: patient.dutyDoctor,
+      defaultPriority: patient.ventilatorStatus === "Room air" ? "Medium" : "High",
+      defaultDueTime: "Next 30 min",
+      defaultGoal: "Keep oxygenation stable and document respiratory support plan.",
+      defaultAssessment: `Current support: ${patient.ventilatorStatus}. Review SpO2 trend, ABG, suction need, sedation target, and alarms.`,
+      defaultPlan: "Confirm mode/support, FiO2/PEEP or oxygen device, ABG timing, VAP bundle, suction plan, and escalation trigger.",
+      createTaskDefault: patient.ventilatorStatus !== "Room air",
+    },
+    Infection: {
+      scenarios: ["Antibiotic review", "Culture pending", "Source control review", "Fever / sepsis watch"],
+      ownerOptions: [patient.admittingDoctor, patient.dutyDoctor, "Pharmacy", patient.assignedWardNurse],
+      defaultOwner: patient.admittingDoctor,
+      defaultPriority: "High",
+      defaultDueTime: "Today",
+      defaultGoal: "Clarify infection source, antibiotic day, culture status, and review date.",
+      defaultAssessment: `${patient.diagnosis}; check fever trend, cultures, antibiotic due time, and lab markers.`,
+      defaultPlan: "Document suspected source, culture status, antibiotic plan, de-escalation/review date, and nurse follow-up.",
+      createTaskDefault: true,
+    },
+    Nutrition: {
+      scenarios: ["Enteral feed plan", "NPO / aspiration risk", "TPN review", "Glucose and diet plan"],
+      ownerOptions: [patient.admittingDoctor, "Dietician", patient.assignedWardNurse, patient.assignedUnitNurse],
+      defaultOwner: "Dietician",
+      defaultPriority: "Medium",
+      defaultDueTime: "Current shift",
+      defaultGoal: "Document safe nutrition route and feeding target.",
+      defaultAssessment: "Review NPO/NG/oral status, aspiration risk, glucose, intake/output, and medication route impact.",
+      defaultPlan: "Set feed route/rate, hold criteria, aspiration precautions, glucose review, and nursing observation.",
+      createTaskDefault: true,
+    },
+    Disposition: {
+      scenarios: ["Continue ICU", "Transfer to ward", "Procedure / OT readiness", "Discharge / death workflow"],
+      ownerOptions: [patient.admittingDoctor, patient.dutyDoctor, patient.assignedUnitNurse, "Admission desk"],
+      defaultOwner: patient.admittingDoctor,
+      defaultPriority: patient.currentStatus === "Ready for transfer" ? "Medium" : "High",
+      defaultDueTime: "Today",
+      defaultGoal: "Define whether patient continues ICU care, transfers, needs procedure, or starts discharge workflow.",
+      defaultAssessment: `Current status: ${patient.currentStatus}. Review vitals stability, oxygen/device need, reports, medication, and family update.`,
+      defaultPlan: "Document decision, reason, clearance checklist, destination, handover requirement, and responsible owner.",
+      createTaskDefault: true,
+    },
+  };
+  return configs[type];
+}
+
+function inferVentilatorType(status: string): VentilatorType {
+  const normalizedStatus = status.toLowerCase();
+  if (normalizedStatus.includes("invasive")) return "Invasive Mechanical Ventilator";
+  if (normalizedStatus.includes("hfov") || normalizedStatus.includes("hfjv") || normalizedStatus.includes("high-frequency")) return "High-Frequency Ventilator";
+  if (normalizedStatus.includes("transport") || normalizedStatus.includes("portable")) return "Transport / Portable Ventilator";
+  if (normalizedStatus.includes("negative")) return "Negative Pressure Ventilator";
+  return "Non-Invasive Ventilator - NIV";
+}
+
+function buildVentilatorSettings(type: VentilatorType, mode: string): VentilatorSettingMap {
+  const settings = Object.fromEntries(ventilatorTypeConfig[type].fields.map((field) => [field.key, field.defaultValue]));
+  if (type === "Invasive Mechanical Ventilator" && mode.includes("Pressure")) settings.target = "Pressure control 16 cmH2O";
+  if (type === "Invasive Mechanical Ventilator" && mode === "PSV") {
+    settings.target = "Pressure support 10 cmH2O";
+    settings.rate = "Spontaneous, backup reviewed";
+  }
+  if (type === "Non-Invasive Ventilator - NIV" && mode === "CPAP") {
+    settings.ipap = "Not applicable";
+    settings.epap = "CPAP 8 cmH2O";
+    settings.backupRate = "Not applicable";
+  }
+  return settings;
+}
+
+function buildVentilatorGoal(type: VentilatorType, mode: string, patient: IcuPatient) {
+  return `${patient.bedNo} ${patient.patientName}: maintain safe oxygenation on ${type} (${mode}) and document escalation / weaning decision.`;
+}
+
+function buildVentilatorAssessment(type: VentilatorType, mode: string, settings: VentilatorSettingMap, patient: IcuPatient) {
+  const settingSummary = formatVentilatorSettings(settings);
+  return `Ventilator type: ${type}. Mode/sub-type: ${mode}. Current support: ${patient.ventilatorStatus}. Settings: ${settingSummary}.`;
+}
+
+function buildVentilatorPlan(type: VentilatorType, checks: Record<string, boolean>) {
+  const config = ventilatorTypeConfig[type];
+  const completedChecks = config.checks.filter((check) => checks[check]);
+  const pendingChecks = config.checks.filter((check) => !checks[check]);
+  const completedText = completedChecks.length ? completedChecks.join(", ") : "none selected";
+  const pendingText = pendingChecks.length ? pendingChecks.join(", ") : "none";
+  return `Ventilator checklist: completed - ${completedText}. Pending - ${pendingText}. Review ABG/SpO2 trend, alarm limits, nursing observation, respiratory therapist note, and escalation trigger.`;
+}
+
+function formatVentilatorSettings(settings: VentilatorSettingMap) {
+  return Object.entries(settings)
+    .map(([key, value]) => `${toTitleLabel(key)} ${value}`)
+    .join("; ");
+}
+
+function toTitleLabel(value: string) {
+  return value
+    .replace(/([A-Z])/g, " $1")
+    .replace(/^./, (letter) => letter.toUpperCase());
+}
+
+function appendClinicalActionToCarePlan(draft: CarePlanDraft, action: ClinicalActionRecord): CarePlanDraft {
+  const line = `${action.type} - ${action.scenario}: ${action.goal} Plan: ${action.plan}`;
+  if (action.type === "Ventilator") return { ...draft, monitoringPlan: `${draft.monitoringPlan}\n${line}` };
+  if (action.type === "Infection") return { ...draft, medicationFollowUp: `${draft.medicationFollowUp}\n${line}` };
+  if (action.type === "Nutrition") return { ...draft, dailyGoal: `${draft.dailyGoal}\n${line}` };
+  if (action.type === "Doctor Assessment") return { ...draft, doctorOrders: `${draft.doctorOrders}\n${line}` };
+  if (action.type === "Disposition") return { ...draft, escalationRule: `${draft.escalationRule}\n${line}` };
+  return { ...draft, nursingTasks: `${draft.nursingTasks}\n${line}` };
+}
+
+function toneTextClass(tone: StatusTone) {
+  if (tone === "critical" || tone === "danger") return "text-danger";
+  if (tone === "warning") return "text-warning";
+  if (tone === "success") return "text-success";
+  if (tone === "info") return "text-info";
+  return "text-muted-foreground";
 }
 
 function buildCarePlanDraft(template: CarePlanTemplate, patient?: IcuPatient): CarePlanDraft {
@@ -1664,6 +2491,22 @@ function carePlanTaskTone(status: CarePlanTaskStatus): StatusTone {
   return "muted";
 }
 
+function carePlanActionReasons(status: CarePlanTaskStatus, kind: CarePlanActionKind) {
+  if (status === "Accepted") return ["Patient and order verified", "Assigned owner acknowledged", "Accepted with clarification pending", "Accepted during round", "Other"];
+  if (status === "In progress") return ["Work started at bedside", "Medication/report follow-up started", "Care-plan intervention started", "Waiting for supporting department", "Other"];
+  if (status === "Completed") return [`${kind === "order" ? "Order" : "Task"} completed as planned`, "Completed after doctor review", "Completed with patient response documented", "Completed and handed over", "Other"];
+  if (status === "Escalated") return ["Patient condition changed", "Delay or blocker", "Abnormal result / vitals", "Medication or device safety concern", "Owner unavailable", "Other"];
+  return ["Status update required", "Other"];
+}
+
+function carePlanActionChecks(status: CarePlanTaskStatus, kind: CarePlanActionKind) {
+  if (status === "Accepted") return ["Patient identity/context reviewed", `${kind === "order" ? "Order" : "Task"} owner confirmed`, "Due time and priority understood"];
+  if (status === "In progress") return ["Bedside readiness checked", "Required supplies/reports reviewed", "Current patient safety status checked"];
+  if (status === "Completed") return ["Completion evidence documented", "Patient response or result reviewed", "Handover impact reviewed"];
+  if (status === "Escalated") return ["Escalation owner selected", "Urgency and patient risk reviewed", "Nurse/doctor communication documented"];
+  return ["Clinical context reviewed"];
+}
+
 function CarePlanTextArea({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) {
   return (
     <label className="space-y-1 text-sm">
@@ -1681,6 +2524,7 @@ function OrderCarePlanCard({
   title,
   subtitle,
   detail,
+  actionNotes,
   owner,
   priority,
   status,
@@ -1692,6 +2536,7 @@ function OrderCarePlanCard({
   title: string;
   subtitle: string;
   detail?: string;
+  actionNotes?: string[];
   owner: string;
   priority: IcuPriority;
   status: CarePlanTaskStatus;
@@ -1707,6 +2552,11 @@ function OrderCarePlanCard({
           <p className="text-sm font-semibold text-foreground">{title}</p>
           <p className="mt-1 text-xs text-muted-foreground">{subtitle}</p>
           {detail ? <p className="mt-2 text-xs text-muted-foreground">{detail}</p> : null}
+          {actionNotes?.[0] ? (
+            <div className="mt-2 rounded-md border border-info/30 bg-info/5 p-2 text-xs text-muted-foreground">
+              {actionNotes[0]}
+            </div>
+          ) : null}
         </div>
         <div className="flex shrink-0 flex-wrap gap-1 sm:justify-end">
           <Badge tone={toneForPriority(priority)}>{priority}</Badge>
@@ -2172,8 +3022,8 @@ function UsersRolesCommand() {
 
 function ConfigurationCommand() {
   const rows = [
-    { id: "cfg-001", area: "ICU units", setting: "Medical ICU, Cardiac ICU, Neuro ICU", value: "Active", owner: "Hospital Admin", status: "Ready" },
-    { id: "cfg-002", area: "Bed setup", setting: "12 demo beds with availability state", value: "Mapped", owner: "ICU Coordinator", status: "Ready" },
+    { id: "cfg-001", area: "ICU units", setting: "General ICU, Medical ICU, Cardiothoracic ICU, Pediatric ICU, Neuro ICU", value: "Active", owner: "Hospital Admin", status: "Ready" },
+    { id: "cfg-002", area: "Bed setup", setting: "24 command beds with availability state", value: "Mapped", owner: "ICU Coordinator", status: "Ready" },
     { id: "cfg-003", area: "Alert thresholds", setting: "SpO2 < 92, MAP < 65, urine < 30 ml/hr", value: "Enabled", owner: "ICU Head", status: "Ready" },
     { id: "cfg-004", area: "Medication timing rules", setting: "Late after 15 min, high-risk double verification", value: "Enabled", owner: "Pharmacy + Nursing", status: "Ready" },
     { id: "cfg-005", area: "Device setup", setting: "Monitor, ventilator, pump, gateway mapping", value: "Partial", owner: "Biomedical", status: "Needs review" },
@@ -4641,8 +5491,11 @@ function DoctorRounds() {
   const [mode, setMode] = React.useState<DoctorRoundMode>("Daily Round");
   const [patientId, setPatientId] = React.useState(icuPatients[0]?.id ?? "");
   const selectedPatient = icuPatients.find((patient) => patient.id === patientId) ?? icuPatients[0];
-  const [draft, setDraft] = React.useState<DoctorRoundDraft>(() => createDefaultDoctorRoundDraft(selectedPatient));
+  const [draft, setDraft] = React.useState<DoctorRoundDraft>(() => createDefaultDoctorRoundDraft(selectedPatient, "Daily Round"));
   const [savedRounds, setSavedRounds] = React.useState<Array<{ id: string; mode: DoctorRoundMode; patient: string; decision: string; summary: string; time: string }>>([]);
+  const doctorOptions = React.useMemo(() => getDoctorRoundDoctorOptions(mode), [mode]);
+  const activeDoctor = doctorOptions.includes(draft.doctor) ? draft.doctor : (doctorOptions[0] ?? draft.doctor);
+  const doctorPatients = React.useMemo(() => filterDoctorRoundPatients(mode, activeDoctor), [activeDoctor, mode]);
 
   const latestVital = [...icuVitals].reverse().find((vital) => vital.patientId === selectedPatient?.id);
   const patientAlerts = icuAlerts.filter((alert) => alert.patientId === selectedPatient?.id);
@@ -4653,6 +5506,7 @@ function DoctorRounds() {
   const roundScenarios = buildDoctorRoundScenarios({ mode, patient: selectedPatient, draft, latestVital, alerts: patientAlerts, meds: patientMeds, infusions: patientInfusions, tasks: patientTasks, fluidBalance });
   const blockingCount = roundScenarios.filter((scenario) => scenario.blocking).length;
   const generatedGoals = buildDoctorRoundGoals(draft, selectedPatient);
+  const selectedPatientVisible = doctorPatients.some((patient) => patient.id === patientId);
 
   const updateDraft = (key: keyof DoctorRoundDraft, value: string) => {
     setDraft((current) => ({ ...current, [key]: value }));
@@ -4661,7 +5515,27 @@ function DoctorRounds() {
   const selectPatient = (nextPatientId: string) => {
     const nextPatient = icuPatients.find((patient) => patient.id === nextPatientId) ?? selectedPatient;
     setPatientId(nextPatientId);
-    setDraft(createDefaultDoctorRoundDraft(nextPatient));
+    setDraft(createDefaultDoctorRoundDraft(nextPatient, mode));
+  };
+
+  const selectDoctor = (doctor: string) => {
+    const nextPatients = filterDoctorRoundPatients(mode, doctor);
+    const nextPatient = nextPatients.find((patient) => patient.id === patientId) ?? nextPatients[0] ?? selectedPatient;
+    if (nextPatient) {
+      setPatientId(nextPatient.id);
+    }
+    setDraft({ ...createDefaultDoctorRoundDraft(nextPatient, mode), doctor });
+  };
+
+  const selectMode = (nextMode: DoctorRoundMode) => {
+    const nextDoctor = getDoctorForRoundMode(selectedPatient, nextMode);
+    const nextPatients = filterDoctorRoundPatients(nextMode, nextDoctor);
+    const nextPatient = nextPatients.find((patient) => patient.id === patientId) ?? nextPatients[0] ?? selectedPatient;
+    setMode(nextMode);
+    if (nextPatient) {
+      setPatientId(nextPatient.id);
+    }
+    setDraft({ ...createDefaultDoctorRoundDraft(nextPatient, nextMode), doctor: nextDoctor });
   };
 
   const saveRound = () => {
@@ -4688,13 +5562,23 @@ function DoctorRounds() {
     <div className="space-y-4">
       <div className="overflow-hidden rounded-md border border-sky-200 bg-white shadow-sm">
         <div className="border-l-4 border-sky-600 bg-sky-50 px-4 py-3">
-          <div className="grid gap-4 2xl:grid-cols-[minmax(250px,0.75fr)_minmax(0,1.4fr)_250px] 2xl:items-end">
-            <label className="space-y-1 text-sm">
-              <span className="font-semibold text-slate-800">ICU patient</span>
-              <select className="h-11 w-full rounded-md border border-slate-300 bg-white px-3 text-sm font-medium text-slate-900 outline-none focus:ring-2 focus:ring-sky-200" value={patientId} onChange={(event) => selectPatient(event.target.value)}>
-                {icuPatients.map((patient) => <option key={patient.id} value={patient.id}>{patient.bedNo} - {patient.patientName}</option>)}
-              </select>
-            </label>
+          <div className="grid gap-4 2xl:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)] 2xl:items-end">
+            <div className="grid gap-3 md:grid-cols-2">
+              <label className="space-y-1 text-sm">
+                <span className="font-semibold text-slate-800">{mode === "Admitting Doctor" ? "Admitting doctor" : "Round doctor"}</span>
+                <select className="h-11 w-full rounded-md border border-slate-300 bg-white px-3 text-sm font-medium text-slate-900 outline-none focus:ring-2 focus:ring-sky-200" value={activeDoctor} onChange={(event) => selectDoctor(event.target.value)}>
+                  {doctorOptions.map((doctor) => <option key={doctor}>{doctor}</option>)}
+                </select>
+              </label>
+
+              <label className="space-y-1 text-sm">
+                <span className="font-semibold text-slate-800">ICU patient ({doctorPatients.length})</span>
+                <select className="h-11 w-full rounded-md border border-slate-300 bg-white px-3 text-sm font-medium text-slate-900 outline-none focus:ring-2 focus:ring-sky-200" value={selectedPatientVisible ? patientId : ""} onChange={(event) => selectPatient(event.target.value)} disabled={!doctorPatients.length}>
+                  {!doctorPatients.length ? <option value="">No patient assigned</option> : null}
+                  {doctorPatients.map((patient) => <option key={patient.id} value={patient.id}>{patient.bedNo} - {patient.patientName} | {patient.unit}</option>)}
+                </select>
+              </label>
+            </div>
 
             <div className="space-y-2">
               <div className="flex flex-wrap items-center justify-between gap-2">
@@ -4710,7 +5594,7 @@ function DoctorRounds() {
                     )}
                     key={item}
                     type="button"
-                    onClick={() => setMode(item)}
+                    onClick={() => selectMode(item)}
                   >
                     {item === "Admitting Doctor" ? <Stethoscope className="h-4 w-4" /> : <ClipboardCheck className="h-4 w-4" />}
                     {item}
@@ -4718,13 +5602,6 @@ function DoctorRounds() {
                 ))}
               </div>
             </div>
-
-            <label className="space-y-1 text-sm">
-              <span className="font-semibold text-slate-800">Doctor</span>
-              <select className="h-11 w-full rounded-md border border-slate-300 bg-white px-3 text-sm font-medium text-slate-900 outline-none focus:ring-2 focus:ring-sky-200" value={draft.doctor} onChange={(event) => updateDraft("doctor", event.target.value)}>
-                {["Dr. Sameer Mehta", "Dr. Neha Malik", "Dr. Imran Shah", "Dr. Aman Verma", selectedPatient?.admittingDoctor ?? "Admitting doctor"].map((doctor) => <option key={doctor}>{doctor}</option>)}
-              </select>
-            </label>
           </div>
         </div>
 
@@ -4736,7 +5613,7 @@ function DoctorRounds() {
         </div>
       </div>
 
-      <DoctorRoundQueuePanel activePatientId={patientId} mode={mode} onSelectPatient={selectPatient} />
+      <DoctorRoundQueuePanel activePatientId={patientId} mode={mode} patients={doctorPatients} selectedDoctor={activeDoctor} onSelectDoctor={selectDoctor} onSelectPatient={selectPatient} />
 
       <section className="space-y-4">
           {mode === "Admitting Doctor" ? (
@@ -4854,11 +5731,11 @@ function DailyRoundWorkspace({ draft, selectedPatient, updateDraft }: { draft: D
   );
 }
 
-function createDefaultDoctorRoundDraft(patient?: IcuPatient): DoctorRoundDraft {
+function createDefaultDoctorRoundDraft(patient?: IcuPatient, mode: DoctorRoundMode = "Daily Round"): DoctorRoundDraft {
   const ventilated = patient?.ventilatorStatus !== "Room air";
   const critical = (patient?.criticalityScore ?? 0) >= 8;
   return {
-    doctor: patient?.admittingDoctor ?? "Dr. Sameer Mehta",
+    doctor: getDoctorForRoundMode(patient, mode),
     roundType: "Daily ICU consultant round",
     provisionalDiagnosis: patient?.diagnosis ?? "ICU diagnosis under review",
     admissionAssessment: `${patient?.currentStatus ?? "ICU"} patient admitted from ${patient?.admissionSource ?? "source"}. Confirm airway, breathing, circulation, disability, exposure, allergy, and medication history.`,
@@ -4881,6 +5758,19 @@ function createDefaultDoctorRoundDraft(patient?: IcuPatient): DoctorRoundDraft {
     familyUpdate: "Family updated about current condition, risks, and plan. Consent/review pending if condition changes.",
     decision: patient?.currentStatus === "Ready for transfer" ? "Transfer to ward" : "Continue ICU care",
   };
+}
+
+function getDoctorForRoundMode(patient?: IcuPatient, mode: DoctorRoundMode = "Daily Round") {
+  if (!patient) return "Dr. Sameer Mehta";
+  return mode === "Admitting Doctor" ? patient.admittingDoctor : patient.dutyDoctor;
+}
+
+function getDoctorRoundDoctorOptions(mode: DoctorRoundMode) {
+  return Array.from(new Set(icuPatients.map((patient) => getDoctorForRoundMode(patient, mode)))).sort();
+}
+
+function filterDoctorRoundPatients(mode: DoctorRoundMode, doctor: string) {
+  return icuPatients.filter((patient) => getDoctorForRoundMode(patient, mode) === doctor);
 }
 
 function buildDoctorRoundScenarios({
@@ -5061,8 +5951,22 @@ function ClinicalMiniBadge({ label, value, tone }: { label: string; value: strin
   );
 }
 
-function DoctorRoundQueuePanel({ activePatientId, mode, onSelectPatient }: { activePatientId: string; mode: DoctorRoundMode; onSelectPatient: (patientId: string) => void }) {
-  const roundQueue = buildDoctorRoundQueue(mode);
+function DoctorRoundQueuePanel({
+  activePatientId,
+  mode,
+  patients,
+  selectedDoctor,
+  onSelectDoctor,
+  onSelectPatient,
+}: {
+  activePatientId: string;
+  mode: DoctorRoundMode;
+  patients: IcuPatient[];
+  selectedDoctor: string;
+  onSelectDoctor: (doctor: string) => void;
+  onSelectPatient: (patientId: string) => void;
+}) {
+  const roundQueue = buildDoctorRoundQueue(mode, patients);
   const roster = Array.from(new Set(icuPatients.map((patient) => mode === "Admitting Doctor" ? patient.admittingDoctor : patient.dutyDoctor))).map((doctor) => {
     const patients = icuPatients.filter((patient) => (mode === "Admitting Doctor" ? patient.admittingDoctor : patient.dutyDoctor) === doctor);
     const alertCount = patients.reduce((sum, patient) => sum + icuAlerts.filter((alert) => alert.patientId === patient.id && alert.status !== "Resolved").length, 0);
@@ -5077,7 +5981,7 @@ function DoctorRoundQueuePanel({ activePatientId, mode, onSelectPatient }: { act
       <div className="flex items-start justify-between gap-3 px-1 py-1">
         <div>
           <p className="text-sm font-bold text-slate-900">{title}</p>
-          <p className="mt-1 text-xs text-slate-500">Compact 20-30 patient round queue with overnight events, pending labs, and pending orders.</p>
+          <p className="mt-1 text-xs text-slate-500">{selectedDoctor} ownership queue with patient filter, overnight events, pending labs, and pending orders.</p>
         </div>
         <span className="rounded-full border border-sky-200 bg-white px-2.5 py-1 text-xs font-bold text-sky-700">{roundQueue.length}</span>
       </div>
@@ -5123,6 +6027,12 @@ function DoctorRoundQueuePanel({ activePatientId, mode, onSelectPatient }: { act
               </button>
             );
           })}
+          {!roundQueue.length ? (
+            <div className="col-span-full rounded-md border border-dashed border-slate-300 bg-slate-50 p-6 text-center">
+              <p className="text-sm font-bold text-slate-900">No patient assigned</p>
+              <p className="mt-1 text-xs text-slate-500">No patient is assigned to {selectedDoctor} in this round mode.</p>
+            </div>
+          ) : null}
           </div>
         </div>
 
@@ -5134,7 +6044,15 @@ function DoctorRoundQueuePanel({ activePatientId, mode, onSelectPatient }: { act
             </div>
             <div className="mt-3 space-y-2">
               {roster.map((item) => (
-                <div className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2" key={item.doctor}>
+                <button
+                  className={cn(
+                    "w-full rounded-md border px-3 py-2 text-left transition hover:border-sky-300 hover:bg-sky-50",
+                    item.doctor === selectedDoctor ? "border-sky-400 bg-sky-50 ring-1 ring-sky-200" : "border-slate-200 bg-slate-50",
+                  )}
+                  key={item.doctor}
+                  type="button"
+                  onClick={() => onSelectDoctor(item.doctor)}
+                >
                   <div className="flex items-center justify-between gap-2">
                     <span className="truncate text-sm font-bold text-slate-900">{item.doctor}</span>
                     <span className={cn("rounded-full border px-2 py-0.5 text-[11px] font-bold", clinicalTonePillClass(item.alertCount ? "warning" : "success"))}>{item.patients.length} pt</span>
@@ -5142,7 +6060,7 @@ function DoctorRoundQueuePanel({ activePatientId, mode, onSelectPatient }: { act
                   <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-200">
                     <div className={cn("h-full rounded-full", item.alertCount ? "bg-amber-500" : "bg-emerald-500")} style={{ width: `${Math.max(18, Math.min(100, item.patients.length * 28))}%` }} />
                   </div>
-                </div>
+                </button>
               ))}
             </div>
           </div>
@@ -5158,12 +6076,13 @@ function DoctorRoundQueuePanel({ activePatientId, mode, onSelectPatient }: { act
   );
 }
 
-function buildDoctorRoundQueue(mode: DoctorRoundMode) {
+function buildDoctorRoundQueue(mode: DoctorRoundMode, queuePatients: IcuPatient[]) {
   const overnightEvents = ["SpO2 dip", "ABG follow-up", "No major event", "Transfer stable", "Urine low", "Fever spike"];
   const pendingLabs = ["Lactate", "ABG", "CBC", "Culture", "Electrolytes", "None"];
   const pendingOrders = ["Medication review", "Ventilator order", "Fluid plan", "Transfer order", "Nursing task", "None"];
+  if (!queuePatients.length) return [];
   return Array.from({ length: mode === "Admitting Doctor" ? 12 : 24 }, (_, index) => {
-    const patient = icuPatients[index % icuPatients.length];
+    const patient = queuePatients[index % queuePatients.length];
     const alertCount = icuAlerts.filter((alert) => alert.patientId === patient.id && alert.status !== "Resolved").length + (index % 7 === 0 ? 1 : 0);
     return {
       id: `${mode}-${patient.id}-${index}`,
@@ -6989,8 +7908,8 @@ function WorkflowField({ label, value, wide, readOnly }: { label: string; value:
 function fieldOptions(label: string, currentValue?: string) {
   const lower = label.toLowerCase();
   const patientOptions = icuPatients.map((patient) => `${patient.bedNo} - ${patient.patientName}`);
-  const bedOptions = ["ICU-A01", "ICU-A02", "ICU-B03", "ICU-B04", "ICU-C05", "ICU-C06"];
-  const unitOptions = ["Medical ICU", "Cardiac ICU", "Neuro ICU", "Isolation ICU", "Post-op ICU"];
+  const bedOptions = ["ICU-A01", "ICU-A02", "ICU-B03", "ICU-B04", "ICU-C05", "ICU-C06", "ICU-G01", "ICU-P07"];
+  const unitOptions = ["General ICU", "Medical ICU", "Cardiothoracic ICU", "Pediatric ICU", "Neuro ICU", "Isolation ICU", "Post-op ICU"];
   const unitNurses = ["Unit Nurse Priya", "Unit Nurse Meera", "Unit Nurse Sana"];
   const wardNurses = ["Ward Nurse Kavita", "Ward Nurse Arjun", "Ward Nurse Neha"];
   const nurses = Array.from(new Set([...unitNurses, ...wardNurses]));

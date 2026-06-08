@@ -196,7 +196,7 @@ export const navigationItems: NavigationItem[] = [
       { id: "nursing-icu-handover", label: "Shift Handover", route: "/nursing-icu/shift-handover", status: "ready" },
       { id: "nursing-icu-tasks", label: "Nurse Task List", route: "/nursing-icu/tasks", status: "ready" },
       { id: "nursing-icu-monitoring", label: "ICU Monitoring Chart", route: "/nursing-icu/monitoring-chart", status: "ready" },
-      { id: "nursing-icu-vitals", label: "Vitals Charting", route: "/nursing-icu/vitals", status: "ready" },
+      { id: "nursing-icu-vitals", label: "Nurse Entry", route: "/nursing-icu/vitals", status: "ready" },
       { id: "nursing-icu-nurse-review", label: "Nurse Review", route: "/nursing-icu/nurse-review", status: "ready" },
       { id: "nursing-icu-intake-output", label: "Intake / Output Chart", route: "/nursing-icu/intake-output", status: "ready" },
       { id: "nursing-icu-medication", label: "Medication Administration", route: "/nursing-icu/medication-administration", status: "ready" },

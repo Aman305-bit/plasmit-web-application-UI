@@ -84,25 +84,29 @@ const hourOptions = ["All hours", ...Array.from({ length: 24 }, (_, hour) => `${
 const timeWindowOptions: TimeWindow[] = ["All time", "Day shift", "Night shift", "Custom range"];
 
 const intakeCategories = [
-  "Oral",
-  "P.O",
-  "Oral supplements",
-  "Gastric",
-  "NG Tube",
-  "Gastric wash",
-  "IV",
-  "Medicine",
-  "Fluid",
-  "Blood products",
-  "Others",
+  "Oral Intake",
+  "Enteral Feed / Tube Feed",
+  "IV Fluids",
+  "IV Medication Dilution",
+  "Continuous Infusions",
+  "Blood & Blood Products",
+  "Parenteral Nutrition / TPN",
+  "Electrolyte Replacement",
+  "Irrigation Input",
+  "Other Intake",
 ];
 
 const outputCategories = [
-  "Est. Blood loss",
-  "Urine output",
-  "Stool output",
-  "Emesis output",
-  "Drain output",
+  "Urine",
+  "Fecal",
+  "Vomitus",
+  "NG Aspirate",
+  "Ryle's Tube Aspirate",
+  "Gastric Drainage",
+  "Gastrostomy Output",
+  "Abdominal Drain",
+  "Chest Drain",
+  "Blood Loss",
 ];
 
 const sourceOptions: SourceFilter[] = [
@@ -117,7 +121,7 @@ const sourceOptions: SourceFilter[] = [
   "Infusion pump",
 ];
 
-const draftSourceOptions: IcuIntakeOutput["source"][] = sourceOptions.filter((source): source is IcuIntakeOutput["source"] => source !== "All sources");
+const captureSourceOptions: IcuIntakeOutput["source"][] = sourceOptions.filter((source): source is IcuIntakeOutput["source"] => source !== "All sources");
 
 const matrixRows: MatrixRow[] = [
   { label: "Intake", type: "section" },
@@ -157,18 +161,18 @@ function IntakeOutputWorkspaceInner() {
   const [activeCell, setActiveCell] = React.useState<ActiveCell>(null);
   const [draft, setDraft] = React.useState<IoDraft>({
     kind: "Intake",
-    category: "IV",
+    category: "IV Fluids",
     component: "Normal saline",
     quantity: "100",
     route: "IV",
-    source: "Manual entry",
+    source: getCaptureSourceForIoCategory("Intake", "IV Fluids"),
     date: selectedToday,
     time: "12:00",
     comment: "",
   });
 
   const selectedPatient = icuPatients.find((patient) => patient.id === patientId) ?? icuPatients[0];
-  const allRows = React.useMemo(() => [...manualRows, ...intakeOutputRows], [manualRows]);
+  const allRows = React.useMemo(() => [...manualRows, ...intakeOutputRows.map(normalizeIoCategory)], [manualRows]);
 
   const scopedRows = React.useMemo(() => {
     const text = query.trim().toLowerCase();
@@ -230,7 +234,7 @@ function IntakeOutputWorkspaceInner() {
       component: draft.component.trim() || draft.category,
       quantityMl: quantity,
       route: draft.route.trim() || draft.category,
-      source: draft.source,
+      source: getCaptureSourceForIoCategory(draft.kind, draft.category),
       status: "Pending review",
       intakeType: draft.kind === "Intake" ? draft.category : "",
       intakeMl: draft.kind === "Intake" ? quantity : 0,
@@ -252,11 +256,11 @@ function IntakeOutputWorkspaceInner() {
   };
 
   const changeDraftKind = (kind: IcuIntakeOutput["kind"]) => {
+    const defaults = getIoDraftDefaults(kind);
     setDraft((current) => ({
       ...current,
       kind,
-      category: kind === "Intake" ? "IV" : "Urine output",
-      route: kind === "Intake" ? "IV" : "Urinary catheter",
+      ...defaults,
     }));
   };
 
@@ -532,18 +536,14 @@ function IoQuantityCell({ bucket, row, rows, value, active, onSelect }: { bucket
 
 function FluidBalanceGraph({ series }: { series: GraphPoint[] }) {
   const width = Math.max(760, series.length * 84);
-  const height = 270;
+  const height = 300;
   const pad = 36;
-  const maxVolume = Math.max(100, ...series.flatMap((point) => [point.intake, point.output, Math.abs(point.balance)]));
-  const plotHeight = height - pad * 2;
+  const labelSpace = 24;
+  const maxVolume = Math.max(100, ...series.flatMap((point) => [point.intake, point.output]));
   const plotWidth = width - pad * 2;
-  const baseline = height - pad;
-  const balancePoints = series.map((point, index) => {
-    const x = pad + (series.length <= 1 ? plotWidth / 2 : (index / (series.length - 1)) * plotWidth);
-    const normalized = (point.balance + maxVolume) / (maxVolume * 2);
-    const y = pad + (1 - normalized) * plotHeight;
-    return `${x},${y}`;
-  }).join(" ");
+  const baseline = Math.round((height - labelSpace) / 2);
+  const intakePlotHeight = baseline - pad - 10;
+  const outputPlotHeight = height - labelSpace - baseline - 10;
 
   return (
     <Card className="overflow-hidden border-slate-200">
@@ -551,12 +551,11 @@ function FluidBalanceGraph({ series }: { series: GraphPoint[] }) {
         <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <CardTitle>Fluid Balance Graph</CardTitle>
-            <CardDescription>Blue intake, green output, and red/green net balance trend.</CardDescription>
+            <CardDescription>Blue intake is plotted above the baseline and green output below it.</CardDescription>
           </div>
           <div className="flex flex-wrap gap-2">
             <Badge tone="info">Intake</Badge>
             <Badge tone="success">Output</Badge>
-            <Badge tone="danger">Net watch</Badge>
           </div>
         </div>
       </CardHeader>
@@ -566,19 +565,16 @@ function FluidBalanceGraph({ series }: { series: GraphPoint[] }) {
             <line stroke="#cbd5e1" strokeDasharray="4 4" x1={pad} x2={width - pad} y1={baseline} y2={baseline} />
             {series.map((point, index) => {
               const x = pad + (series.length <= 1 ? plotWidth / 2 : (index / (series.length - 1)) * plotWidth);
-              const intakeHeight = Math.max(4, (point.intake / maxVolume) * (plotHeight - 38));
-              const outputHeight = Math.max(4, (point.output / maxVolume) * (plotHeight - 38));
-              const balanceY = pad + (1 - ((point.balance + maxVolume) / (maxVolume * 2))) * plotHeight;
+              const intakeHeight = point.intake > 0 ? Math.max(4, (point.intake / maxVolume) * intakePlotHeight) : 0;
+              const outputHeight = point.output > 0 ? Math.max(4, (point.output / maxVolume) * outputPlotHeight) : 0;
               return (
                 <g key={point.key}>
                   <rect fill="#0ea5e9" height={intakeHeight} rx="4" width="18" x={x - 23} y={baseline - intakeHeight} />
-                  <rect fill="#10b981" height={outputHeight} rx="4" width="18" x={x + 5} y={baseline - outputHeight} />
-                  <circle cx={x} cy={balanceY} fill={point.balance >= 0 ? "#f97316" : "#dc2626"} r="4" />
+                  <rect fill="#10b981" height={outputHeight} rx="4" width="18" x={x + 5} y={baseline} />
                   <text fill="#475569" fontSize="10" textAnchor="middle" x={x} y={height - 10}>{point.label}</text>
                 </g>
               );
             })}
-            <polyline fill="none" points={balancePoints} stroke="#dc2626" strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" />
           </svg>
         </div>
       </CardContent>
@@ -602,8 +598,8 @@ function FluidGraphReviewPanel({
   const fallbackPoint: GraphPoint = { key: "empty", label: "-", intake: 0, output: 0, balance: 0 };
   const peakPositive = series.reduce((best, point) => point.balance > best.balance ? point : best, series[0] ?? fallbackPoint);
   const peakNegative = series.reduce((best, point) => point.balance < best.balance ? point : best, series[0] ?? fallbackPoint);
-  const lowUrineCount = rows.filter((row) => row.category === "Urine output" && row.quantityMl < 30).length;
-  const drainOutput = rows.filter((row) => row.category === "Drain output").reduce((sum, row) => sum + row.quantityMl, 0);
+  const lowUrineCount = rows.filter((row) => row.category === "Urine" && row.quantityMl < 30).length;
+  const drainOutput = rows.filter((row) => ["Abdominal Drain", "Chest Drain", "Gastric Drainage", "Gastrostomy Output"].includes(row.category)).reduce((sum, row) => sum + row.quantityMl, 0);
   const pendingCount = rows.filter((row) => row.status === "Pending review").length;
 
   return (
@@ -745,7 +741,7 @@ function QuickFluidEntryDialog({
           <div className="flex items-start justify-between gap-3 border-b border-slate-200 bg-sky-700 p-4 text-white">
             <div>
               <Dialog.Title className="text-lg font-bold">Add Intake / Output</Dialog.Title>
-              <Dialog.Description className="mt-1 text-sm text-sky-50">{patientLabel} | component, quantity, time, source, and comment.</Dialog.Description>
+              <Dialog.Description className="mt-1 text-sm text-sky-50">{patientLabel} | source, component, quantity, time, and comment.</Dialog.Description>
             </div>
             <Dialog.Close asChild>
               <button className="rounded-md p-2 text-sky-50 transition hover:bg-white/15 focus:outline-none focus:ring-2 focus:ring-white/50" type="button" aria-label="Close quick add">
@@ -764,6 +760,9 @@ function QuickFluidEntryDialog({
 
 function QuickFluidEntry({ draft, onChange, onKindChange, onSave }: { draft: IoDraft; onChange: (draft: IoDraft) => void; onKindChange: (kind: IcuIntakeOutput["kind"]) => void; onSave: () => void }) {
   const categories = draft.kind === "Intake" ? intakeCategories : outputCategories;
+  const updateCategory = (category: string) => {
+    onChange({ ...draft, ...getIoDraftDefaults(draft.kind, category) });
+  };
 
   return (
     <div className="space-y-4">
@@ -779,8 +778,8 @@ function QuickFluidEntry({ draft, onChange, onKindChange, onSave }: { draft: IoD
         </div>
       </div>
       <div className="grid gap-3 md:grid-cols-2">
-        <FieldBlock label="Category">
-          <select className="h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-sky-200" value={draft.category} onChange={(event) => onChange({ ...draft, category: event.target.value })}>
+        <FieldBlock label={draft.kind === "Intake" ? "Intake source" : "Output source"}>
+          <select className="h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-sky-200" value={draft.category} onChange={(event) => updateCategory(event.target.value)}>
             {categories.map((category) => <option key={category}>{category}</option>)}
           </select>
         </FieldBlock>
@@ -796,11 +795,6 @@ function QuickFluidEntry({ draft, onChange, onKindChange, onSave }: { draft: IoD
         <FieldBlock label="Date">
           <Input type="date" value={draft.date} onChange={(event) => onChange({ ...draft, date: event.target.value })} />
         </FieldBlock>
-        <FieldBlock label="Source">
-          <select className="h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-sky-200" value={draft.source} onChange={(event) => onChange({ ...draft, source: event.target.value as IcuIntakeOutput["source"] })}>
-            {draftSourceOptions.map((source) => <option key={source}>{source}</option>)}
-          </select>
-        </FieldBlock>
         <FieldBlock label="Route">
           <Input value={draft.route} onChange={(event) => onChange({ ...draft, route: event.target.value })} />
         </FieldBlock>
@@ -815,6 +809,86 @@ function QuickFluidEntry({ draft, onChange, onKindChange, onSave }: { draft: IoD
       </div>
     </div>
   );
+}
+
+function normalizeIoCategory(row: IcuIntakeOutput): IcuIntakeOutput {
+  const category = normalizeIoCategoryName(row.kind, row.category, row.component, row.outputType, row.intakeType);
+  return {
+    ...row,
+    category,
+    intakeType: row.kind === "Intake" ? category : row.intakeType,
+    outputType: row.kind === "Output" ? category : row.outputType,
+  };
+}
+
+function getIoDraftDefaults(kind: IcuIntakeOutput["kind"], category = kind === "Intake" ? "IV Fluids" : "Urine"): Pick<IoDraft, "category" | "component" | "route" | "source"> {
+  const source = getCaptureSourceForIoCategory(kind, category);
+  const defaults: Record<string, { component: string; route: string }> = {
+    "Oral Intake": { component: "Water / diet intake", route: "Oral" },
+    "Enteral Feed / Tube Feed": { component: "Enteral feed", route: "NG / feeding tube" },
+    "IV Fluids": { component: "Normal saline", route: "IV" },
+    "IV Medication Dilution": { component: "Medication diluent", route: "IV" },
+    "Continuous Infusions": { component: "Infusion carrier volume", route: "Infusion" },
+    "Blood & Blood Products": { component: "Blood product unit", route: "Blood transfusion" },
+    "Parenteral Nutrition / TPN": { component: "TPN bag", route: "Central line" },
+    "Electrolyte Replacement": { component: "Electrolyte infusion", route: "IV" },
+    "Irrigation Input": { component: "Irrigation fluid", route: "Irrigation" },
+    "Other Intake": { component: "Other intake", route: "As documented" },
+    Urine: { component: "Foley catheter", route: "Urinary catheter" },
+    Fecal: { component: "Stool", route: "Stool chart" },
+    Vomitus: { component: "Vomitus", route: "Oral" },
+    "NG Aspirate": { component: "NG aspirate", route: "NG tube" },
+    "Ryle's Tube Aspirate": { component: "Ryle's tube aspirate", route: "Ryle's tube" },
+    "Gastric Drainage": { component: "Gastric drainage", route: "Gastric tube" },
+    "Gastrostomy Output": { component: "Gastrostomy output", route: "Gastrostomy" },
+    "Abdominal Drain": { component: "Abdominal drain", route: "Surgical drain" },
+    "Chest Drain": { component: "Chest drain", route: "Chest drain" },
+    "Blood Loss": { component: "Estimated blood loss", route: "Procedure estimate" },
+  };
+  return { category, component: defaults[category]?.component ?? category, route: defaults[category]?.route ?? category, source };
+}
+
+function getCaptureSourceForIoCategory(kind: IcuIntakeOutput["kind"], category: string): IcuIntakeOutput["source"] {
+  if (kind === "Intake") {
+    if (category === "Blood & Blood Products") return "Blood administration";
+    if (category === "IV Medication Dilution" || category === "Electrolyte Replacement") return "Medication administration";
+    if (category === "IV Fluids" || category === "Continuous Infusions") return "Infusion pump";
+    return "Manual entry";
+  }
+  if (category === "Urine") return "Urine assessment";
+  if (category === "Fecal") return "Stool assessment";
+  if (category === "Vomitus") return "Emesis assessment";
+  if (["NG Aspirate", "Ryle's Tube Aspirate", "Gastric Drainage", "Gastrostomy Output", "Abdominal Drain", "Chest Drain"].includes(category)) return "Drain assessment";
+  return "Manual entry";
+}
+
+function normalizeIoCategoryName(kind: IcuIntakeOutput["kind"], category: string, component: string, outputType: string, intakeType: string) {
+  const text = `${category} ${component} ${outputType} ${intakeType}`.toLowerCase();
+
+  if (kind === "Intake") {
+    if (text.includes("blood") || text.includes("prbc") || text.includes("ffp") || text.includes("platelet")) return "Blood & Blood Products";
+    if (text.includes("medication") || text.includes("medicine") || text.includes("diluent") || text.includes("antibiotic")) return "IV Medication Dilution";
+    if (text.includes("infusion") || text.includes("vasopressor") || text.includes("noradrenaline")) return "Continuous Infusions";
+    if (text.includes("ng") || text.includes("tube") || text.includes("enteral") || text.includes("feed")) return "Enteral Feed / Tube Feed";
+    if (text.includes("tpn") || text.includes("parenteral")) return "Parenteral Nutrition / TPN";
+    if (text.includes("electrolyte") || text.includes("potassium") || text.includes("magnesium")) return "Electrolyte Replacement";
+    if (text.includes("irrigation") || text.includes("wash")) return "Irrigation Input";
+    if (text.includes("iv") || text.includes("fluid") || text.includes("saline") || text.includes("ringer") || text.includes("dextrose") || text.includes("crystalloid")) return "IV Fluids";
+    if (text.includes("oral") || text.includes("p.o") || text.includes("supplement") || text.includes("water") || text.includes("juice") || text.includes("ice")) return "Oral Intake";
+    return "Other Intake";
+  }
+
+  if (text.includes("urine") || text.includes("foley") || text.includes("catheter") || text.includes("urinal")) return "Urine";
+  if (text.includes("stool") || text.includes("fecal")) return "Fecal";
+  if (text.includes("vomit") || text.includes("emesis")) return "Vomitus";
+  if (text.includes("ryle")) return "Ryle's Tube Aspirate";
+  if (text.includes("ng aspirate")) return "NG Aspirate";
+  if (text.includes("gastric")) return "Gastric Drainage";
+  if (text.includes("gastrostomy")) return "Gastrostomy Output";
+  if (text.includes("chest drain")) return "Chest Drain";
+  if (text.includes("drain")) return "Abdominal Drain";
+  if (text.includes("blood loss") || text.includes("blood")) return "Blood Loss";
+  return category;
 }
 
 function RunningTotalPanel({ rows, alerts, activeCell }: { rows: IcuIntakeOutput[]; alerts: Array<{ title: string; detail: string; tone: StatusTone }>; activeCell: ActiveCell }) {
@@ -973,8 +1047,8 @@ function buildGraphSeries(rows: IcuIntakeOutput[], buckets: Bucket[]) {
 }
 
 function buildFluidAlerts(rows: IcuIntakeOutput[], balance: number): Array<{ title: string; detail: string; tone: StatusTone }> {
-  const lowUrine = rows.filter((row) => row.category === "Urine output" && row.quantityMl < 30);
-  const drainTotal = rows.filter((row) => row.category === "Drain output").reduce((sum, row) => sum + row.quantityMl, 0);
+  const lowUrine = rows.filter((row) => row.category === "Urine" && row.quantityMl < 30);
+  const drainTotal = rows.filter((row) => ["Abdominal Drain", "Chest Drain", "Gastric Drainage", "Gastrostomy Output"].includes(row.category)).reduce((sum, row) => sum + row.quantityMl, 0);
   const pending = rows.filter((row) => row.status === "Pending review");
   const alerts: Array<{ title: string; detail: string; tone: StatusTone }> = [];
 
@@ -994,8 +1068,8 @@ function buildFluidAlerts(rows: IcuIntakeOutput[], balance: number): Array<{ tit
   return alerts;
 }
 
-function buildSourceStats(rows: IcuIntakeOutput[]) {
-  const stats = draftSourceOptions
+function buildSourceStats(rows: IcuIntakeOutput[]): Array<{ source: string; quantity: number }> {
+  const stats = captureSourceOptions
     .map((source) => ({
       source,
       quantity: rows.filter((row) => row.source === source).reduce((sum, row) => sum + row.quantityMl, 0),
