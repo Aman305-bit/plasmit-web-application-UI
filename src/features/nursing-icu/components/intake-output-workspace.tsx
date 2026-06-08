@@ -560,6 +560,14 @@ function FluidBalanceGraph({ series }: { series: GraphPoint[] }) {
         </div>
       </CardHeader>
       <CardContent className="p-0">
+        <div className="flex flex-wrap gap-3 border-b border-slate-100 bg-slate-50 px-4 py-2 text-xs font-medium text-slate-600">
+          <FluidGraphLegendItem color="#0ea5e9" label="Intake above baseline" />
+          <FluidGraphLegendItem color="#10b981" label="Output below baseline" />
+          <span className="inline-flex items-center gap-2">
+            <span className="h-0 w-8 border-t border-dashed border-slate-400" />
+            Zero baseline
+          </span>
+        </div>
         <div className="overflow-x-auto p-4">
           <svg className="block" height={height} role="img" viewBox={`0 0 ${width} ${height}`} width={width}>
             <line stroke="#cbd5e1" strokeDasharray="4 4" x1={pad} x2={width - pad} y1={baseline} y2={baseline} />
@@ -579,6 +587,15 @@ function FluidBalanceGraph({ series }: { series: GraphPoint[] }) {
         </div>
       </CardContent>
     </Card>
+  );
+}
+
+function FluidGraphLegendItem({ color, label }: { color: string; label: string }) {
+  return (
+    <span className="inline-flex items-center gap-2">
+      <span className="h-3 w-3 rounded-sm" style={{ backgroundColor: color }} />
+      {label}
+    </span>
   );
 }
 
