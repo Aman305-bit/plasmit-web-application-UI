@@ -2,6 +2,7 @@
 
 import * as Dialog from "@radix-ui/react-dialog";
 import * as React from "react";
+import { useSearchParams } from "next/navigation";
 import {
   AlertTriangle,
   BarChart3,
@@ -56,6 +57,14 @@ type ActiveCell = {
   total: number;
   rows: IcuIntakeOutput[];
 } | null;
+
+type GraphPoint = {
+  key: string;
+  label: string;
+  intake: number;
+  output: number;
+  balance: number;
+};
 
 type IoDraft = {
   kind: IcuIntakeOutput["kind"];
@@ -121,6 +130,16 @@ const matrixRows: MatrixRow[] = [
 ];
 
 export function IntakeOutputWorkspace() {
+  return (
+    <React.Suspense fallback={<FluidWorkspaceLoading />}>
+      <IntakeOutputWorkspaceInner />
+    </React.Suspense>
+  );
+}
+
+function IntakeOutputWorkspaceInner() {
+  const searchParams = useSearchParams();
+  const isFluidBalanceView = searchParams.get("view") === "fluid-balance";
   const [patientId, setPatientId] = React.useState(icuPatients[0]?.id ?? "");
   const [view, setView] = React.useState<IoView>("Hourly");
   const [mode, setMode] = React.useState<IoMode>("Table");
@@ -171,6 +190,12 @@ export function IntakeOutputWorkspace() {
   const previousBalance = React.useMemo(() => summarizeRows(previousRows).balance, [previousRows]);
   const alerts = React.useMemo(() => buildFluidAlerts(scopedRows, totals.balance), [scopedRows, totals.balance]);
   const graphSeries = React.useMemo(() => buildGraphSeries(scopedRows, buckets), [buckets, scopedRows]);
+  const screenTitle = isFluidBalanceView ? "Fluid Balance Graph" : "Intake / Output Chart";
+  const screenEyebrow = isFluidBalanceView ? "ICU Fluid Balance Review" : "Bedside Intake / Output Entry";
+  const screenDescription = isFluidBalanceView
+    ? "Trend review for intake, output, net balance, low urine output, drain output, and shift-level escalation."
+    : "Capture and verify oral, IV, blood product, tube feed, urine, drain, stool, emesis, and manual bedside entries.";
+  const effectiveMode: IoMode = isFluidBalanceView ? "Graph" : mode;
 
   const resetFilters = () => {
     setSelectedDate(selectedToday);
@@ -241,12 +266,13 @@ export function IntakeOutputWorkspace() {
         <div className="grid gap-4 border-b border-sky-100 bg-sky-700 p-4 text-white lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2 text-xs font-semibold uppercase text-sky-100">
-              <Droplets className="h-4 w-4" />
-              ICU Fluid Balance
+              {isFluidBalanceView ? <BarChart3 className="h-4 w-4" /> : <Droplets className="h-4 w-4" />}
+              {screenEyebrow}
               <span className="rounded-full bg-white/15 px-2 py-0.5">{selectedPatient.bedNo}</span>
             </div>
-            <h2 className="mt-2 text-xl font-bold leading-tight">{selectedPatient.patientName}</h2>
-            <p className="mt-1 max-w-4xl text-sm text-sky-50">{selectedPatient.diagnosis} | {selectedPatient.assignedWardNurse} | {selectedPatient.admittingDoctor}</p>
+            <h2 className="mt-2 text-xl font-bold leading-tight">{screenTitle} - {selectedPatient.patientName}</h2>
+            <p className="mt-1 max-w-4xl text-sm text-sky-50">{screenDescription}</p>
+            <p className="mt-1 max-w-4xl text-xs text-sky-100">{selectedPatient.diagnosis} | {selectedPatient.assignedWardNurse} | {selectedPatient.admittingDoctor}</p>
           </div>
           <div className="grid grid-cols-3 gap-2 sm:min-w-[420px]">
             <FluidHeaderMetric label="Intake" value={`${totals.intake} ml`} tone="info" />
@@ -305,21 +331,29 @@ export function IntakeOutputWorkspace() {
                   <Input className="w-full pl-9" placeholder="Component, nurse, source..." value={query} onChange={(event) => setQuery(event.target.value)} />
                 </div>
               </FieldBlock>
-              <div className="flex h-10 rounded-md border border-slate-300 bg-white p-1">
-                {(["Table", "Graph"] satisfies IoMode[]).map((option) => (
-                  <button
-                    className={cn("flex h-8 items-center gap-1 rounded px-3 text-xs font-semibold transition", mode === option ? "bg-sky-600 text-white" : "text-slate-600 hover:bg-slate-100")}
-                    key={option}
-                    type="button"
-                    onClick={() => setMode(option)}
-                  >
-                    {option === "Table" ? <Table2 className="h-4 w-4" /> : <BarChart3 className="h-4 w-4" />}{option}
-                  </button>
-                ))}
-              </div>
-              <Button className="h-10 whitespace-nowrap" onClick={() => setQuickAddOpen(true)}>
-                <Plus className="h-4 w-4" />Quick add
-              </Button>
+              {isFluidBalanceView ? (
+                <div className="flex h-10 items-center gap-2 rounded-md border border-sky-200 bg-sky-50 px-3 text-xs font-bold uppercase text-sky-800">
+                  <BarChart3 className="h-4 w-4" />Graph review
+                </div>
+              ) : (
+                <div className="flex h-10 rounded-md border border-slate-300 bg-white p-1">
+                  {(["Table", "Graph"] satisfies IoMode[]).map((option) => (
+                    <button
+                      className={cn("flex h-8 items-center gap-1 rounded px-3 text-xs font-semibold transition", mode === option ? "bg-sky-600 text-white" : "text-slate-600 hover:bg-slate-100")}
+                      key={option}
+                      type="button"
+                      onClick={() => setMode(option)}
+                    >
+                      {option === "Table" ? <Table2 className="h-4 w-4" /> : <BarChart3 className="h-4 w-4" />}{option}
+                    </button>
+                  ))}
+                </div>
+              )}
+              {!isFluidBalanceView ? (
+                <Button className="h-10 whitespace-nowrap" onClick={() => setQuickAddOpen(true)}>
+                  <Plus className="h-4 w-4" />Quick add
+                </Button>
+              ) : null}
               <Button className="h-10 whitespace-nowrap" variant="outline" onClick={resetFilters}>
                 <RefreshCcw className="h-4 w-4" />Reset
               </Button>
@@ -336,16 +370,23 @@ export function IntakeOutputWorkspace() {
           <FluidMetricCard icon={AlertTriangle} label="Fluid alerts" value={alerts.length} detail={alerts[0]?.title ?? "No open fluid alert"} tone={alerts.some((alert) => alert.tone === "danger" || alert.tone === "critical") ? "danger" : alerts.length ? "warning" : "success"} />
         </div>
 
-        {mode === "Table" ? (
+        {isFluidBalanceView ? (
+          <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_390px]">
+            <FluidBalanceGraph series={graphSeries} />
+            <FluidGraphReviewPanel alerts={alerts} previousBalance={previousBalance} rows={scopedRows} series={graphSeries} />
+          </div>
+        ) : effectiveMode === "Table" ? (
           <FluidBalanceMatrix buckets={buckets} rows={scopedRows} activeCell={activeCell} onSelectCell={setActiveCell} />
         ) : (
           <FluidBalanceGraph series={graphSeries} />
         )}
 
-        <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_420px]">
-          <FluidLedger rows={scopedRows} />
-          <RunningTotalPanel rows={currentDayRows} alerts={alerts} activeCell={activeCell} />
-        </div>
+        {!isFluidBalanceView ? (
+          <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_420px]">
+            <FluidLedger rows={scopedRows} />
+            <RunningTotalPanel rows={currentDayRows} alerts={alerts} activeCell={activeCell} />
+          </div>
+        ) : null}
       </div>
 
       <QuickFluidEntryDialog
@@ -357,6 +398,19 @@ export function IntakeOutputWorkspace() {
         onSave={saveManualEntry}
         patientLabel={`${selectedPatient.bedNo} - ${selectedPatient.patientName}`}
       />
+    </div>
+  );
+}
+
+function FluidWorkspaceLoading() {
+  return (
+    <div className="space-y-4">
+      <div className="h-32 rounded-md border border-sky-100 bg-sky-50" />
+      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+        {Array.from({ length: 4 }, (_, index) => (
+          <div className="h-24 rounded-md border border-slate-200 bg-slate-50" key={index} />
+        ))}
+      </div>
     </div>
   );
 }
@@ -476,7 +530,7 @@ function IoQuantityCell({ bucket, row, rows, value, active, onSelect }: { bucket
   );
 }
 
-function FluidBalanceGraph({ series }: { series: Array<{ key: string; label: string; intake: number; output: number; balance: number }> }) {
+function FluidBalanceGraph({ series }: { series: GraphPoint[] }) {
   const width = Math.max(760, series.length * 84);
   const height = 270;
   const pad = 36;
@@ -529,6 +583,89 @@ function FluidBalanceGraph({ series }: { series: Array<{ key: string; label: str
         </div>
       </CardContent>
     </Card>
+  );
+}
+
+function FluidGraphReviewPanel({
+  rows,
+  alerts,
+  series,
+  previousBalance,
+}: {
+  rows: IcuIntakeOutput[];
+  alerts: Array<{ title: string; detail: string; tone: StatusTone }>;
+  series: GraphPoint[];
+  previousBalance: number;
+}) {
+  const totals = summarizeRows(rows);
+  const sourceStats = buildSourceStats(rows).slice(0, 5);
+  const fallbackPoint: GraphPoint = { key: "empty", label: "-", intake: 0, output: 0, balance: 0 };
+  const peakPositive = series.reduce((best, point) => point.balance > best.balance ? point : best, series[0] ?? fallbackPoint);
+  const peakNegative = series.reduce((best, point) => point.balance < best.balance ? point : best, series[0] ?? fallbackPoint);
+  const lowUrineCount = rows.filter((row) => row.category === "Urine output" && row.quantityMl < 30).length;
+  const drainOutput = rows.filter((row) => row.category === "Drain output").reduce((sum, row) => sum + row.quantityMl, 0);
+  const pendingCount = rows.filter((row) => row.status === "Pending review").length;
+
+  return (
+    <div className="space-y-4">
+      <Card className="border-slate-200">
+        <CardHeader className="border-b border-slate-100 bg-white">
+          <CardTitle>Balance Review</CardTitle>
+          <CardDescription>Doctor/head nurse review summary for the selected date and time window.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3 p-4">
+          <TotalLine label="Current intake" value={`${totals.intake} ml`} tone="info" />
+          <TotalLine label="Current output" value={`${totals.output} ml`} tone="success" />
+          <TotalLine label="Net balance" value={formatSignedMl(totals.balance)} tone={balanceTone(totals.balance)} />
+          <TotalLine label="Previous balance" value={formatSignedMl(previousBalance)} tone={balanceTone(previousBalance)} />
+          <TotalLine label={`Peak positive (${peakPositive.label})`} value={formatSignedMl(peakPositive.balance)} tone={balanceTone(peakPositive.balance)} />
+          <TotalLine label={`Peak negative (${peakNegative.label})`} value={formatSignedMl(peakNegative.balance)} tone={balanceTone(peakNegative.balance)} />
+        </CardContent>
+      </Card>
+
+      <Card className="border-slate-200">
+        <CardHeader className="border-b border-slate-100 bg-white">
+          <CardTitle>Scenario Checks</CardTitle>
+          <CardDescription>Common ICU fluid-balance review triggers.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3 p-4">
+          <FluidScenarioLine title="Low urine output" detail={lowUrineCount ? `${lowUrineCount} hour(s) below 30 ml` : "No low urine output in selected window"} tone={lowUrineCount ? "danger" : "success"} />
+          <FluidScenarioLine title="Drain output" detail={`${drainOutput} ml drain output`} tone={drainOutput > 200 ? "warning" : "success"} />
+          <FluidScenarioLine title="Positive balance" detail={formatSignedMl(totals.balance)} tone={totals.balance > 500 ? "warning" : "success"} />
+          <FluidScenarioLine title="Pending verification" detail={`${pendingCount} entry(s) pending`} tone={pendingCount ? "info" : "success"} />
+          {alerts.map((alert) => (
+            <div className={cn("rounded-md border p-3", metricToneClass(alert.tone))} key={alert.title}>
+              <div className="text-sm font-bold text-slate-950">{alert.title}</div>
+              <div className="mt-1 text-xs text-slate-600">{alert.detail}</div>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+
+      <Card className="border-slate-200">
+        <CardHeader className="border-b border-slate-100 bg-white">
+          <CardTitle>Source Sync</CardTitle>
+          <CardDescription>Where visible fluid records are coming from.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-2 p-4">
+          {sourceStats.map((stat) => (
+            <div className="flex items-center justify-between gap-2 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm" key={stat.source}>
+              <span className="text-slate-700">{stat.source}</span>
+              <span className="font-bold text-slate-950">{stat.quantity} ml</span>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+function FluidScenarioLine({ title, detail, tone }: { title: string; detail: string; tone: StatusTone }) {
+  return (
+    <div className={cn("flex items-center justify-between gap-3 rounded-md border px-3 py-2", metricToneClass(tone))}>
+      <span className="text-sm font-bold text-slate-950">{title}</span>
+      <Badge tone={tone}>{detail}</Badge>
+    </div>
   );
 }
 

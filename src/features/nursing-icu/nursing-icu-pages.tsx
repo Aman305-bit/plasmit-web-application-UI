@@ -70,6 +70,34 @@ import {
 
 type NursingIcuPageId =
   | "dashboard"
+  | "executive-dashboard"
+  | "notifications-tasks"
+  | "patient-search"
+  | "patient-timeline"
+  | "smart-bed-view"
+  | "icu-operations"
+  | "diagnostics-hub"
+  | "operational-analytics"
+  | "escalation-center"
+  | "patient-overview"
+  | "progress-notes"
+  | "orders-care-plans"
+  | "family-communication"
+  | "remote-command-center"
+  | "remote-consultations"
+  | "escalated-cases"
+  | "edge-device-management"
+  | "device-mapping"
+  | "connectivity-dashboard"
+  | "signal-health"
+  | "patient-risk-center"
+  | "early-warning-scores"
+  | "clinical-analytics"
+  | "pilot-outcome"
+  | "adoption-analytics"
+  | "device-analytics"
+  | "users-roles"
+  | "configuration"
   | "patient-board"
   | "arrival-bed-allocation"
   | "shift-handover"
@@ -99,6 +127,34 @@ type PatientAction = "View" | "Monitor" | "Medication" | "Notes" | "Transfer" | 
 
 const pageMeta: Record<NursingIcuPageId, { title: string; description: string; icon: typeof HeartPulse }> = {
   dashboard: { title: "ICU Dashboard", description: "ICU census, alerts, bed occupancy, workload, pending activities, and shift summary.", icon: HeartPulse },
+  "executive-dashboard": { title: "Executive Dashboard", description: "ICU occupancy, utilization, performance, compliance, response time, and operational health.", icon: BarChart3 },
+  "notifications-tasks": { title: "Notifications & Tasks", description: "Command-level overdue tasks, critical notifications, doctor instructions, nursing work, and device alerts.", icon: ListChecks },
+  "patient-search": { title: "Patient Search", description: "Search ICU patients by MRN, bed, doctor, risk, status, ventilator state, and alerts.", icon: Search },
+  "patient-timeline": { title: "Patient Timeline", description: "Chronological ICU journey across admission, vitals, medication, diagnostics, alerts, rounds, handover, and discharge.", icon: Clock3 },
+  "smart-bed-view": { title: "Smart Bed View", description: "Patient-level ICU cockpit with vitals, device status, medication, alerts, tasks, notes, and intake/output.", icon: BedDouble },
+  "icu-operations": { title: "ICU Operations", description: "Operational control for occupancy, bed status, nurse coverage, pending admissions, transfers, and bottlenecks.", icon: Activity },
+  "diagnostics-hub": { title: "Diagnostics Hub", description: "Combined lab, radiology, pharmacy, critical values, pending reports, and doctor review status.", icon: TestTube2 },
+  "operational-analytics": { title: "Operational Analytics", description: "Bed utilization, ICU demand, length of stay, alert response, medication compliance, and nurse workload.", icon: BarChart3 },
+  "escalation-center": { title: "Escalation Center", description: "Central escalation queue for critical alerts, overdue tasks, delayed orders, device failures, and owner handoff.", icon: ShieldAlert },
+  "patient-overview": { title: "Patient Overview", description: "Single-patient ICU snapshot covering demographics, diagnosis, latest vitals, active devices, medication, alerts, and tasks.", icon: UserRound },
+  "progress-notes": { title: "Progress Notes", description: "Structured ICU progress notes for doctor, nursing, pharmacy, allied health, events, and procedure follow-up.", icon: FileText },
+  "orders-care-plans": { title: "Orders & Care Plans", description: "Medication orders, nursing care plans, monitoring instructions, procedure orders, and acknowledgement tracking.", icon: ClipboardCheck },
+  "family-communication": { title: "Family Communication", description: "Family updates, consent status, counseling notes, visitor coordination, and communication history.", icon: UserRound },
+  "remote-command-center": { title: "Remote Command Center", description: "Remote intensivist overview for ICU patients, escalations, consult readiness, and video/rounding queues.", icon: Stethoscope },
+  "remote-consultations": { title: "Remote Consultations", description: "Tele-ICU consultation queue with specialty, patient context, documents, status, and follow-up actions.", icon: Stethoscope },
+  "escalated-cases": { title: "Escalated Cases", description: "High-priority cases escalated to remote intensivist, duty doctor, head nurse, or biomedical team.", icon: AlertTriangle },
+  "edge-device-management": { title: "Edge Device Management", description: "ICU monitor, ventilator, infusion pump, gateway, and edge device operational inventory.", icon: Activity },
+  "device-mapping": { title: "Device Mapping", description: "Bed-to-device mapping for monitors, ventilators, pumps, gateways, patient assignment, and ownership.", icon: BedDouble },
+  "connectivity-dashboard": { title: "Connectivity Dashboard", description: "Gateway, monitor, ventilator, pump, and network connectivity status with downtime and owner queue.", icon: Activity },
+  "signal-health": { title: "Signal Health", description: "Signal quality, last-data time, packet delay, missing vitals, and biomedical troubleshooting status.", icon: Activity },
+  "patient-risk-center": { title: "Patient Risk Center", description: "Patient risk score board across vitals, medication, diagnostics, device status, tasks, and escalation readiness.", icon: ShieldAlert },
+  "early-warning-scores": { title: "Early Warning Scores", description: "Patient-wise early warning score trends, thresholds, observation frequency, and escalation triggers.", icon: HeartPulse },
+  "clinical-analytics": { title: "Clinical Analytics", description: "Clinical quality indicators, infection trends, medication compliance, ventilator bundle, and ICU outcome measures.", icon: BarChart3 },
+  "pilot-outcome": { title: "Pilot Outcome Dashboard", description: "Pilot KPIs, response time, workflow adoption, alert closure, documentation improvement, and outcome tracking.", icon: BarChart3 },
+  "adoption-analytics": { title: "Adoption Analytics", description: "Module usage, role usage, screen adoption, task completion, and workflow adherence analytics.", icon: BarChart3 },
+  "device-analytics": { title: "Device Analytics", description: "Device utilization, device-to-bed usage, downtime, issue frequency, and biomedical performance analytics.", icon: Activity },
+  "users-roles": { title: "Users & Roles", description: "ICU command role matrix for doctors, nurses, administrators, remote intensivists, biomedical, and quality teams.", icon: UserRound },
+  configuration: { title: "ICU Configuration", description: "ICU unit setup, beds, alert thresholds, escalation rules, medication timing rules, and device configuration.", icon: ShieldAlert },
   "patient-board": { title: "ICU Patient Board", description: "Bed-wise patient board for monitoring, medication, notes, transfer, and discharge actions.", icon: BedDouble },
   "arrival-bed-allocation": { title: "Patient Arrival & Bed Allocation", description: "Unit nurse workflow for ICU arrival, bed allocation, nurse assignment, doctor assignment, and initial condition capture.", icon: Plus },
   "shift-handover": { title: "Shift Handover", description: "Outgoing and incoming nurse handover with checklist, pending tasks, IV fluids, transfusion, alerts, and acknowledgement.", icon: ClipboardCheck },
@@ -133,14 +189,29 @@ const nursingIcuTabGroups: Array<{
     title: "Command",
     tabs: [
       { id: "dashboard", label: "Dashboard", route: "/nursing-icu" },
+      { id: "executive-dashboard", label: "Executive", route: "/nursing-icu/executive-dashboard" },
+      { id: "notifications-tasks", label: "Notifications", route: "/nursing-icu/notifications-tasks" },
       { id: "patient-board", label: "Patient Board", route: "/nursing-icu/patient-board" },
+      { id: "patient-search", label: "Patient Search", route: "/nursing-icu/patient-search" },
+      { id: "smart-bed-view", label: "Smart Bed", route: "/nursing-icu/smart-bed-view" },
       { id: "alerts", label: "Alerts", route: "/nursing-icu/alerts" },
+      { id: "escalation-center", label: "Escalation", route: "/nursing-icu/escalation-center" },
+    ],
+  },
+  {
+    title: "Clinical Workspace",
+    tabs: [
+      { id: "patient-overview", label: "Patient Overview", route: "/nursing-icu/patient-overview" },
+      { id: "progress-notes", label: "Progress Notes", route: "/nursing-icu/progress-notes" },
+      { id: "orders-care-plans", label: "Orders & Care", route: "/nursing-icu/orders-care-plans" },
+      { id: "family-communication", label: "Family Communication", route: "/nursing-icu/family-communication" },
     ],
   },
   {
     title: "Admission",
     tabs: [
       { id: "arrival-bed-allocation", label: "Arrival & Bed", route: "/nursing-icu/arrival-bed-allocation" },
+      { id: "patient-timeline", label: "Timeline", route: "/nursing-icu/patient-timeline" },
       { id: "shift-handover", label: "Shift Handover", route: "/nursing-icu/shift-handover" },
       { id: "tasks", label: "Tasks", route: "/nursing-icu/tasks" },
     ],
@@ -173,9 +244,35 @@ const nursingIcuTabGroups: Array<{
   {
     title: "Coordination",
     tabs: [
+      { id: "icu-operations", label: "Operations", route: "/nursing-icu/icu-operations" },
+      { id: "diagnostics-hub", label: "Diagnostics Hub", route: "/nursing-icu/diagnostics-hub" },
       { id: "lab-results", label: "Lab", route: "/nursing-icu/lab-results" },
       { id: "radiology-reports", label: "Radiology", route: "/nursing-icu/radiology-reports" },
       { id: "pharmacy-requests", label: "Pharmacy", route: "/nursing-icu/pharmacy-requests" },
+    ],
+  },
+  {
+    title: "Tele ICU",
+    tabs: [
+      { id: "remote-command-center", label: "Remote Center", route: "/nursing-icu/remote-command-center" },
+      { id: "remote-consultations", label: "Consultations", route: "/nursing-icu/remote-consultations" },
+      { id: "escalated-cases", label: "Escalated Cases", route: "/nursing-icu/escalated-cases" },
+    ],
+  },
+  {
+    title: "Device Ops",
+    tabs: [
+      { id: "edge-device-management", label: "Edge Devices", route: "/nursing-icu/edge-device-management" },
+      { id: "device-mapping", label: "Device Mapping", route: "/nursing-icu/device-mapping" },
+      { id: "connectivity-dashboard", label: "Connectivity", route: "/nursing-icu/connectivity-dashboard" },
+      { id: "signal-health", label: "Signal Health", route: "/nursing-icu/signal-health" },
+    ],
+  },
+  {
+    title: "Risk",
+    tabs: [
+      { id: "patient-risk-center", label: "Patient Risk", route: "/nursing-icu/patient-risk-center" },
+      { id: "early-warning-scores", label: "EWS", route: "/nursing-icu/early-warning-scores" },
     ],
   },
   {
@@ -195,8 +292,20 @@ const nursingIcuTabGroups: Array<{
   {
     title: "Audit",
     tabs: [
+      { id: "operational-analytics", label: "Operational Analytics", route: "/nursing-icu/operational-analytics" },
+      { id: "clinical-analytics", label: "Clinical Analytics", route: "/nursing-icu/clinical-analytics" },
+      { id: "pilot-outcome", label: "Pilot Outcome", route: "/nursing-icu/pilot-outcome" },
+      { id: "adoption-analytics", label: "Adoption", route: "/nursing-icu/adoption-analytics" },
+      { id: "device-analytics", label: "Device Analytics", route: "/nursing-icu/device-analytics" },
       { id: "audit-logs", label: "Audit", route: "/nursing-icu/audit-logs" },
       { id: "reports", label: "Reports", route: "/nursing-icu/reports" },
+    ],
+  },
+  {
+    title: "Admin",
+    tabs: [
+      { id: "users-roles", label: "Users & Roles", route: "/nursing-icu/users-roles" },
+      { id: "configuration", label: "Configuration", route: "/nursing-icu/configuration" },
     ],
   },
 ];
@@ -244,6 +353,34 @@ export function NursingIcuModulePage({ page }: { page: NursingIcuPageId }) {
       {!streamlinedPage ? <FilterPanel search={search} setSearch={setSearch} status={status} setStatus={setStatus} unit={unit} setUnit={setUnit} /> : null}
 
       {page === "dashboard" ? <Dashboard patients={filteredPatients} /> : null}
+      {page === "executive-dashboard" ? <ExecutiveDashboard /> : null}
+      {page === "notifications-tasks" ? <NotificationsTasks /> : null}
+      {page === "patient-search" ? <PatientSearchCommand patients={filteredPatients} /> : null}
+      {page === "patient-timeline" ? <PatientTimelineCommand /> : null}
+      {page === "smart-bed-view" ? <SmartBedViewCommand patients={filteredPatients} /> : null}
+      {page === "icu-operations" ? <IcuOperationsCommand /> : null}
+      {page === "diagnostics-hub" ? <DiagnosticsHubCommand /> : null}
+      {page === "operational-analytics" ? <OperationalAnalyticsCommand /> : null}
+      {page === "escalation-center" ? <EscalationCenterCommand /> : null}
+      {page === "patient-overview" ? <PatientOverviewCommand patients={filteredPatients} /> : null}
+      {page === "progress-notes" ? <ProgressNotesCommand /> : null}
+      {page === "orders-care-plans" ? <OrdersCarePlansCommand /> : null}
+      {page === "family-communication" ? <FamilyCommunicationCommand /> : null}
+      {page === "remote-command-center" ? <RemoteCommandCenterCommand /> : null}
+      {page === "remote-consultations" ? <RemoteConsultationsCommand /> : null}
+      {page === "escalated-cases" ? <EscalatedCasesCommand /> : null}
+      {page === "edge-device-management" ? <DeviceOperationsCommand mode="edge" /> : null}
+      {page === "device-mapping" ? <DeviceOperationsCommand mode="mapping" /> : null}
+      {page === "connectivity-dashboard" ? <DeviceOperationsCommand mode="connectivity" /> : null}
+      {page === "signal-health" ? <DeviceOperationsCommand mode="signal" /> : null}
+      {page === "patient-risk-center" ? <PatientRiskCenterCommand /> : null}
+      {page === "early-warning-scores" ? <EarlyWarningScoresCommand /> : null}
+      {page === "clinical-analytics" ? <ClinicalAnalyticsCommand /> : null}
+      {page === "pilot-outcome" ? <PilotOutcomeDashboardCommand /> : null}
+      {page === "adoption-analytics" ? <AdoptionAnalyticsCommand /> : null}
+      {page === "device-analytics" ? <DeviceAnalyticsCommand /> : null}
+      {page === "users-roles" ? <UsersRolesCommand /> : null}
+      {page === "configuration" ? <ConfigurationCommand /> : null}
       {page === "patient-board" ? <PatientBoardWorkspace patients={filteredPatients} /> : null}
       {page === "arrival-bed-allocation" ? <AdmissionWizardWorkspace /> : null}
       {page === "shift-handover" ? <ShiftHandoverWorkspace /> : null}
@@ -388,54 +525,27 @@ function Dashboard({ patients }: { patients: IcuPatient[] }) {
   const transferReady = icuPatients.filter((patient) => patient.currentStatus === "Ready for transfer").length;
   const dueMedication = medicationRows.filter((row) => ["Due", "Late"].includes(row.status)).length;
   const openAlerts = icuAlerts.filter((alert) => alert.status !== "Resolved").length;
-  const pendingTasks = icuTasks.filter((task) => task.status !== "Completed").length;
-  const commandItems = [
-    { label: "Bed board", route: "/nursing-icu/patient-board", icon: BedDouble, tone: "info" as DashboardCellTone },
-    { label: "ICU monitor", route: "/nursing-icu/monitoring-chart", icon: HeartPulse, tone: "success" as DashboardCellTone },
-    { label: "Vitals", route: "/nursing-icu/vitals", icon: Activity, tone: "info" as DashboardCellTone },
-    { label: "Medication", route: "/nursing-icu/medication-administration", icon: Pill, tone: dueMedication ? "danger" as DashboardCellTone : "success" as DashboardCellTone },
-    { label: "Lab", route: "/nursing-icu/lab-results", icon: TestTube2, tone: "purple" as DashboardCellTone },
-    { label: "I/O", route: "/nursing-icu/intake-output", icon: Droplets, tone: "warning" as DashboardCellTone },
-    { label: "Rounds", route: "/nursing-icu/doctor-rounds", icon: Stethoscope, tone: "info" as DashboardCellTone },
-    { label: "Tasks", route: "/nursing-icu/tasks", icon: ListChecks, tone: pendingTasks ? "warning" as DashboardCellTone : "success" as DashboardCellTone },
-  ];
   const dashboardTabs = [
     { label: "Dashboard", route: "/nursing-icu" },
-    { label: "Bed Board", route: "/nursing-icu/patient-board" },
     { label: "ICU Monitor", route: "/nursing-icu/monitoring-chart" },
     { label: "Clinical History", route: "/nursing-icu/patient-board?view=clinical-history" },
     { label: "Patient Overview", route: "/nursing-icu/patient-board?view=overview" },
     { label: "Vital Signs", route: "/nursing-icu/vitals" },
     { label: "Ventilation", route: "/nursing-icu/monitoring-chart?view=ventilation" },
     { label: "Input / Output", route: "/nursing-icu/intake-output" },
-    { label: "Medication", route: "/nursing-icu/medication-administration" },
-    { label: "Radiology", route: "/nursing-icu/radiology-reports" },
-    { label: "Events", route: "/nursing-icu/alerts" },
+    { label: "Fluid Balance Graph", route: "/nursing-icu/intake-output?view=fluid-balance" },
+    { label: "RRT", route: "/nursing-icu/monitoring-chart?view=rrt" },
+    { label: "Care Plan / Intervention", route: "/nursing-icu/doctor-rounds" },
+    { label: "Program Notes", route: "/nursing-icu/nursing-notes" },
+    { label: "Prescribe Medication", route: "/nursing-icu/medication-administration" },
   ];
 
   return (
-    <div className="space-y-4">
-      <div className="overflow-hidden rounded-md border border-sky-200 bg-white shadow-sm">
-        <div className="border-b border-sky-200 bg-sky-600 px-4 py-3">
-          <div className="flex gap-2 overflow-x-auto">
-            {commandItems.map((item) => {
-              const Icon = item.icon;
-              return (
-                <Link
-                  className="flex h-11 min-w-24 shrink-0 items-center justify-center gap-2 rounded-md border border-white/20 bg-white/10 px-3 text-xs font-bold text-white transition hover:bg-white/20"
-                  href={item.route}
-                  key={item.label}
-                >
-                  <Icon className="h-4 w-4" />
-                  {item.label}
-                  <span className={cn("h-2 w-2 rounded-full", dashboardToneDotClass(item.tone))} />
-                </Link>
-              );
-            })}
-          </div>
-        </div>
+    <div className="space-y-3">
+      <div className="overflow-visible rounded-sm border border-sky-700/30 bg-white shadow-sm">
+        <IcuClassicTabs tabs={dashboardTabs} />
 
-        <div className="grid gap-3 border-b border-slate-200 bg-slate-50 p-4 sm:grid-cols-2 xl:grid-cols-6">
+        <div className="flex gap-2 overflow-x-auto border-b border-slate-200 bg-white px-3 py-2">
           <DashboardCommandMetric label="ICU census" value={`${occupiedBeds}/6`} tone="info" />
           <DashboardCommandMetric label="Critical" value={critical} tone={critical ? "critical" : "success"} />
           <DashboardCommandMetric label="Ventilator" value={ventilated} tone={ventilated ? "purple" : "success"} />
@@ -444,25 +554,12 @@ function Dashboard({ patients }: { patients: IcuPatient[] }) {
           <DashboardCommandMetric label="Transfer ready" value={transferReady} tone={transferReady ? "success" : "info"} />
         </div>
 
-        <div className="flex gap-1 overflow-x-auto border-b border-slate-200 bg-white px-4 py-2">
-          {dashboardTabs.map((tab, index) => (
-            <Link
-              className={cn(
-                "inline-flex h-9 shrink-0 items-center rounded-md px-3 text-xs font-bold transition",
-                index === 0 ? "bg-sky-600 text-white shadow-sm" : "text-slate-600 hover:bg-slate-100 hover:text-slate-950",
-              )}
-              href={tab.route}
-              key={tab.label}
-            >
-              {tab.label}
-            </Link>
-          ))}
-        </div>
+        <IcuUnitCommandSelector activeUnit={unitFilter} onSelect={setUnitFilter} />
 
-        <div className="grid gap-3 p-4 lg:grid-cols-[minmax(240px,1fr)_180px_180px_auto] lg:items-end">
+        <div className="grid gap-2 bg-slate-50 px-3 py-2 lg:grid-cols-[minmax(240px,1fr)_180px_180px_auto] lg:items-end">
           <label className="space-y-1 text-sm">
             <span className="font-semibold text-slate-800">Search patient / bed / diagnosis</span>
-            <Input className="border-slate-300 bg-white" placeholder="Search ICU patient, MRN, bed..." value={query} onChange={(event) => setQuery(event.target.value)} />
+            <Input className="h-9 border-slate-300 bg-white text-sm" placeholder="Search ICU patient, MRN, bed..." value={query} onChange={(event) => setQuery(event.target.value)} />
           </label>
           <NativeSelect label="Risk filter" value={riskFilter} onChange={setRiskFilter} options={["All risk", "Critical", "Ventilator", "Medication due", "Alerts", "Ready for transfer", "Stable ICU care"]} />
           <NativeSelect label="ICU unit" value={unitFilter} onChange={setUnitFilter} options={["All units", "Medical ICU", "Cardiac ICU", "Neuro ICU"]} />
@@ -480,12 +577,1900 @@ function Dashboard({ patients }: { patients: IcuPatient[] }) {
         <DashboardFocusStrip patients={visiblePatients} />
         <DashboardShiftPanel />
       </div>
+
+      <DashboardOvernightEvents />
     </div>
+  );
+}
+
+function IcuUnitCommandSelector({ activeUnit, onSelect }: { activeUnit: string; onSelect: (value: string) => void }) {
+  const rows = buildIcuUnitCommandRows();
+
+  return (
+    <div className="border-b border-slate-200 bg-white px-3 py-3">
+      <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <p className="text-sm font-bold text-slate-950">ICU unit command</p>
+          <p className="text-xs text-slate-500">Select who is commanding Medical, Cardiac, or Neuro ICU. Matrix and queues follow the selected unit.</p>
+        </div>
+        <span className="rounded-full border border-sky-300 bg-sky-50 px-3 py-1 text-xs font-bold text-sky-700">{activeUnit}</span>
+      </div>
+      <div className="grid gap-2 md:grid-cols-2 2xl:grid-cols-4">
+        {rows.map((row) => {
+          const active = activeUnit === row.value;
+          return (
+            <button
+              className={cn(
+                "rounded-md border bg-white p-3 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md",
+                active ? "border-sky-600 ring-2 ring-sky-100" : "border-slate-200",
+              )}
+              key={row.value}
+              type="button"
+              onClick={() => onSelect(row.value)}
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-sm font-black text-slate-950">{row.label}</p>
+                  <p className="mt-1 text-xs text-slate-500">{row.commander}</p>
+                </div>
+                <span className={cn("h-3 w-3 rounded-full", dashboardToneDotClass(row.tone))} />
+              </div>
+              <div className="mt-3 grid grid-cols-3 gap-2">
+                <span className={cn("rounded-full px-2 py-1 text-center text-[11px] font-black text-white", dashboardToneSolidClass(row.tone))}>{row.patients} pt</span>
+                <span className="rounded-full bg-zinc-700 px-2 py-1 text-center text-[11px] font-black text-white">{row.alerts} alerts</span>
+                <span className="rounded-full bg-sky-600 px-2 py-1 text-center text-[11px] font-black text-white">{row.beds}</span>
+              </div>
+              <div className="mt-3 space-y-1 text-xs text-slate-600">
+                <p><span className="font-bold text-slate-800">Head nurse:</span> {row.headNurse}</p>
+                <p><span className="font-bold text-slate-800">Focus:</span> {row.focus}</p>
+              </div>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function buildIcuUnitCommandRows() {
+  const unitMeta = [
+    { value: "All units", label: "All ICUs", commander: "ICU Head / COO overview", headNurse: "Head Nurse Sana", focus: "Combined census, alerts, staffing, and bed pressure", beds: "12 beds", tone: "info" as DashboardCellTone },
+    { value: "Medical ICU", label: "Medical ICU", commander: "Dr. Sameer Mehta", headNurse: "Unit Nurse Priya", focus: "Sepsis, DKA, renal/fluid balance, transfer readiness", beds: "6 beds", tone: "warning" as DashboardCellTone },
+    { value: "Cardiac ICU", label: "Cardiac ICU", commander: "Dr. Neha Malik", headNurse: "Unit Nurse Meera", focus: "Post CABG, ventilator, ABG, transfusion watch", beds: "4 beds", tone: "purple" as DashboardCellTone },
+    { value: "Neuro ICU", label: "Neuro ICU", commander: "Dr. Imran Shah", headNurse: "Unit Nurse Priya", focus: "GCS, CT pending, neuro observation, aspiration risk", beds: "4 beds", tone: "success" as DashboardCellTone },
+  ];
+
+  return unitMeta.map((row) => {
+    const patients = row.value === "All units" ? icuPatients : icuPatients.filter((patient) => patient.unit === row.value);
+    const patientIds = new Set(patients.map((patient) => patient.id));
+    const alerts = icuAlerts.filter((alert) => row.value === "All units" || patientIds.has(alert.patientId));
+    const highRisk = patients.some((patient) => patient.currentStatus === "Critical" || patient.criticalityScore >= 8);
+    const tone = highRisk && row.value !== "All units" ? "critical" as DashboardCellTone : row.tone;
+    return {
+      ...row,
+      tone,
+      patients: patients.length,
+      alerts: alerts.filter((alert) => alert.status !== "Resolved").length,
+    };
+  });
+}
+
+function ExecutiveDashboard() {
+  const occupied = icuPatients.length;
+  const available = 12 - occupied;
+  const ventilated = icuPatients.filter((patient) => patient.ventilatorStatus !== "Room air").length;
+  const critical = icuPatients.filter((patient) => patient.currentStatus === "Critical" || patient.criticalityScore >= 8).length;
+  const complianceBase = medicationRows.length || 1;
+  const medicationCompliance = Math.round((medicationRows.filter((row) => row.status === "Administered").length / complianceBase) * 100);
+  const documentationCompliance = Math.round((icuTasks.filter((task) => task.status === "Completed").length / Math.max(icuTasks.length, 1)) * 100);
+
+  return (
+    <div className="space-y-4">
+      <SummaryGrid>
+        <StatCard label="ICU occupancy" value={occupied} change={`${available} beds open`} context="of 12 beds" tone="info" icon={BedDouble} />
+        <StatCard label="Ventilator patients" value={ventilated} change="Device watch" context="Connected support" tone={ventilated ? "warning" : "success"} icon={Activity} />
+        <StatCard label="Critical patients" value={critical} change="Round first" context="High acuity" tone={critical ? "critical" : "success"} icon={ShieldAlert} />
+        <StatCard label="Active alerts" value={icuAlerts.filter((alert) => alert.status !== "Resolved").length} change="SLA monitor" context="Open queue" tone="danger" icon={AlertTriangle} />
+      </SummaryGrid>
+
+      <div className="grid gap-4 xl:grid-cols-3">
+        <CommandSection title="Performance Snapshot" description="Executive ICU health for today's demo.">
+          <MetricBar label="Medication compliance" value={medicationCompliance} tone={medicationCompliance >= 80 ? "success" : "warning"} />
+          <MetricBar label="Documentation completion" value={documentationCompliance} tone={documentationCompliance >= 80 ? "success" : "warning"} />
+          <MetricBar label="Alert response readiness" value={74} tone="warning" />
+          <MetricBar label="Device uptime" value={91} tone="success" />
+        </CommandSection>
+        <CommandSection title="Utilization" description="Operational demand and bed pressure.">
+          <InfoLine label="Occupied beds" value={`${occupied} of 12`} />
+          <InfoLine label="Pending discharge" value={`${icuPatients.filter((patient) => patient.currentStatus === "Ready for transfer" || patient.currentStatus === "Discharge ordered").length}`} />
+          <InfoLine label="New admissions" value="2 in current shift" />
+          <InfoLine label="Average ICU LOS" value="3.8 days" />
+        </CommandSection>
+        <CommandSection title="Leadership Focus" description="Items to mention in demo.">
+          {["Critical patients rounded first", "Medication delay visible in command queue", "Nursing handover continuity available", "Diagnostics and device gaps visible"].map((item) => (
+            <div className="rounded-md border border-border bg-surface-muted p-3 text-sm font-medium text-foreground" key={item}>{item}</div>
+          ))}
+        </CommandSection>
+      </div>
+    </div>
+  );
+}
+
+function NotificationsTasks() {
+  const rows = [
+    ...icuAlerts.filter((alert) => alert.status !== "Resolved").map((alert) => ({
+      id: alert.id,
+      type: "Alert",
+      title: alert.message,
+      patient: patientName(alert.patientId),
+      owner: alert.owner,
+      status: alert.status,
+      tone: toneForStatus(alert.severity),
+    })),
+    ...icuTasks.filter((task) => task.status !== "Completed").map((task) => ({
+      id: task.id,
+      type: task.taskType,
+      title: task.title,
+      patient: `${task.bedNo} - ${task.patientName}`,
+      owner: task.assignedTo,
+      status: task.status,
+      tone: toneForStatus(task.status),
+    })),
+    ...doctorInstructions.filter((instruction) => instruction.status !== "Completed").map((instruction) => ({
+      id: instruction.id,
+      type: "Doctor instruction",
+      title: instruction.instruction,
+      patient: `${instruction.bedNo} - ${patientName(instruction.patientId)}`,
+      owner: instruction.assignedNurse,
+      status: instruction.status,
+      tone: toneForPriority(instruction.priority),
+    })),
+  ];
+
+  return (
+    <div className="space-y-4">
+      <SummaryGrid>
+        <StatCard label="Open notifications" value={rows.length} change="Command queue" context="Tasks + alerts" tone="warning" icon={ListChecks} />
+        <StatCard label="Overdue tasks" value={icuTasks.filter((task) => task.status === "Overdue").length} change="Escalate" context="Nursing queue" tone="danger" icon={Clock3} />
+        <StatCard label="Doctor instructions" value={doctorInstructions.filter((item) => item.status !== "Completed").length} change="Follow-up" context="Pending nurse action" tone="info" icon={FileText} />
+        <StatCard label="Critical alerts" value={icuAlerts.filter((alert) => alert.severity === "Critical").length} change="Immediate" context="Duty doctor owner" tone="critical" icon={AlertTriangle} />
+      </SummaryGrid>
+      <CommandSection title="Notifications & Tasks Queue" description="Combined command queue for today's ICU P0 demo.">
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[880px] text-sm">
+            <thead className="bg-surface-muted text-xs uppercase text-muted-foreground">
+              <tr>
+                <th className="px-4 py-3 text-left">Type</th>
+                <th className="px-4 py-3 text-left">Patient</th>
+                <th className="px-4 py-3 text-left">Notification</th>
+                <th className="px-4 py-3 text-left">Owner</th>
+                <th className="px-4 py-3 text-left">Status</th>
+                <th className="px-4 py-3 text-left">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((row) => (
+                <tr className="border-b border-border last:border-b-0" key={row.id}>
+                  <td className="px-4 py-3 font-medium text-foreground">{row.type}</td>
+                  <td className="px-4 py-3 text-muted-foreground">{row.patient}</td>
+                  <td className="px-4 py-3">{row.title}</td>
+                  <td className="px-4 py-3 text-muted-foreground">{row.owner}</td>
+                  <td className="px-4 py-3"><Badge tone={row.tone}>{row.status}</Badge></td>
+                  <td className="px-4 py-3"><Button size="sm" variant="outline">Open</Button></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </CommandSection>
+    </div>
+  );
+}
+
+function PatientSearchCommand({ patients }: { patients: IcuPatient[] }) {
+  const [query, setQuery] = React.useState("");
+  const [risk, setRisk] = React.useState("All risk");
+  const [ventilator, setVentilator] = React.useState("All ventilator");
+  const rows = patients.filter((patient) => {
+    const searchable = `${patient.patientName} ${patient.mrn} ${patient.bedNo} ${patient.diagnosis} ${patient.admittingDoctor} ${patient.assignedWardNurse}`.toLowerCase();
+    const matchesQuery = searchable.includes(query.toLowerCase());
+    const matchesRisk = risk === "All risk" || patient.currentStatus === risk || (risk === "Critical score" && patient.criticalityScore >= 8);
+    const matchesVentilator = ventilator === "All ventilator" || (ventilator === "On support" && patient.ventilatorStatus !== "Room air") || patient.ventilatorStatus === ventilator;
+    return matchesQuery && matchesRisk && matchesVentilator;
+  });
+
+  return (
+    <div className="space-y-4">
+      <Card>
+        <CardContent className="grid gap-3 p-4 md:grid-cols-[minmax(240px,1fr)_220px_220px_auto] md:items-end">
+          <label className="space-y-1 text-sm">
+            <span className="font-medium text-foreground">Search MRN / patient / bed / doctor</span>
+            <Input placeholder="Search ICU patient..." value={query} onChange={(event) => setQuery(event.target.value)} />
+          </label>
+          <NativeSelect label="Risk" value={risk} onChange={setRisk} options={["All risk", "Critical score", "Critical", "Ventilated", "Stable ICU care", "Ready for transfer"]} />
+          <NativeSelect label="Ventilator" value={ventilator} onChange={setVentilator} options={["All ventilator", "On support", "Room air", "NIV support", "Invasive ventilation", "Oxygen mask"]} />
+          <Button variant="outline" onClick={() => {
+            setQuery("");
+            setRisk("All risk");
+            setVentilator("All ventilator");
+          }}>Reset</Button>
+        </CardContent>
+      </Card>
+
+      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+        {rows.map((patient) => (
+          <Card key={patient.id}>
+            <CardHeader>
+              <div>
+                <CardTitle>{patient.bedNo} - {patient.patientName}</CardTitle>
+                <CardDescription>{patient.mrn} | {patient.ageGender} | {patient.unit}</CardDescription>
+              </div>
+              <Badge tone={toneForStatus(patient.currentStatus)}>{patient.currentStatus}</Badge>
+            </CardHeader>
+            <CardContent className="space-y-3 text-sm">
+              <InfoLine label="Diagnosis" value={patient.diagnosis} />
+              <InfoLine label="Admitting doctor" value={patient.admittingDoctor} />
+              <InfoLine label="Ward nurse" value={patient.assignedWardNurse} />
+              <InfoLine label="Ventilator" value={patient.ventilatorStatus} />
+              <Button className="w-full" asChild><Link href="/nursing-icu/smart-bed-view">Open smart bed</Link></Button>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function PatientTimelineCommand() {
+  const [patientId, setPatientId] = React.useState(icuPatients[0]?.id ?? "");
+  const patient = icuPatients.find((item) => item.id === patientId) ?? icuPatients[0];
+  const timeline = [
+    { type: "Admission", title: `${patient?.admissionSource} to ${patient?.bedNo}`, detail: patient?.admissionTime ?? "Today", time: "08:10", tone: "info" as StatusTone },
+    ...icuVitals.filter((row) => row.patientId === patientId).map((row) => ({ type: "Vitals", title: `${row.bp}, SpO2 ${row.spo2}%`, detail: row.note, time: row.time, tone: row.abnormal ? "danger" as StatusTone : "success" as StatusTone })),
+    ...medicationRows.filter((row) => row.patientId === patientId).map((row) => ({ type: "Medication", title: `${row.medication} ${row.status}`, detail: row.reason, time: row.scheduledTime, tone: toneForStatus(row.status) })),
+    ...icuAlerts.filter((row) => row.patientId === patientId).map((row) => ({ type: "Alert", title: row.type, detail: row.message, time: row.createdAt, tone: toneForStatus(row.severity) })),
+    ...doctorInstructions.filter((row) => row.patientId === patientId).map((row) => ({ type: "Doctor", title: row.instructionType, detail: row.instruction, time: row.dueTime, tone: toneForPriority(row.priority) })),
+  ];
+
+  return (
+    <div className="grid gap-4 xl:grid-cols-[320px_minmax(0,1fr)]">
+      <CommandSection title="Select Patient" description="Timeline follows the selected ICU patient.">
+        <PatientSelect label="Patient" value={patientId} onChange={setPatientId} patients={icuPatients} />
+        {patient ? <PatientMiniCard patient={patient} /> : null}
+      </CommandSection>
+      <CommandSection title="Patient Timeline" description="Admission, vitals, medication, alerts, doctor instructions, and handover cues.">
+        <div className="space-y-3">
+          {timeline.map((item, index) => (
+            <div className="grid gap-3 rounded-md border border-border bg-background p-3 md:grid-cols-[90px_120px_minmax(0,1fr)_100px]" key={`${item.type}-${index}`}>
+              <Badge tone={item.tone}>{item.type}</Badge>
+              <span className="text-sm font-semibold text-foreground">{item.time}</span>
+              <div>
+                <p className="text-sm font-semibold text-foreground">{item.title}</p>
+                <p className="mt-1 text-xs text-muted-foreground">{item.detail}</p>
+              </div>
+              <Button size="sm" variant="outline">Open</Button>
+            </div>
+          ))}
+        </div>
+      </CommandSection>
+    </div>
+  );
+}
+
+function SmartBedViewCommand({ patients }: { patients: IcuPatient[] }) {
+  const [patientId, setPatientId] = React.useState(patients[0]?.id ?? icuPatients[0]?.id ?? "");
+  const patient = patients.find((item) => item.id === patientId) ?? icuPatients.find((item) => item.id === patientId) ?? icuPatients[0];
+  const latestVital = [...icuVitals].reverse().find((row) => row.patientId === patient?.id);
+  const meds = medicationRows.filter((row) => row.patientId === patient?.id);
+  const tasks = icuTasks.filter((row) => row.patientId === patient?.id && row.status !== "Completed");
+  const alerts = icuAlerts.filter((row) => row.patientId === patient?.id && row.status !== "Resolved");
+  const infusions = infusionRows.filter((row) => row.patientId === patient?.id);
+  const balance = intakeOutputRows.filter((row) => row.patientId === patient?.id).reduce((sum, row) => sum + row.balanceMl, 0);
+
+  return (
+    <div className="space-y-4">
+      <Card>
+        <CardContent className="grid gap-3 p-4 md:grid-cols-[320px_repeat(4,minmax(0,1fr))] md:items-end">
+          <PatientSelect label="Smart bed patient" value={patientId} onChange={setPatientId} patients={patients} />
+          <MiniMetric label="Risk score" value={patient?.criticalityScore ?? "-"} tone={patient && patient.criticalityScore >= 8 ? "critical" : "info"} />
+          <MiniMetric label="SpO2" value={latestVital ? `${latestVital.spo2}%` : "-"} tone={latestVital?.abnormal ? "danger" : "success"} />
+          <MiniMetric label="Open alerts" value={alerts.length} tone={alerts.length ? "danger" : "success"} />
+          <MiniMetric label="Fluid balance" value={`${balance} ml`} tone={balance > 400 ? "warning" : "info"} />
+        </CardContent>
+      </Card>
+
+      <div className="grid gap-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(360px,0.8fr)]">
+        <CommandSection title={`${patient?.bedNo} Smart Bed`} description={`${patient?.patientName} | ${patient?.mrn} | ${patient?.diagnosis}`}>
+          <div className="grid gap-3 md:grid-cols-2">
+            <InfoPanel title="Clinical Context" rows={[
+              ["Status", patient?.currentStatus ?? "-"],
+              ["Ventilator", patient?.ventilatorStatus ?? "-"],
+              ["Admitting doctor", patient?.admittingDoctor ?? "-"],
+              ["Assigned nurse", patient?.assignedWardNurse ?? "-"],
+            ]} />
+            <InfoPanel title="Latest Vitals" rows={[
+              ["BP", latestVital?.bp ?? "-"],
+              ["Pulse", latestVital ? String(latestVital.pulse) : "-"],
+              ["SpO2", latestVital ? `${latestVital.spo2}%` : "-"],
+              ["GCS", latestVital ? String(latestVital.gcs) : "-"],
+            ]} />
+          </div>
+          <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+            {["Record vitals", "Add note", "Acknowledge alert", "Start round"].map((action) => <Button variant="outline" key={action}>{action}</Button>)}
+          </div>
+        </CommandSection>
+
+        <CommandSection title="Active Work" description="Medication, tasks, infusions, and unresolved alerts.">
+          <MiniList title="Medication" rows={meds.map((row) => `${row.scheduledTime} - ${row.medication} ${row.status}`)} />
+          <MiniList title="Tasks" rows={tasks.map((row) => `${row.dueTime} - ${row.title}`)} />
+          <MiniList title="Devices / Infusions" rows={infusions.map((row) => `${row.pumpNo} - ${row.fluidName} ${row.status}`)} />
+        </CommandSection>
+      </div>
+    </div>
+  );
+}
+
+function IcuOperationsCommand() {
+  const beds = buildTwelveBedMap();
+  const occupied = beds.filter((bed) => bed.status !== "Available").length;
+  const cleaning = beds.filter((bed) => bed.status === "Cleaning").length;
+
+  return (
+    <div className="space-y-4">
+      <SummaryGrid>
+        <StatCard label="Total ICU beds" value={12} change={`${occupied} occupied`} context="Command bed map" tone="info" icon={BedDouble} />
+        <StatCard label="Available" value={beds.filter((bed) => bed.status === "Available").length} change="Ready now" context="Admission capacity" tone="success" icon={CheckCircle2} />
+        <StatCard label="Cleaning / Reserved" value={cleaning + beds.filter((bed) => bed.status === "Reserved").length} change="Ops follow-up" context="Bed turnaround" tone="warning" icon={RefreshCcw} />
+        <StatCard label="Nurse ratio" value={2} change="1 nurse : 2 beds" context="Current shift" tone="success" icon={UserRound} />
+      </SummaryGrid>
+
+      <CommandSection title="ICU Bed Map" description="12-bed P0 operational map with occupied, available, cleaning, reserved, ventilator, and critical states.">
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          {beds.map((bed) => (
+            <div className="rounded-md border border-border bg-background p-3" key={bed.bedNo}>
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-sm font-semibold text-foreground">{bed.bedNo}</p>
+                  <p className="mt-1 text-xs text-muted-foreground">{bed.patient ?? "No patient assigned"}</p>
+                </div>
+                <Badge tone={toneForStatus(bed.status)}>{bed.status}</Badge>
+              </div>
+              <p className="mt-3 text-xs text-muted-foreground">{bed.detail}</p>
+            </div>
+          ))}
+        </div>
+      </CommandSection>
+
+      <div className="grid gap-4 xl:grid-cols-2">
+        <CommandSection title="Operational Bottlenecks" description="What the ICU coordinator needs to act on.">
+          {["Medication dispense pending for ICU-A01", "CT report pending for ICU-B03", "Transfer checklist pending for ICU-B04", "Cleaning bed ICU-C06 before next admission"].map((item) => (
+            <div className="rounded-md border border-warning/30 bg-warning/5 p-3 text-sm text-foreground" key={item}>{item}</div>
+          ))}
+        </CommandSection>
+        <CommandSection title="Staff Coverage" description="Current shift coverage and command ownership.">
+          <InfoLine label="Head nurse" value="Head Nurse Sana" />
+          <InfoLine label="Ward nurses" value="Kavita, Arjun, Neha, Leena" />
+          <InfoLine label="Duty doctor" value="Dr. Aman Verma" />
+          <InfoLine label="Biomedical support" value="On call for device delay" />
+        </CommandSection>
+      </div>
+    </div>
+  );
+}
+
+function DiagnosticsHubCommand() {
+  const labRows = icuAlerts.filter((alert) => alert.type.toLowerCase().includes("lab") || alert.source.toLowerCase().includes("lab"));
+  const pendingSamples = icuTasks.filter((task) => task.taskType.toLowerCase().includes("lab") || task.title.toLowerCase().includes("sample"));
+  const pharmacyPending = medicationRows.filter((row) => row.status === "Due" || row.status === "Late");
+
+  return (
+    <div className="space-y-4">
+      <SummaryGrid>
+        <StatCard label="Critical labs" value={labRows.length} change="Doctor review" context="Lab alerts" tone={labRows.length ? "critical" : "success"} icon={TestTube2} />
+        <StatCard label="Pending samples" value={pendingSamples.length} change="Collection queue" context="Nursing action" tone="warning" icon={ClipboardCheck} />
+        <StatCard label="Radiology pending" value={1} change="CT review" context="Neuro ICU" tone="warning" icon={BarChart3} />
+        <StatCard label="Pharmacy pending" value={pharmacyPending.length} change="Dispense follow-up" context="Medication queue" tone={pharmacyPending.length ? "danger" : "success"} icon={Pill} />
+      </SummaryGrid>
+      <div className="grid gap-4 xl:grid-cols-3">
+        <CommandSection title="Lab Queue" description="Critical and pending lab work.">
+          <MiniList title="Critical values" rows={labRows.map((row) => `${row.bedNo} - ${row.message}`)} empty="No critical lab alert" />
+          <MiniList title="Sample tasks" rows={pendingSamples.map((row) => `${row.bedNo} - ${row.title}`)} />
+        </CommandSection>
+        <CommandSection title="Radiology Queue" description="Report availability and doctor review.">
+          {[
+            ["ICU-B03", "CT brain", "Report pending"],
+            ["ICU-A02", "Portable chest X-ray", "Reviewed"],
+            ["ICU-A01", "USG abdomen", "Ordered"],
+          ].map(([bed, test, status]) => <InfoLine label={`${bed} ${test}`} value={status} key={`${bed}-${test}`} />)}
+        </CommandSection>
+        <CommandSection title="Pharmacy Queue" description="Medicine dispense and shortage watch.">
+          <MiniList title="Pending medicines" rows={pharmacyPending.map((row) => `${row.bedNo} - ${row.medication} ${row.status}`)} />
+        </CommandSection>
+      </div>
+    </div>
+  );
+}
+
+function OperationalAnalyticsCommand() {
+  const occupancy = Math.round((icuPatients.length / 12) * 100);
+  const medCompliance = Math.round((medicationRows.filter((row) => row.status === "Administered").length / Math.max(medicationRows.length, 1)) * 100);
+  const alertClosure = Math.round((icuAlerts.filter((alert) => alert.status === "Resolved").length / Math.max(icuAlerts.length, 1)) * 100);
+  const taskCompletion = Math.round((icuTasks.filter((task) => task.status === "Completed").length / Math.max(icuTasks.length, 1)) * 100);
+  const forecastRows = buildAdmissionForecastRows();
+
+  return (
+    <div className="space-y-4">
+      <SummaryGrid>
+        <StatCard label="Bed utilization" value={occupancy} change="Today %" context="Current occupancy" tone="info" icon={BedDouble} />
+        <StatCard label="Medication compliance" value={medCompliance} change="MAR %" context="Administered doses" tone={medCompliance >= 80 ? "success" : "warning"} icon={Pill} />
+        <StatCard label="Alert closure" value={alertClosure} change="SLA %" context="Resolved alerts" tone={alertClosure >= 70 ? "success" : "danger"} icon={AlertTriangle} />
+        <StatCard label="Task completion" value={taskCompletion} change="Shift %" context="Nursing workload" tone={taskCompletion >= 70 ? "success" : "warning"} icon={ListChecks} />
+      </SummaryGrid>
+      <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_420px]">
+        <CommandSection title="Operational Trend" description="Placeholder chart cards for P0 analytics.">
+          <MetricBar label="ICU occupancy" value={occupancy} tone="info" />
+          <MetricBar label="Alert response within SLA" value={74} tone="warning" />
+          <MetricBar label="Nurse workload balance" value={68} tone="warning" />
+          <MetricBar label="Device availability" value={91} tone="success" />
+        </CommandSection>
+        <CommandSection title="Admission Forecast" description="Demand forecast for ICU bed planning and expected admissions.">
+          {forecastRows.map((row) => (
+            <div className="rounded-md border border-border bg-background p-3" key={row.window}>
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-sm font-semibold text-foreground">{row.window}</p>
+                  <p className="mt-1 text-xs text-muted-foreground">{row.source}</p>
+                </div>
+                <Badge tone={row.tone}>{row.expected} expected</Badge>
+              </div>
+              <MetricBar label="Bed pressure" value={row.pressure} tone={row.tone} />
+            </div>
+          ))}
+        </CommandSection>
+      </div>
+      <div className="grid gap-4 xl:grid-cols-2">
+        <CommandSection title="Daily Outcomes" description="P0 demo outcome indicators.">
+          <InfoLine label="Pending transfer/discharge" value={`${icuPatients.filter((patient) => patient.currentStatus === "Ready for transfer" || patient.currentStatus === "Discharge ordered").length}`} />
+          <InfoLine label="Readmission watch" value="0 flagged today" />
+          <InfoLine label="Average handover completion" value="86%" />
+          <InfoLine label="Documentation gaps" value={`${icuTasks.filter((task) => task.taskType.toLowerCase().includes("documentation")).length || 2}`} />
+        </CommandSection>
+      </div>
+    </div>
+  );
+}
+
+function EscalationCenterCommand() {
+  const escalationRows = [
+    ...icuAlerts.filter((alert) => alert.status !== "Resolved").map((alert) => ({
+      id: alert.id,
+      source: alert.source,
+      bedNo: alert.bedNo,
+      patient: patientName(alert.patientId),
+      trigger: alert.message,
+      severity: alert.severity,
+      assignedTo: alert.owner,
+      sla: alert.severity === "Critical" ? "Immediate" : "30 min",
+      status: alert.status,
+    })),
+    ...icuTasks.filter((task) => task.status === "Overdue" || task.priority === "Critical").map((task) => ({
+      id: task.id,
+      source: task.createdBy,
+      bedNo: task.bedNo,
+      patient: task.patientName,
+      trigger: task.title,
+      severity: task.priority,
+      assignedTo: task.assignedTo,
+      sla: task.dueTime,
+      status: task.status,
+    })),
+  ];
+
+  return (
+    <div className="space-y-4">
+      <SummaryGrid>
+        <StatCard label="Open escalations" value={escalationRows.length} change="Live queue" context="Alerts + tasks" tone="danger" icon={ShieldAlert} />
+        <StatCard label="Critical triggers" value={escalationRows.filter((row) => row.severity === "Critical").length} change="Round first" context="Doctor owner" tone="critical" icon={AlertTriangle} />
+        <StatCard label="Nurse-owned" value={escalationRows.filter((row) => row.assignedTo.toLowerCase().includes("nurse")).length} change="Follow-up" context="Nursing queue" tone="warning" icon={UserRound} />
+        <StatCard label="SLA watched" value={100} change="Protocol %" context="Escalation rules" tone="success" icon={CheckCircle2} />
+      </SummaryGrid>
+      <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
+        <GenericTable title="Escalation Center Queue" rows={escalationRows} />
+        <CommandSection title="Escalation Protocol" description="Demo-ready clinical and operational escalation path.">
+          <InfoLine label="Critical vitals" value="Duty doctor + head nurse" />
+          <InfoLine label="Medication delay" value="Pharmacy + ward nurse" />
+          <InfoLine label="Device offline" value="Biomedical engineer" />
+          <InfoLine label="Transfer blocked" value="Unit nurse + admission desk" />
+          <MiniList title="Next actions" rows={["Acknowledge", "Assign owner", "Add follow-up note", "Close with outcome"]} />
+        </CommandSection>
+      </div>
+    </div>
+  );
+}
+
+function PatientOverviewCommand({ patients }: { patients: IcuPatient[] }) {
+  const [patientId, setPatientId] = React.useState(patients[0]?.id ?? icuPatients[0]?.id ?? "");
+  const patient = patients.find((item) => item.id === patientId) ?? icuPatients.find((item) => item.id === patientId) ?? icuPatients[0];
+  const latestVital = [...icuVitals].reverse().find((row) => row.patientId === patient?.id);
+  const activeMeds = medicationRows.filter((row) => row.patientId === patient?.id);
+  const activeTasks = icuTasks.filter((row) => row.patientId === patient?.id && row.status !== "Completed");
+  const activeAlerts = icuAlerts.filter((row) => row.patientId === patient?.id && row.status !== "Resolved");
+
+  return (
+    <div className="space-y-4">
+      <Card>
+        <CardContent className="grid gap-3 p-4 md:grid-cols-[320px_repeat(4,minmax(0,1fr))] md:items-end">
+          <PatientSelect label="Patient" value={patientId} onChange={setPatientId} patients={patients.length ? patients : icuPatients} />
+          <MiniMetric label="Risk score" value={patient?.criticalityScore ?? "-"} tone={patient && patient.criticalityScore >= 8 ? "critical" : "info"} />
+          <MiniMetric label="Open alerts" value={activeAlerts.length} tone={activeAlerts.length ? "danger" : "success"} />
+          <MiniMetric label="Medication rows" value={activeMeds.length} tone={activeMeds.some((row) => row.status === "Late") ? "danger" : "success"} />
+          <MiniMetric label="Pending tasks" value={activeTasks.length} tone={activeTasks.length ? "warning" : "success"} />
+        </CardContent>
+      </Card>
+
+      <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_380px]">
+        <CommandSection title={`${patient?.bedNo} Patient Overview`} description={`${patient?.patientName} | ${patient?.mrn} | ${patient?.ageGender}`}>
+          <div className="grid gap-3 md:grid-cols-2">
+            <InfoPanel title="Patient Context" rows={[
+              ["Diagnosis", patient?.diagnosis ?? "-"],
+              ["Admission source", patient?.admissionSource ?? "-"],
+              ["Unit", patient?.unit ?? "-"],
+              ["Current status", patient?.currentStatus ?? "-"],
+            ]} />
+            <InfoPanel title="Clinical Ownership" rows={[
+              ["Admitting doctor", patient?.admittingDoctor ?? "-"],
+              ["Consulting doctor", patient?.consultingDoctor ?? "-"],
+              ["Duty doctor", patient?.dutyDoctor ?? "-"],
+              ["Ward nurse", patient?.assignedWardNurse ?? "-"],
+            ]} />
+            <InfoPanel title="Latest Vitals" rows={[
+              ["Time", latestVital?.time ?? "-"],
+              ["BP", latestVital?.bp ?? "-"],
+              ["SpO2", latestVital ? `${latestVital.spo2}%` : "-"],
+              ["GCS", latestVital ? `${latestVital.gcs}` : "-"],
+            ]} />
+            <InfoPanel title="Device / Support" rows={[
+              ["Ventilator", patient?.ventilatorStatus ?? "-"],
+              ["Monitor", getCommandDeviceRows().find((row) => row.bedNo === patient?.bedNo)?.monitor ?? "Not mapped"],
+              ["Pump", getCommandDeviceRows().find((row) => row.bedNo === patient?.bedNo)?.infusionPump ?? "Not mapped"],
+              ["Last vitals", patient?.lastVitalsTime ?? "-"],
+            ]} />
+          </div>
+        </CommandSection>
+        <CommandSection title="Active Work Queue" description="Patient-specific items from ICU workflows.">
+          <MiniList title="Alerts" rows={activeAlerts.map((row) => `${row.type}: ${row.message}`)} />
+          <MiniList title="Medication" rows={activeMeds.map((row) => `${row.scheduledTime} - ${row.medication} ${row.status}`)} />
+          <MiniList title="Tasks" rows={activeTasks.map((row) => `${row.dueTime} - ${row.title}`)} />
+        </CommandSection>
+      </div>
+    </div>
+  );
+}
+
+function ProgressNotesCommand() {
+  const noteTemplates: Record<string, string[]> = {
+    "Doctor Progress Note": [
+      "Patient reviewed on ICU round. Vitals, oxygen support, urine output, labs, medication chart, device need, and escalation triggers reviewed.",
+      "Continue ICU care with close monitoring. Review response to current treatment and reassess transfer readiness next round.",
+      "Condition discussed with duty team. Pending diagnostics and medication safety checks to be followed up before next review.",
+    ],
+    "Nursing Note": [
+      "Patient received in assigned bed. Identity, allergy, device status, lines, vitals, medication due list, and safety checklist verified.",
+      "Vitals recorded as per ICU frequency. Abnormal findings escalated and documented with follow-up task created.",
+      "Shift care completed with medication, intake/output, hygiene, device checks, and handover points updated.",
+    ],
+    "Procedure / Event Note": [
+      "Procedure/event documented with indication, pre-checks, consent status, monitoring, immediate outcome, and post-event plan.",
+      "Critical event escalated to duty doctor. Interventions, response, family update need, and next observation frequency recorded.",
+    ],
+    "Pharmacy / Allied Note": [
+      "Medication reconciliation reviewed. High-risk medicines, renal dose, allergy, stock availability, and substitution need checked.",
+      "Therapy review completed with nutrition, physiotherapy, respiratory care, and rehabilitation follow-up plan.",
+    ],
+  };
+  const [patientId, setPatientId] = React.useState(icuPatients[0]?.id ?? "");
+  const [noteType, setNoteType] = React.useState("Doctor Progress Note");
+  const [note, setNote] = React.useState(noteTemplates["Doctor Progress Note"][0]);
+  const patient = icuPatients.find((row) => row.id === patientId) ?? icuPatients[0];
+  const noteRows = [
+    { id: "pn-001", patient: "ICU-A01 - Aisha Khan", type: "Doctor Progress Note", author: "Dr. Sameer Mehta", time: "10:20", status: "Signed", summary: "Sepsis response reviewed; continue ICU care." },
+    { id: "pn-002", patient: "ICU-A02 - Rohan Das", type: "Nursing Note", author: "Ward Nurse Arjun", time: "10:40", status: "Pending review", summary: "Transfusion and ABG follow-up noted." },
+    { id: "pn-003", patient: "ICU-B03 - Meera Sharma", type: "Procedure / Event Note", author: "Dr. Imran Shah", time: "11:05", status: "Draft", summary: "Neuro observation event captured." },
+  ];
+
+  return (
+    <div className="space-y-4">
+      <SummaryGrid>
+        <StatCard label="Signed notes" value={noteRows.filter((row) => row.status === "Signed").length} change="Today" context="Completed" tone="success" icon={FileText} />
+        <StatCard label="Draft notes" value={noteRows.filter((row) => row.status === "Draft").length} change="Review" context="Pending author" tone="warning" icon={Clock3} />
+        <StatCard label="Critical notes" value={1} change="Event" context="Escalation linked" tone="danger" icon={AlertTriangle} />
+        <StatCard label="Templates" value={Object.keys(noteTemplates).length} change="Reusable" context="ICU scenarios" tone="info" icon={ClipboardCheck} />
+      </SummaryGrid>
+
+      <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
+        <CommandSection title="Create Progress Note" description="Select a scenario template, then edit the note before saving.">
+          <div className="grid gap-3 md:grid-cols-2">
+            <PatientSelect label="Patient" value={patientId} onChange={setPatientId} patients={icuPatients} />
+            <NativeSelect
+              label="Note type"
+              value={noteType}
+              onChange={(value) => {
+                setNoteType(value);
+                setNote(noteTemplates[value]?.[0] ?? "");
+              }}
+              options={Object.keys(noteTemplates)}
+            />
+          </div>
+          <NativeSelect label="Scenario template" value={note} onChange={setNote} options={noteTemplates[noteType]} />
+          <label className="space-y-1 text-sm">
+            <span className="font-medium text-foreground">Editable note</span>
+            <textarea className="min-h-40 w-full rounded-md border border-input bg-background p-3 text-sm outline-none focus:ring-2 focus:ring-ring/20" value={note} onChange={(event) => setNote(event.target.value)} />
+          </label>
+          <div className="grid gap-2 sm:grid-cols-3">
+            <Button variant="outline">Save draft</Button>
+            <Button variant="outline">Send for review</Button>
+            <Button onClick={() => toast.success(`Progress note saved for ${patient.patientName}`)}>Sign note</Button>
+          </div>
+        </CommandSection>
+        <CommandSection title="Selected Patient" description="Context attached to the note.">
+          <PatientMiniCard patient={patient} />
+          <InfoLine label="Doctor" value={patient.admittingDoctor} />
+          <InfoLine label="Nurse" value={patient.assignedWardNurse} />
+          <InfoLine label="Ventilator" value={patient.ventilatorStatus} />
+        </CommandSection>
+      </div>
+
+      <GenericTable title="Progress Notes Register" rows={noteRows} />
+    </div>
+  );
+}
+
+type CarePlanTaskStatus = "Pending acknowledgement" | "Accepted" | "In progress" | "Completed" | "Escalated";
+
+type CarePlanDraft = {
+  doctorOrders: string;
+  nursingTasks: string;
+  monitoringPlan: string;
+  medicationFollowUp: string;
+  escalationRule: string;
+  dailyGoal: string;
+};
+
+type CarePlanTemplate = {
+  label: string;
+  description: string;
+  priority: IcuPriority;
+  dueTime: string;
+  draft: Omit<CarePlanDraft, "dailyGoal"> & { dailyGoal: string };
+};
+
+type CarePlanTaskRow = {
+  id: string;
+  patientId: string;
+  patient: string;
+  source: string;
+  task: string;
+  owner: string;
+  priority: IcuPriority;
+  dueTime: string;
+  status: CarePlanTaskStatus;
+  escalation: string;
+};
+
+type CarePlanWorkspaceTab = "context" | "orders" | "care-plan" | "tasks" | "review";
+
+const carePlanTemplates: CarePlanTemplate[] = [
+  {
+    label: "Sepsis / shock bundle",
+    description: "Cultures, antibiotic timing, fluids, MAP target, urine output, and lactate repeat.",
+    priority: "Critical",
+    dueTime: "Next 15 min",
+    draft: {
+      doctorOrders: "Blood culture, CBC, electrolytes, ABG/lactate. Start/continue broad-spectrum antibiotic. Maintain MAP target and review vasopressor need.",
+      nursingTasks: "Collect cultures before antibiotic if not already done.\nStart strict intake/output and hourly urine output.\nRepeat vitals every 15 minutes until MAP target is stable.",
+      monitoringPlan: "BP/MAP, SpO2, pulse, temperature, urine output, lactate trend, mental status.",
+      medicationFollowUp: "Check antibiotic due time, infusion pump, vasopressor line, allergy status, and pharmacy availability.",
+      escalationRule: "Escalate to duty doctor if MAP < 65, urine output < 30 ml/hr, SpO2 < 92%, or lactate rises.",
+      dailyGoal: "Stabilize perfusion, complete infection bundle, and document family update.",
+    },
+  },
+  {
+    label: "Ventilator care bundle",
+    description: "Ventilator safety, suction, oral care, sedation target, ABG, and VAP prevention.",
+    priority: "High",
+    dueTime: "Next 30 min",
+    draft: {
+      doctorOrders: "Review ventilator mode/settings, ABG timing, sedation target, chest X-ray, and weaning readiness.",
+      nursingTasks: "Head-end elevation and oral care.\nSuction readiness and ET/NIV interface check.\nDocument sedation score and ventilator alarm review.",
+      monitoringPlan: "SpO2, RR, ventilator alarms, ABG, secretion load, sedation score, cuff/fit check.",
+      medicationFollowUp: "Sedation/analgesia due, nebulization, antibiotic/bronchodilator timing, high-risk infusion double check.",
+      escalationRule: "Escalate if SpO2 drops, ventilator alarm persists, secretion load increases, or ABG worsens.",
+      dailyGoal: "Maintain oxygenation, prevent VAP, and assess weaning readiness.",
+    },
+  },
+  {
+    label: "Neuro observation plan",
+    description: "GCS, pupils, seizure watch, aspiration precautions, imaging/report follow-up.",
+    priority: "High",
+    dueTime: "Next 30 min",
+    draft: {
+      doctorOrders: "Hourly neuro vitals, CT/report follow-up, seizure precaution, aspiration prevention, and sodium/osmolality review if ordered.",
+      nursingTasks: "Record GCS and pupil size.\nKeep suction/oxygen ready and aspiration precautions.\nFollow up CT/lab report and inform doctor.",
+      monitoringPlan: "GCS, pupils, limb movement, BP, SpO2, urine output, seizure activity.",
+      medicationFollowUp: "Mannitol/hypertonic saline availability, anti-seizure medicine timing, NPO/NG route safety.",
+      escalationRule: "Escalate for GCS drop, unequal pupils, seizure, vomiting/aspiration, or sudden BP change.",
+      dailyGoal: "Prevent neurological deterioration and keep imaging/report review on time.",
+    },
+  },
+  {
+    label: "Renal / fluid balance plan",
+    description: "Strict intake/output, low urine output, drain review, fluid target, and renal dose watch.",
+    priority: "High",
+    dueTime: "Next 1 hour",
+    draft: {
+      doctorOrders: "Strict I/O chart, urine output target, electrolytes/creatinine review, fluid restriction/bolus decision, renal dose adjustment.",
+      nursingTasks: "Record urine output hourly.\nDocument oral/IV intake and drain output.\nEscalate low urine output or positive balance.",
+      monitoringPlan: "Hourly urine, drains, cumulative balance, edema, BP/MAP, electrolytes, creatinine.",
+      medicationFollowUp: "Review nephrotoxic medicines, renal-dose antibiotics, diuretic order, and infusion volume.",
+      escalationRule: "Escalate if urine output < 0.5 ml/kg/hr, drain output rises, or positive balance crosses target.",
+      dailyGoal: "Keep fluid balance within target and complete renal review.",
+    },
+  },
+  {
+    label: "Transfer readiness plan",
+    description: "Stable vitals, medication reconciliation, device removal, reports, and handover summary.",
+    priority: "Medium",
+    dueTime: "Today",
+    draft: {
+      doctorOrders: "Confirm transfer decision, target ward, medication reconciliation, pending reports, and continuing device plan.",
+      nursingTasks: "Complete transfer checklist.\nPrepare nursing handover and active medication list.\nConfirm ward bed and transport readiness.",
+      monitoringPlan: "Vitals stability, oxygen requirement, pending labs/radiology, I/O summary, mobility safety.",
+      medicationFollowUp: "Reconcile antibiotics, infusions, high-risk meds, PRN meds, and next dose times.",
+      escalationRule: "Escalate if ward bed, transport, pharmacy, device removal, or discharge/transfer order is pending.",
+      dailyGoal: "Move patient safely from ICU with clean handover and no missed medication/report.",
+    },
+  },
+];
+
+function OrdersCarePlansCommand() {
+  const [patientId, setPatientId] = React.useState(icuPatients[0]?.id ?? "");
+  const [activeTab, setActiveTab] = React.useState<CarePlanWorkspaceTab>("orders");
+  const [templateLabel, setTemplateLabel] = React.useState(carePlanTemplates[0].label);
+  const [orderFilter, setOrderFilter] = React.useState("All orders");
+  const [planStatus, setPlanStatus] = React.useState<"Draft" | "Active">("Draft");
+  const [draft, setDraft] = React.useState<CarePlanDraft>(() => buildCarePlanDraft(carePlanTemplates[0], icuPatients[0]));
+  const [generatedTasks, setGeneratedTasks] = React.useState<CarePlanTaskRow[]>([]);
+  const [taskStatusOverrides, setTaskStatusOverrides] = React.useState<Record<string, CarePlanTaskStatus>>({});
+  const [orderStatusOverrides, setOrderStatusOverrides] = React.useState<Record<string, CarePlanTaskStatus>>({});
+
+  const patient = icuPatients.find((row) => row.id === patientId) ?? icuPatients[0];
+  const selectedTemplate = carePlanTemplates.find((template) => template.label === templateLabel) ?? carePlanTemplates[0];
+  const patientOrderRows = React.useMemo(() => {
+    const rows = [
+      ...medicationRows
+        .filter((row) => row.patientId === patientId)
+        .map((row) => ({
+          id: row.id,
+          patientId: row.patientId,
+          orderType: "Medication",
+          order: `${row.medication} ${row.dose} ${row.route}`,
+          frequency: row.frequency,
+          owner: row.administeredBy || patient.assignedWardNurse,
+          status: orderStatusOverrides[row.id] ?? mapOrderStatus(row.status),
+          safety: row.doubleVerification,
+          priority: row.status === "Late" ? "High" as IcuPriority : "Medium" as IcuPriority,
+        })),
+      ...doctorInstructions
+        .filter((row) => row.patientId === patientId)
+        .map((row) => ({
+          id: row.id,
+          patientId: row.patientId,
+          orderType: row.instructionType,
+          order: row.instruction,
+          frequency: row.dueTime,
+          owner: row.assignedNurse,
+          status: orderStatusOverrides[row.id] ?? mapOrderStatus(row.status),
+          safety: row.priority,
+          priority: row.priority,
+        })),
+    ];
+    return orderFilter === "All orders" ? rows : rows.filter((row) => row.orderType === orderFilter);
+  }, [orderFilter, orderStatusOverrides, patient.assignedWardNurse, patientId]);
+
+  const patientTaskRows = React.useMemo(() => {
+    const baseTasks: CarePlanTaskRow[] = icuTasks
+      .filter((task) => task.patientId === patientId)
+      .map((task) => ({
+        id: task.id,
+        patientId: task.patientId,
+        patient: `${task.bedNo} - ${task.patientName}`,
+        source: task.source ?? "Existing nursing task",
+        task: task.title,
+        owner: task.assignedTo,
+        priority: task.priority,
+        dueTime: task.dueTime,
+        status: taskStatusOverrides[task.id] ?? mapTaskStatus(task.status),
+        escalation: task.escalationOwner ?? task.remarks,
+      }));
+    return [...generatedTasks.filter((task) => task.patientId === patientId), ...baseTasks];
+  }, [generatedTasks, patientId, taskStatusOverrides]);
+
+  const selectPatient = (nextPatientId: string) => {
+    const nextPatient = icuPatients.find((row) => row.id === nextPatientId) ?? icuPatients[0];
+    setPatientId(nextPatientId);
+    setDraft(buildCarePlanDraft(selectedTemplate, nextPatient));
+    setPlanStatus("Draft");
+  };
+
+  const selectTemplate = (nextTemplateLabel: string) => {
+    const nextTemplate = carePlanTemplates.find((template) => template.label === nextTemplateLabel) ?? carePlanTemplates[0];
+    setTemplateLabel(nextTemplate.label);
+    setDraft(buildCarePlanDraft(nextTemplate, patient));
+    setPlanStatus("Draft");
+  };
+
+  const updateTaskStatus = (taskId: string, status: CarePlanTaskStatus) => {
+    setTaskStatusOverrides((current) => ({ ...current, [taskId]: status }));
+    setGeneratedTasks((rows) => rows.map((row) => row.id === taskId ? { ...row, status } : row));
+    toast.success(`Task ${status.toLowerCase()}`);
+  };
+
+  const updateOrderStatus = (orderId: string, status: CarePlanTaskStatus) => {
+    setOrderStatusOverrides((current) => ({ ...current, [orderId]: status }));
+    toast.success(`Order ${status.toLowerCase()}`);
+  };
+
+  const generateTasks = () => {
+    const tasks = parseCarePlanTasks(draft.nursingTasks);
+    if (!tasks.length) {
+      toast.error("Add at least one nursing task before generating.");
+      return;
+    }
+    const rows = tasks.map((task, index): CarePlanTaskRow => ({
+      id: `care-task-${Date.now()}-${index}`,
+      patientId: patient.id,
+      patient: `${patient.bedNo} - ${patient.patientName}`,
+      source: selectedTemplate.label,
+      task,
+      owner: patient.assignedWardNurse,
+      priority: selectedTemplate.priority,
+      dueTime: selectedTemplate.dueTime,
+      status: "Pending acknowledgement",
+      escalation: draft.escalationRule,
+    }));
+    setGeneratedTasks((current) => [...rows, ...current]);
+    setPlanStatus("Active");
+    toast.success(`${rows.length} nursing task(s) generated for ${patient.patientName}`);
+  };
+
+  const pendingTasks = patientTaskRows.filter((row) => !["Completed"].includes(row.status)).length;
+  const openOrders = patientOrderRows.filter((row) => row.status !== "Completed").length;
+  const generatedTaskCount = generatedTasks.filter((task) => task.patientId === patientId).length;
+  const orderTypes = ["All orders", ...Array.from(new Set([
+    ...medicationRows.filter((row) => row.patientId === patientId).map(() => "Medication"),
+    ...doctorInstructions.filter((row) => row.patientId === patientId).map((row) => row.instructionType),
+  ]))];
+  const carePlanTabs: Array<{ id: CarePlanWorkspaceTab; label: string; icon: typeof UserRound; badge: string; tone: StatusTone }> = [
+    { id: "context", label: "Patient Context", icon: UserRound, badge: String(patient.alerts.length), tone: patient.alerts.length ? "warning" : "success" },
+    { id: "orders", label: "Orders", icon: ClipboardCheck, badge: String(openOrders), tone: openOrders ? "warning" : "success" },
+    { id: "care-plan", label: "Care Plan", icon: FileText, badge: planStatus, tone: planStatus === "Active" ? "success" : "info" },
+    { id: "tasks", label: "Tasks", icon: ListChecks, badge: String(pendingTasks), tone: pendingTasks ? "warning" : "success" },
+    { id: "review", label: "Review", icon: CheckCircle2, badge: String(generatedTaskCount), tone: generatedTaskCount ? "success" : "muted" },
+  ];
+
+  return (
+    <div className="grid gap-4 xl:grid-cols-[330px_minmax(0,1fr)]">
+      <Card className="h-fit">
+        <CardHeader>
+          <div>
+            <CardTitle>Orders & Care Plans</CardTitle>
+            <CardDescription>Patient-first workflow with simple side tabs.</CardDescription>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <PatientSelect label="Patient" value={patientId} onChange={selectPatient} patients={icuPatients} />
+          <div className="space-y-2 rounded-md border border-border bg-surface-muted p-2">
+            {carePlanTabs.map((tab) => {
+              const Icon = tab.icon;
+              return (
+                <button
+                  className={cn(
+                    "flex w-full items-center justify-between gap-3 rounded-md border p-3 text-left text-sm transition",
+                    activeTab === tab.id ? "border-primary bg-primary/5 text-foreground" : "border-border bg-background text-muted-foreground hover:bg-surface-muted",
+                  )}
+                  key={tab.id}
+                  type="button"
+                  onClick={() => setActiveTab(tab.id)}
+                >
+                  <span className="flex min-w-0 items-center gap-2">
+                    <Icon className="h-4 w-4 shrink-0" />
+                    <span className="truncate font-medium">{tab.label}</span>
+                  </span>
+                  <Badge tone={tab.tone}>{tab.badge}</Badge>
+                </button>
+              );
+            })}
+          </div>
+        </CardContent>
+      </Card>
+
+      <div className="space-y-4">
+        {activeTab === "context" ? (
+          <CommandSection title="Patient Context" description="Confirm patient, risk, care team, and current alerts before acting on orders.">
+            <PatientMiniCard patient={patient} />
+            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+              <MiniMetric label="Status" value={patient.currentStatus} tone={toneForStatus(patient.currentStatus)} />
+              <MiniMetric label="Ventilator" value={patient.ventilatorStatus} tone={patient.ventilatorStatus === "Room air" ? "success" : "warning"} />
+              <MiniMetric label="Doctor" value={patient.admittingDoctor} tone="info" />
+              <MiniMetric label="Nurse" value={patient.assignedWardNurse} tone="success" />
+            </div>
+            <div className="grid gap-3 lg:grid-cols-2">
+              <InfoPanel title="Clinical context" rows={[
+                ["Diagnosis", patient.diagnosis],
+                ["MRN", patient.mrn],
+                ["Unit", patient.unit],
+                ["Admission source", patient.admissionSource],
+              ]} />
+              <MiniList title="Patient alerts" rows={patient.alerts} empty="No active alerts" />
+            </div>
+          </CommandSection>
+        ) : null}
+
+        {activeTab === "orders" ? (
+          <CommandSection title="Clinical Order Queue" description="Patient-wise medication and doctor orders with acknowledgement actions.">
+            <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_220px] md:items-end">
+              <div className="relative">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input className="pl-9" value={`${patient.bedNo} - ${patient.patientName}`} readOnly />
+              </div>
+              <NativeSelect label="Order type" value={orderFilter} onChange={setOrderFilter} options={orderTypes} />
+            </div>
+            <div className="space-y-2">
+              {patientOrderRows.map((row) => (
+                <OrderCarePlanCard
+                  key={row.id}
+                  owner={row.owner}
+                  priority={row.priority}
+                  status={row.status}
+                  subtitle={`${row.orderType} | ${row.frequency} | Safety: ${row.safety}`}
+                  title={row.order}
+                  onAccept={() => updateOrderStatus(row.id, "Accepted")}
+                  onComplete={() => updateOrderStatus(row.id, "Completed")}
+                  onEscalate={() => updateOrderStatus(row.id, "Escalated")}
+                  onStart={() => updateOrderStatus(row.id, "In progress")}
+                />
+              ))}
+              {!patientOrderRows.length ? <EmptyCarePlanPanel title="No orders for selected filter" detail="Change patient or order type." /> : null}
+            </div>
+          </CommandSection>
+        ) : null}
+
+        {activeTab === "care-plan" ? (
+          <CommandSection title="Patient Care Plan Builder" description="Select scenario, edit plan, then generate nurse-actionable tasks.">
+          <NativeSelect label="Scenario template" value={templateLabel} onChange={selectTemplate} options={carePlanTemplates.map((template) => template.label)} />
+          <div className="rounded-md border border-border bg-surface-muted p-3 text-xs text-muted-foreground">{selectedTemplate.description}</div>
+          <CarePlanTextArea label="Doctor orders" value={draft.doctorOrders} onChange={(value) => setDraft((current) => ({ ...current, doctorOrders: value }))} />
+          <CarePlanTextArea label="Nursing tasks" value={draft.nursingTasks} onChange={(value) => setDraft((current) => ({ ...current, nursingTasks: value }))} />
+          <CarePlanTextArea label="Monitoring plan" value={draft.monitoringPlan} onChange={(value) => setDraft((current) => ({ ...current, monitoringPlan: value }))} />
+          <CarePlanTextArea label="Medication / report follow-up" value={draft.medicationFollowUp} onChange={(value) => setDraft((current) => ({ ...current, medicationFollowUp: value }))} />
+          <CarePlanTextArea label="Escalation rule" value={draft.escalationRule} onChange={(value) => setDraft((current) => ({ ...current, escalationRule: value }))} />
+          <CarePlanTextArea label="Daily goal" value={draft.dailyGoal} onChange={(value) => setDraft((current) => ({ ...current, dailyGoal: value }))} />
+          <div className="grid gap-2 sm:grid-cols-3">
+            <Button variant="outline" onClick={() => {
+              setDraft(buildCarePlanDraft(selectedTemplate, patient));
+              setPlanStatus("Draft");
+            }}>Reset</Button>
+            <Button variant="outline" onClick={() => {
+              setPlanStatus("Active");
+              toast.success(`Care plan saved for ${patient.patientName}`);
+            }}>Save plan</Button>
+            <Button onClick={generateTasks}><Plus className="h-4 w-4" />Generate tasks</Button>
+          </div>
+          </CommandSection>
+        ) : null}
+
+        {activeTab === "tasks" ? (
+          <CommandSection title="Nursing Task Queue" description="Generated care plan tasks plus existing patient tasks.">
+            <div className="space-y-2">
+              {patientTaskRows.map((row) => (
+                <OrderCarePlanCard
+                  key={row.id}
+                  owner={row.owner}
+                  priority={row.priority}
+                  status={row.status}
+                  subtitle={`${row.source} | Due ${row.dueTime}`}
+                  title={row.task}
+                  detail={row.escalation}
+                  onAccept={() => updateTaskStatus(row.id, "Accepted")}
+                  onComplete={() => updateTaskStatus(row.id, "Completed")}
+                  onEscalate={() => updateTaskStatus(row.id, "Escalated")}
+                  onStart={() => updateTaskStatus(row.id, "In progress")}
+                />
+              ))}
+              {!patientTaskRows.length ? <EmptyCarePlanPanel title="No nursing tasks" detail="Generate tasks from the selected care plan." /> : null}
+            </div>
+          </CommandSection>
+        ) : null}
+
+        {activeTab === "review" ? (
+          <CommandSection title="Review Care Plan" description="Final check before saving or generating tasks for nursing execution.">
+            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+              <MiniMetric label="Open orders" value={openOrders} tone={openOrders ? "warning" : "success"} />
+              <MiniMetric label="Open tasks" value={pendingTasks} tone={pendingTasks ? "warning" : "success"} />
+              <MiniMetric label="Generated" value={generatedTaskCount} tone={generatedTaskCount ? "success" : "muted"} />
+              <MiniMetric label="Priority" value={selectedTemplate.priority} tone={toneForPriority(selectedTemplate.priority)} />
+            </div>
+            <div className="grid gap-3 lg:grid-cols-2">
+              <MiniList title="Plan goals" rows={[draft.dailyGoal, draft.escalationRule]} />
+              <InfoPanel title="Current plan" rows={[
+                ["Scenario", selectedTemplate.label],
+                ["Plan status", planStatus],
+                ["Due time", selectedTemplate.dueTime],
+                ["Owner", patient.assignedWardNurse],
+              ]} />
+            </div>
+            <div className="grid gap-2 sm:grid-cols-3">
+              <Button variant="outline" onClick={() => setActiveTab("orders")}>Review orders</Button>
+              <Button variant="outline" onClick={() => setActiveTab("care-plan")}>Edit plan</Button>
+              <Button onClick={generateTasks}><Plus className="h-4 w-4" />Generate tasks</Button>
+            </div>
+          </CommandSection>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
+function buildCarePlanDraft(template: CarePlanTemplate, patient?: IcuPatient): CarePlanDraft {
+  const context = patient ? `${patient.bedNo} ${patient.patientName}: ${patient.diagnosis}` : "Selected ICU patient";
+  return {
+    doctorOrders: `${context}\n${template.draft.doctorOrders}`,
+    nursingTasks: template.draft.nursingTasks,
+    monitoringPlan: template.draft.monitoringPlan,
+    medicationFollowUp: template.draft.medicationFollowUp,
+    escalationRule: template.draft.escalationRule,
+    dailyGoal: template.draft.dailyGoal,
+  };
+}
+
+function parseCarePlanTasks(value: string) {
+  return value
+    .split(/\n|;/)
+    .map((item) => item.replace(/^[-*]\s*/, "").trim())
+    .filter(Boolean);
+}
+
+function mapOrderStatus(status: string): CarePlanTaskStatus {
+  if (status === "Administered" || status === "Completed") return "Completed";
+  if (status === "In progress") return "In progress";
+  if (status === "Late" || status === "Escalated") return "Escalated";
+  if (status === "Accepted") return "Accepted";
+  return "Pending acknowledgement";
+}
+
+function mapTaskStatus(status: string): CarePlanTaskStatus {
+  if (status === "Completed") return "Completed";
+  if (status === "In progress") return "In progress";
+  if (status === "Escalated" || status === "Overdue") return "Escalated";
+  if (status === "Accepted") return "Accepted";
+  return "Pending acknowledgement";
+}
+
+function carePlanTaskTone(status: CarePlanTaskStatus): StatusTone {
+  if (status === "Completed") return "success";
+  if (status === "Escalated") return "danger";
+  if (status === "In progress") return "info";
+  if (status === "Accepted") return "warning";
+  return "muted";
+}
+
+function CarePlanTextArea({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) {
+  return (
+    <label className="space-y-1 text-sm">
+      <span className="font-medium text-foreground">{label}</span>
+      <textarea
+        className="min-h-24 w-full rounded-md border border-input bg-background p-3 text-sm outline-none focus:ring-2 focus:ring-ring/20"
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+      />
+    </label>
+  );
+}
+
+function OrderCarePlanCard({
+  title,
+  subtitle,
+  detail,
+  owner,
+  priority,
+  status,
+  onAccept,
+  onStart,
+  onComplete,
+  onEscalate,
+}: {
+  title: string;
+  subtitle: string;
+  detail?: string;
+  owner: string;
+  priority: IcuPriority;
+  status: CarePlanTaskStatus;
+  onAccept: () => void;
+  onStart: () => void;
+  onComplete: () => void;
+  onEscalate: () => void;
+}) {
+  return (
+    <div className="rounded-md border border-border bg-background p-3">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0">
+          <p className="text-sm font-semibold text-foreground">{title}</p>
+          <p className="mt-1 text-xs text-muted-foreground">{subtitle}</p>
+          {detail ? <p className="mt-2 text-xs text-muted-foreground">{detail}</p> : null}
+        </div>
+        <div className="flex shrink-0 flex-wrap gap-1 sm:justify-end">
+          <Badge tone={toneForPriority(priority)}>{priority}</Badge>
+          <StatusPill tone={carePlanTaskTone(status)}>{status}</StatusPill>
+        </div>
+      </div>
+      <div className="mt-3 flex flex-col gap-2 border-t border-border pt-3 sm:flex-row sm:items-center sm:justify-between">
+        <span className="text-xs font-medium text-muted-foreground">Owner: {owner}</span>
+        <div className="flex flex-wrap gap-2">
+          <Button size="sm" variant="outline" onClick={onAccept} disabled={status !== "Pending acknowledgement"}>Accept</Button>
+          <Button size="sm" variant="outline" onClick={onStart} disabled={status === "Completed"}>Start</Button>
+          <Button size="sm" onClick={onComplete}>Done</Button>
+          <Button size="sm" variant="outline" onClick={onEscalate} disabled={status === "Completed"}>Escalate</Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function EmptyCarePlanPanel({ title, detail }: { title: string; detail: string }) {
+  return (
+    <div className="rounded-md border border-dashed border-border bg-surface-muted p-5 text-center">
+      <p className="text-sm font-semibold text-foreground">{title}</p>
+      <p className="mt-1 text-xs text-muted-foreground">{detail}</p>
+    </div>
+  );
+}
+
+function FamilyCommunicationCommand() {
+  const rows = [
+    { id: "fam-001", patient: "ICU-A01 - Aisha Khan", contact: "Mother - Sana Khan", type: "Clinical update", language: "Hindi", status: "Completed", owner: "Dr. Sameer Mehta", nextUpdate: "06:00 PM", note: "Critical condition and ICU plan explained." },
+    { id: "fam-002", patient: "ICU-A02 - Rohan Das", contact: "Wife - Priya Das", type: "Consent", language: "English", status: "Pending signature", owner: "Unit Nurse Meera", nextUpdate: "Today", note: "Blood transfusion counseling completed." },
+    { id: "fam-003", patient: "ICU-B03 - Meera Sharma", contact: "Son - Nikhil Sharma", type: "Visitor coordination", language: "Hindi", status: "Scheduled", owner: "Family Coordinator", nextUpdate: "04:30 PM", note: "Neuro observation update requested." },
+  ];
+
+  return (
+    <div className="space-y-4">
+      <SummaryGrid>
+        <StatCard label="Family updates" value={rows.length} change="Today" context="Communication log" tone="info" icon={UserRound} />
+        <StatCard label="Pending consent" value={rows.filter((row) => row.type === "Consent" && row.status.includes("Pending")).length} change="Follow-up" context="Legal safety" tone="warning" icon={FileText} />
+        <StatCard label="Scheduled calls" value={rows.filter((row) => row.status === "Scheduled").length} change="Coordinator" context="Visitor desk" tone="success" icon={Clock3} />
+        <StatCard label="Critical updates" value={1} change="Doctor-led" context="High acuity" tone="danger" icon={AlertTriangle} />
+      </SummaryGrid>
+      <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
+        <GenericTable title="Family Communication Register" rows={rows} />
+        <CommandSection title="Communication Checklist" description="Non-AI family communication workflow.">
+          <Checklist title="Before family update" items={["Confirm patient identity", "Confirm authorized attendant", "Check latest doctor note", "Document update and next contact time"]} />
+        </CommandSection>
+      </div>
+    </div>
+  );
+}
+
+function RemoteCommandCenterCommand() {
+  const rows = [
+    { id: "tele-001", bedNo: "ICU-A01", patient: "Aisha Khan", remoteIntensivist: "Dr. Leena Rao", reason: "Sepsis shock watch", readiness: "Vitals + labs attached", status: "Ready for remote review", priority: "Critical" },
+    { id: "tele-002", bedNo: "ICU-A02", patient: "Rohan Das", remoteIntensivist: "Dr. Vikram Nair", reason: "Ventilator settings review", readiness: "ABG pending", status: "Waiting diagnostics", priority: "High" },
+    { id: "tele-003", bedNo: "ICU-B03", patient: "Meera Sharma", remoteIntensivist: "Dr. Leena Rao", reason: "Neuro observation", readiness: "CT report pending", status: "Scheduled", priority: "Medium" },
+  ];
+  const hospitals = [
+    { name: "Plasmit Hospital - Main", census: 12, critical: 3, escalated: 2, occupancy: 88, tone: "danger" as StatusTone },
+    { name: "Plasmit Hospital - East", census: 8, critical: 1, escalated: 1, occupancy: 72, tone: "warning" as StatusTone },
+    { name: "Plasmit Hospital - North", census: 6, critical: 0, escalated: 0, occupancy: 54, tone: "success" as StatusTone },
+  ];
+
+  return (
+    <div className="space-y-4">
+      <SummaryGrid>
+        <StatCard label="Remote cases" value={rows.length} change="Tele ICU" context="Review queue" tone="info" icon={Stethoscope} />
+        <StatCard label="Critical remote" value={rows.filter((row) => row.priority === "Critical").length} change="Immediate" context="Remote watch" tone="critical" icon={AlertTriangle} />
+        <StatCard label="Hospitals visible" value={hospitals.length} change="Network" context="Multi-hospital view" tone="info" icon={BedDouble} />
+        <StatCard label="Pending diagnostics" value={rows.filter((row) => row.status.includes("Waiting")).length} change="Attach report" context="Consult readiness" tone="warning" icon={TestTube2} />
+      </SummaryGrid>
+
+      <div className="grid gap-3 xl:grid-cols-3">
+        {hospitals.map((hospital) => (
+          <CommandSection title={hospital.name} description="Multi-hospital ICU view for remote intensivist." key={hospital.name}>
+            <div className="grid grid-cols-3 gap-2">
+              <MiniMetric label="Census" value={hospital.census} tone="info" />
+              <MiniMetric label="Critical" value={hospital.critical} tone={hospital.critical ? "danger" : "success"} />
+              <MiniMetric label="Escalated" value={hospital.escalated} tone={hospital.escalated ? "warning" : "success"} />
+            </div>
+            <MetricBar label="Occupancy" value={hospital.occupancy} tone={hospital.tone} />
+          </CommandSection>
+        ))}
+      </div>
+
+      <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
+        <GenericTable title="Remote Intensivist Command Queue" rows={rows} />
+        <CommandSection title="Remote Center Readiness" description="Remote ICU overview without AI automation.">
+          <MiniList title="Readiness checklist" rows={["Camera and audio check", "Latest vitals attached", "Diagnostics status visible", "Local doctor owner visible"]} />
+          <MiniList title="Live risk queue" rows={rows.map((row) => `${row.bedNo} - ${row.patient}: ${row.reason}`)} />
+        </CommandSection>
+      </div>
+    </div>
+  );
+}
+
+function RemoteConsultationsCommand() {
+  const rows = [
+    { id: "rc-001", patient: "ICU-A01 - Aisha Khan", specialty: "Critical care", requestedBy: "Dr. Sameer Mehta", reason: "Persistent hypotension", documents: "Vitals, lactate, cultures", status: "In review", followUp: "15 min" },
+    { id: "rc-002", patient: "ICU-B03 - Meera Sharma", specialty: "Neurology", requestedBy: "Dr. Imran Shah", reason: "Low GCS observation", documents: "CT pending", status: "Scheduled", followUp: "04:00 PM" },
+    { id: "rc-003", patient: "ICU-A02 - Rohan Das", specialty: "Cardiology", requestedBy: "Dr. Neha Malik", reason: "Post CABG rhythm watch", documents: "ECG, ABG", status: "Completed", followUp: "Next round" },
+  ];
+
+  return (
+    <CommandRegisterScreen
+      title="Remote Consultations"
+      description="Consult request, specialty queue, clinical documents, and follow-up status."
+      rows={rows}
+      metrics={[
+        { label: "Consults", value: rows.length, tone: "info", icon: Stethoscope },
+        { label: "In review", value: rows.filter((row) => row.status === "In review").length, tone: "warning", icon: Clock3 },
+        { label: "Completed", value: rows.filter((row) => row.status === "Completed").length, tone: "success", icon: CheckCircle2 },
+        { label: "Scheduled", value: rows.filter((row) => row.status === "Scheduled").length, tone: "info", icon: ClipboardCheck },
+      ]}
+      sideTitle="Consult Workflow"
+      sideRows={["Request consultation", "Attach patient context", "Track recommendation", "Assign follow-up task"]}
+    />
+  );
+}
+
+function EscalatedCasesCommand() {
+  const rows = [
+    { id: "ec-001", patient: "ICU-A01 - Aisha Khan", trigger: "SpO2 low + BP low", escalatedTo: "Duty Doctor + Remote Intensivist", owner: "Head Nurse Sana", status: "Active", nextStep: "Repeat vitals and lactate" },
+    { id: "ec-002", patient: "ICU-A02 - Rohan Das", trigger: "ABG and ventilator review", escalatedTo: "Cardiac intensivist", owner: "Ward Nurse Arjun", status: "Watching", nextStep: "ABG result follow-up" },
+    { id: "ec-003", patient: "ICU-D10", trigger: "Gateway signal missing", escalatedTo: "Biomedical engineer", owner: "Biomedical Raj", status: "Assigned", nextStep: "Replace network cable" },
+  ];
+
+  return (
+    <CommandRegisterScreen
+      title="Escalated Cases"
+      description="Critical clinical, operational, and device cases requiring higher-level review."
+      rows={rows}
+      metrics={[
+        { label: "Escalated", value: rows.length, tone: "danger", icon: ShieldAlert },
+        { label: "Active", value: rows.filter((row) => row.status === "Active").length, tone: "critical", icon: AlertTriangle },
+        { label: "Device case", value: rows.filter((row) => row.patient === "ICU-D10").length, tone: "warning", icon: Activity },
+        { label: "Owner mapped", value: rows.length, tone: "success", icon: UserRound },
+      ]}
+      sideTitle="Escalation Safety"
+      sideRows={["Owner assigned", "SLA visible", "Next step documented", "Close only after outcome"]}
+    />
+  );
+}
+
+type DeviceOperationsMode = "edge" | "mapping" | "connectivity" | "signal";
+
+function DeviceOperationsCommand({ mode }: { mode: DeviceOperationsMode }) {
+  const rows = getCommandDeviceRows();
+  const offline = rows.filter((row) => row.connectivity !== "Online").length;
+  const weakSignal = rows.filter((row) => row.signal !== "Good").length;
+  const gatewayRows = buildGatewayHealthRows(rows);
+  const discoveryRows = buildAutoDiscoveryRows();
+  const pageCopy = {
+    edge: ["Edge Device Inventory", "ICU edge gateway, monitor, ventilator, and pump inventory."],
+    mapping: ["Bed Device Mapping", "Bed-to-device assignments and patient mapping."],
+    connectivity: ["Connectivity Dashboard", "Online/offline state, gateway health, and downtime ownership."],
+    signal: ["Signal Health", "Signal quality, last data, missing vitals, and biomedical troubleshooting."],
+  } as const;
+  const [title, description] = pageCopy[mode];
+
+  return (
+    <div className="space-y-4">
+      <SummaryGrid>
+        <StatCard label="Mapped beds" value={rows.filter((row) => row.patient !== "Unassigned").length} change="Device map" context="Bed coverage" tone="info" icon={BedDouble} />
+        <StatCard label="Online devices" value={rows.length - offline} change="Live" context="Connectivity" tone="success" icon={Activity} />
+        <StatCard label="Offline devices" value={offline} change="Biomedical" context="Needs action" tone={offline ? "danger" : "success"} icon={AlertTriangle} />
+        <StatCard label="Weak signal" value={weakSignal} change="Signal health" context="Gateway watch" tone={weakSignal ? "warning" : "success"} icon={ShieldAlert} />
+      </SummaryGrid>
+      <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
+        <GenericTable title={title} rows={rows} />
+        <CommandSection title="Device Ops Actions" description={description}>
+          <MiniList title="Action checklist" rows={[
+            mode === "mapping" ? "Verify patient-to-bed assignment" : "Check device heartbeat",
+            mode === "connectivity" ? "Escalate offline gateway" : "Confirm last data time",
+            mode === "signal" ? "Review missing vitals window" : "Confirm biomedical owner",
+            "Document resolution and next check",
+          ]} />
+          <InfoLine label="Biomedical owner" value="Biomedical Raj" />
+          <InfoLine label="Escalation SLA" value={offline ? "15 min" : "On track"} />
+        </CommandSection>
+      </div>
+      <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_420px]">
+        <GenericTable title="Gateway Health" rows={gatewayRows} />
+        {mode === "mapping" ? (
+          <CommandSection title="Auto Discovery Panel" description="New devices discovered and ready for bed assignment.">
+            {discoveryRows.map((row) => (
+              <div className="rounded-md border border-border bg-background p-3" key={row.id}>
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">{row.deviceName}</p>
+                    <p className="mt-1 text-xs text-muted-foreground">{row.deviceType} | {row.detectedAt}</p>
+                  </div>
+                  <Badge tone={toneForStatus(row.status)}>{row.status}</Badge>
+                </div>
+                <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                  <NativeSelect label="Assign to bed" value={row.assignTo} onChange={() => undefined} options={["ICU-A01", "ICU-A02", "ICU-B03", "ICU-B04", "ICU-D10"]} />
+                  <Button variant="outline" onClick={() => toast.success(`${row.deviceName} mapped to ${row.assignTo}`)}>Assign device</Button>
+                </div>
+              </div>
+            ))}
+          </CommandSection>
+        ) : (
+          <CommandSection title="Gateway Watch" description="CPU, memory, storage, temperature, and communication state.">
+            {gatewayRows.map((row) => (
+              <div className="rounded-md border border-border bg-background p-3" key={row.id}>
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-sm font-semibold text-foreground">{row.gateway}</p>
+                  <Badge tone={toneForStatus(row.status)}>{row.status}</Badge>
+                </div>
+                <div className="mt-3 grid grid-cols-2 gap-2">
+                  <MiniMetric label="CPU" value={`${row.cpu}%`} tone={Number(row.cpu) > 80 ? "warning" : "success"} />
+                  <MiniMetric label="Memory" value={`${row.memory}%`} tone={Number(row.memory) > 80 ? "warning" : "success"} />
+                  <MiniMetric label="Storage" value={`${row.storage}%`} tone={Number(row.storage) > 85 ? "warning" : "success"} />
+                  <MiniMetric label="Temp" value={`${row.temperature} C`} tone={Number(row.temperature) > 45 ? "danger" : "success"} />
+                </div>
+              </div>
+            ))}
+          </CommandSection>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function PatientRiskCenterCommand() {
+  const rows = buildRiskRows();
+  const highRiskRows = rows.filter((row) => row.riskLevel === "Critical" || row.riskLevel === "High");
+
+  return (
+    <div className="space-y-4">
+      <SummaryGrid>
+        <StatCard label="Critical risk" value={rows.filter((row) => row.riskLevel === "Critical").length} change="Immediate" context="Round first" tone="critical" icon={ShieldAlert} />
+        <StatCard label="High risk" value={rows.filter((row) => row.riskLevel === "High").length} change="Escalate" context="Watch list" tone="danger" icon={AlertTriangle} />
+        <StatCard label="Medication risk" value={medicationRows.filter((row) => row.status === "Late" || row.doubleVerification === "Required").length} change="eMAR" context="Safety check" tone="warning" icon={Pill} />
+        <StatCard label="Stable patients" value={rows.filter((row) => row.riskLevel === "Stable").length} change="Continue care" context="No urgent signal" tone="success" icon={CheckCircle2} />
+      </SummaryGrid>
+      <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_420px]">
+        <GenericTable title="Patient Risk Score Board" rows={rows} />
+        <CommandSection title="Risk Inputs" description="Non-AI risk center uses rule-based ICU signals for demo.">
+          <MiniList title="Risk factors" rows={["Criticality score", "Abnormal vitals", "Open clinical alerts", "Late/high-risk medication", "Device connectivity", "Pending ICU tasks"]} />
+          <MetricBar label="Critical review coverage" value={88} tone="success" />
+          <MetricBar label="Documentation readiness" value={76} tone="warning" />
+        </CommandSection>
+      </div>
+      <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_420px]">
+        <CommandSection title="Risk Factor Heat Map" description="Patient rows with risk, ventilation, infection, organ support, and alert count.">
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[780px] text-sm">
+              <thead className="bg-surface-muted text-xs uppercase text-muted-foreground">
+                <tr>
+                  <th className="px-3 py-2 text-left">Patient</th>
+                  <th className="px-3 py-2 text-center">Risk</th>
+                  <th className="px-3 py-2 text-center">Ventilation</th>
+                  <th className="px-3 py-2 text-center">Infection</th>
+                  <th className="px-3 py-2 text-center">Organ Support</th>
+                  <th className="px-3 py-2 text-center">Alerts</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map((row) => (
+                  <tr className="border-b border-border last:border-b-0" key={row.id}>
+                    <td className="px-3 py-2 font-semibold text-foreground">{row.bedNo} - {row.patient}</td>
+                    <td className="px-3 py-2 text-center"><RiskDot value={row.score} /></td>
+                    <td className="px-3 py-2 text-center"><RiskDot value={row.ventilationScore} /></td>
+                    <td className="px-3 py-2 text-center"><RiskDot value={row.infectionScore} /></td>
+                    <td className="px-3 py-2 text-center"><RiskDot value={row.organSupportScore} /></td>
+                    <td className="px-3 py-2 text-center"><RiskDot value={row.alerts} /></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </CommandSection>
+        <CommandSection title="Deterioration Trends" description="High-risk patients with trend reason and next escalation.">
+          {highRiskRows.map((row) => (
+            <div className="rounded-md border border-border bg-background p-3" key={row.id}>
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-sm font-semibold text-foreground">{row.bedNo} - {row.patient}</p>
+                  <p className="mt-1 text-xs text-muted-foreground">{row.trendReason}</p>
+                </div>
+                <Badge tone={toneForStatus(row.riskLevel)}>{row.riskLevel}</Badge>
+              </div>
+              <MetricBar label="Deterioration score" value={Math.min(100, row.score * 8)} tone={toneForStatus(row.riskLevel)} />
+            </div>
+          ))}
+        </CommandSection>
+      </div>
+    </div>
+  );
+}
+
+function EarlyWarningScoresCommand() {
+  const rows = buildRiskRows().map((row) => ({
+    id: `ews-${row.id}`,
+    patient: row.patient,
+    bedNo: row.bedNo,
+    ewsScore: row.score,
+    observationFrequency: row.score >= 10 ? "15 min" : row.score >= 7 ? "30 min" : "2 hourly",
+    escalationTrigger: row.score >= 10 ? "Duty doctor now" : row.score >= 7 ? "Head nurse review" : "Continue monitoring",
+    latestVitals: row.latestVitals,
+    status: row.riskLevel,
+  }));
+
+  return (
+    <CommandRegisterScreen
+      title="Early Warning Scores"
+      description="Rule-based warning score board with observation frequency and escalation trigger."
+      rows={rows}
+      metrics={[
+        { label: "EWS tracked", value: rows.length, tone: "info", icon: HeartPulse },
+        { label: "Immediate review", value: rows.filter((row) => row.ewsScore >= 10).length, tone: "critical", icon: AlertTriangle },
+        { label: "30 min watch", value: rows.filter((row) => row.ewsScore >= 7 && row.ewsScore < 10).length, tone: "warning", icon: Clock3 },
+        { label: "Stable watch", value: rows.filter((row) => row.ewsScore < 7).length, tone: "success", icon: CheckCircle2 },
+      ]}
+      sideTitle="EWS Rules"
+      sideRows={["SpO2, BP, pulse, RR, GCS, urine output", "Score >= 10: immediate doctor review", "Score 7-9: increased observation", "Score < 7: routine ICU monitoring"]}
+    />
+  );
+}
+
+function ClinicalAnalyticsCommand() {
+  const medCompliance = Math.round((medicationRows.filter((row) => row.status === "Administered").length / Math.max(medicationRows.length, 1)) * 100);
+  const mortalityRate = 3;
+  const infectionRate = 8;
+  const avgLos = 4;
+  const rows = [
+    { id: "ca-001", metric: "Medication compliance", unit: "All ICU", value: `${medCompliance}%`, benchmark: ">= 90%", trend: "Needs attention", owner: "Head Nurse" },
+    { id: "ca-002", metric: "Ventilator bundle completion", unit: "Critical care", value: "82%", benchmark: ">= 95%", trend: "Improving", owner: "ICU Doctor" },
+    { id: "ca-003", metric: "Infection trend watch", unit: "Medical ICU", value: "2 flagged", benchmark: "0 unresolved", trend: "Review cultures", owner: "Quality Team" },
+    { id: "ca-004", metric: "Documentation quality", unit: "All ICU", value: "86%", benchmark: ">= 95%", trend: "Stable", owner: "Nursing Supervisor" },
+    { id: "ca-005", metric: "Mortality rate", unit: "All ICU", value: `${mortalityRate}%`, benchmark: "<= 5%", trend: "Within benchmark", owner: "Medical Director" },
+    { id: "ca-006", metric: "Average ICU LOS", unit: "All ICU", value: `${avgLos} days`, benchmark: "<= 5 days", trend: "Stable", owner: "ICU Head" },
+  ];
+
+  return (
+    <div className="space-y-4">
+      <SummaryGrid>
+        <StatCard label="Mortality rate" value={mortalityRate} change="%" context="Within benchmark" tone="success" icon={ShieldAlert} />
+        <StatCard label="Infection rate" value={infectionRate} change="%" context="Culture watch" tone="warning" icon={TestTube2} />
+        <StatCard label="Avg ICU LOS" value={avgLos} change="days" context="Length of stay" tone="info" icon={Clock3} />
+        <StatCard label="Clinical quality" value={86} change="Score %" context="Composite" tone="success" icon={BarChart3} />
+      </SummaryGrid>
+      <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
+        <GenericTable title="Clinical Analytics" rows={rows} />
+        <CommandSection title="Included P2 Non-AI Views" description="Document items grouped here as analytics subviews.">
+          <MiniList title="Analytics coverage" rows={["Multi-hospital ICU view", "Quality metrics", "Infection trends", "Medication compliance", "Ventilator bundle"]} />
+          <MetricBar label="Quality readiness" value={86} tone="success" />
+          <MetricBar label="Infection review completion" value={72} tone="warning" />
+        </CommandSection>
+      </div>
+    </div>
+  );
+}
+
+function PilotOutcomeDashboardCommand() {
+  const rows = [
+    { id: "po-001", outcome: "Alert response time", beforePilot: "42 min", current: "18 min", improvement: "57%", owner: "ICU Head", status: "Improved" },
+    { id: "po-002", outcome: "Medication delay visibility", beforePilot: "Manual follow-up", current: "Command queue", improvement: "High", owner: "Head Nurse", status: "Adopted" },
+    { id: "po-003", outcome: "Handover completeness", beforePilot: "62%", current: "86%", improvement: "24%", owner: "Nursing Supervisor", status: "Improved" },
+    { id: "po-004", outcome: "Device issue tracking", beforePilot: "Phone-based", current: "Mapped owner", improvement: "Medium", owner: "Biomedical", status: "In progress" },
+  ];
+
+  return (
+    <CommandRegisterScreen
+      title="Pilot Outcome Dashboard"
+      description="Demo screen for pilot KPIs and before/after ICU command center outcome story."
+      rows={rows}
+      metrics={[
+        { label: "Pilot KPIs", value: rows.length, tone: "info", icon: BarChart3 },
+        { label: "Improved", value: rows.filter((row) => row.status === "Improved").length, tone: "success", icon: CheckCircle2 },
+        { label: "Adopted", value: rows.filter((row) => row.status === "Adopted").length, tone: "success", icon: ClipboardCheck },
+        { label: "In progress", value: rows.filter((row) => row.status === "In progress").length, tone: "warning", icon: Clock3 },
+      ]}
+      sideTitle="Pilot Story"
+      sideRows={["Before/after KPI visible", "Clinical and nursing workflows covered", "Device issues tracked", "Daily demo narrative ready"]}
+    />
+  );
+}
+
+function AdoptionAnalyticsCommand() {
+  const rows = [
+    { id: "aa-001", module: "ICU Dashboard", role: "Head Nurse", usage: "94%", actions: "Bed board, alerts, tasks", status: "High adoption" },
+    { id: "aa-002", module: "Medication Administration", role: "Ward Nurse", usage: "88%", actions: "Administer, hold, verify", status: "Good adoption" },
+    { id: "aa-003", module: "Doctor Rounds", role: "Doctor", usage: "76%", actions: "Care plan, orders", status: "Needs coaching" },
+    { id: "aa-004", module: "Device Operations", role: "Biomedical", usage: "64%", actions: "Mapping, signal review", status: "Pilot training" },
+  ];
+
+  return (
+    <CommandRegisterScreen
+      title="Adoption Analytics"
+      description="Role-wise screen usage and workflow adoption across ICU command center."
+      rows={rows}
+      metrics={[
+        { label: "Tracked modules", value: rows.length, tone: "info", icon: BarChart3 },
+        { label: "High adoption", value: rows.filter((row) => row.status.includes("High")).length, tone: "success", icon: CheckCircle2 },
+        { label: "Coaching needed", value: rows.filter((row) => row.status.includes("Needs")).length, tone: "warning", icon: UserRound },
+        { label: "Pilot training", value: rows.filter((row) => row.status.includes("Pilot")).length, tone: "warning", icon: ClipboardCheck },
+      ]}
+      sideTitle="Adoption Signals"
+      sideRows={["Role-wise usage", "Screen-wise actions", "Training gaps", "Workflow completion"]}
+    />
+  );
+}
+
+function DeviceAnalyticsCommand() {
+  const rows = getCommandDeviceRows().map((row) => ({
+    id: `da-${row.id}`,
+    bedNo: row.bedNo,
+    deviceSet: `${row.monitor}, ${row.ventilator}, ${row.infusionPump}`,
+    utilization: row.patient === "Unassigned" ? "12%" : "86%",
+    uptime: `${row.uptime}%`,
+    downtimeReason: row.issue,
+    biomedicalOwner: row.owner,
+    status: row.connectivity,
+  }));
+
+  return (
+    <CommandRegisterScreen
+      title="Device Analytics"
+      description="Device utilization, device-to-bed usage, uptime, downtime, and biomedical performance."
+      rows={rows}
+      metrics={[
+        { label: "Device sets", value: rows.length, tone: "info", icon: Activity },
+        { label: "Mapped active", value: rows.filter((row) => row.utilization !== "12%").length, tone: "success", icon: BedDouble },
+        { label: "Downtime cases", value: rows.filter((row) => row.status !== "Online").length, tone: "danger", icon: AlertTriangle },
+        { label: "Avg uptime", value: Math.round(getCommandDeviceRows().reduce((sum, row) => sum + row.uptime, 0) / getCommandDeviceRows().length), tone: "success", icon: CheckCircle2 },
+      ]}
+      sideTitle="Device Analytics Coverage"
+      sideRows={["Device utilization", "Device-to-bed usage", "Downtime reason", "Biomedical owner performance"]}
+    />
+  );
+}
+
+function UsersRolesCommand() {
+  const rows = [
+    { id: "role-001", role: "ICU Head", visibleScreens: "Command, Executive, Operations, Analytics", primaryActions: "Review, escalate, print reports", status: "Configured" },
+    { id: "role-002", role: "Intensivist / Doctor", visibleScreens: "Rounds, Overview, Orders, Progress Notes, Risk", primaryActions: "Order, review, sign notes", status: "Configured" },
+    { id: "role-003", role: "Head Nurse", visibleScreens: "Nursing Station, Tasks, Handover, Escalations", primaryActions: "Assign, supervise, acknowledge", status: "Configured" },
+    { id: "role-004", role: "Ward Nurse", visibleScreens: "Medication, Tasks, Vitals, I/O, Notes", primaryActions: "Record, administer, handover", status: "Configured" },
+    { id: "role-005", role: "Biomedical Engineer", visibleScreens: "Device Ops, Connectivity, Signal Health", primaryActions: "Map devices, resolve issues", status: "Configured" },
+    { id: "role-006", role: "Quality Team", visibleScreens: "Clinical Analytics, Audit Logs, Reports", primaryActions: "Review compliance", status: "Configured" },
+  ];
+
+  return (
+    <CommandRegisterScreen
+      title="Users & Roles Matrix"
+      description="Screen-level role visibility for ICU command center demo."
+      rows={rows}
+      metrics={[
+        { label: "Roles", value: rows.length, tone: "info", icon: UserRound },
+        { label: "Clinical roles", value: 4, tone: "success", icon: Stethoscope },
+        { label: "Ops roles", value: 2, tone: "warning", icon: Activity },
+        { label: "Configured", value: rows.filter((row) => row.status === "Configured").length, tone: "success", icon: CheckCircle2 },
+      ]}
+      sideTitle="Role Setup Rules"
+      sideRows={["Doctor can sign orders/notes", "Nurse can administer and document", "Head nurse can reassign/escalate", "Biomedical can manage devices"]}
+    />
+  );
+}
+
+function ConfigurationCommand() {
+  const rows = [
+    { id: "cfg-001", area: "ICU units", setting: "Medical ICU, Cardiac ICU, Neuro ICU", value: "Active", owner: "Hospital Admin", status: "Ready" },
+    { id: "cfg-002", area: "Bed setup", setting: "12 demo beds with availability state", value: "Mapped", owner: "ICU Coordinator", status: "Ready" },
+    { id: "cfg-003", area: "Alert thresholds", setting: "SpO2 < 92, MAP < 65, urine < 30 ml/hr", value: "Enabled", owner: "ICU Head", status: "Ready" },
+    { id: "cfg-004", area: "Medication timing rules", setting: "Late after 15 min, high-risk double verification", value: "Enabled", owner: "Pharmacy + Nursing", status: "Ready" },
+    { id: "cfg-005", area: "Device setup", setting: "Monitor, ventilator, pump, gateway mapping", value: "Partial", owner: "Biomedical", status: "Needs review" },
+    { id: "cfg-006", area: "Escalation rules", setting: "Critical to duty doctor, device to biomedical", value: "Enabled", owner: "ICU Head", status: "Ready" },
+  ];
+
+  return (
+    <CommandRegisterScreen
+      title="ICU Configuration"
+      description="Non-integration configuration screens needed for demo and code review."
+      rows={rows}
+      metrics={[
+        { label: "Config areas", value: rows.length, tone: "info", icon: ShieldAlert },
+        { label: "Ready", value: rows.filter((row) => row.status === "Ready").length, tone: "success", icon: CheckCircle2 },
+        { label: "Needs review", value: rows.filter((row) => row.status === "Needs review").length, tone: "warning", icon: Clock3 },
+        { label: "Rules enabled", value: rows.filter((row) => row.value === "Enabled").length, tone: "success", icon: ClipboardCheck },
+      ]}
+      sideTitle="Configuration Coverage"
+      sideRows={["ICU unit setup", "Bed setup", "Alert thresholds", "Medication timing rules", "Device setup", "Escalation rules"]}
+    />
+  );
+}
+
+type CommandRegisterMetric = {
+  label: string;
+  value: number;
+  tone: StatusTone;
+  icon: typeof HeartPulse;
+};
+
+function CommandRegisterScreen({
+  title,
+  description,
+  rows,
+  metrics,
+  sideTitle,
+  sideRows,
+}: {
+  title: string;
+  description: string;
+  rows: Record<string, unknown>[];
+  metrics: CommandRegisterMetric[];
+  sideTitle: string;
+  sideRows: string[];
+}) {
+  return (
+    <div className="space-y-4">
+      <SummaryGrid>
+        {metrics.map((metric) => (
+          <StatCard
+            context={description}
+            icon={metric.icon}
+            key={metric.label}
+            label={metric.label}
+            value={metric.value}
+            change="Current"
+            tone={metric.tone}
+          />
+        ))}
+      </SummaryGrid>
+      <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
+        <GenericTable title={title} rows={rows} />
+        <CommandSection title={sideTitle} description={description}>
+          <MiniList title="Screen workflow" rows={sideRows} />
+          <Button onClick={() => toast.success(`${title} action saved`)}>Save demo action</Button>
+        </CommandSection>
+      </div>
+    </div>
+  );
+}
+
+function getCommandDeviceRows() {
+  return [
+    { id: "dev-001", bedNo: "ICU-A01", patient: "Aisha Khan", monitor: "MON-ICU-11", ventilator: "NIV-03", infusionPump: "PUMP-11", gateway: "GW-A", signal: "Good", connectivity: "Online", lastData: "2 min ago", issue: "No issue", owner: "Biomedical Raj", uptime: 98 },
+    { id: "dev-002", bedNo: "ICU-A02", patient: "Rohan Das", monitor: "MON-ICU-12", ventilator: "VENT-07", infusionPump: "PUMP-07", gateway: "GW-A", signal: "Good", connectivity: "Online", lastData: "1 min ago", issue: "No issue", owner: "Biomedical Raj", uptime: 99 },
+    { id: "dev-003", bedNo: "ICU-B03", patient: "Meera Sharma", monitor: "MON-ICU-21", ventilator: "OXY-02", infusionPump: "PUMP-14", gateway: "GW-B", signal: "Weak", connectivity: "Online", lastData: "8 min ago", issue: "Intermittent SpO2 signal", owner: "Biomedical Nisha", uptime: 91 },
+    { id: "dev-004", bedNo: "ICU-B04", patient: "Kabir Ali", monitor: "MON-ICU-22", ventilator: "Room air", infusionPump: "PUMP-18", gateway: "GW-B", signal: "Good", connectivity: "Online", lastData: "5 min ago", issue: "No issue", owner: "Biomedical Nisha", uptime: 97 },
+    { id: "dev-005", bedNo: "ICU-D10", patient: "Unassigned", monitor: "MON-ICU-40", ventilator: "VENT-10", infusionPump: "PUMP-22", gateway: "GW-D", signal: "No signal", connectivity: "Offline", lastData: "42 min ago", issue: "Gateway offline", owner: "Biomedical Raj", uptime: 72 },
+  ];
+}
+
+function buildGatewayHealthRows(rows: ReturnType<typeof getCommandDeviceRows>) {
+  const gateways = Array.from(new Set(rows.map((row) => row.gateway)));
+  return gateways.map((gateway, index) => {
+    const gatewayDevices = rows.filter((row) => row.gateway === gateway);
+    const offline = gatewayDevices.some((row) => row.connectivity !== "Online");
+    const weak = gatewayDevices.some((row) => row.signal !== "Good");
+    return {
+      id: `gw-${gateway}`,
+      gateway,
+      beds: gatewayDevices.map((row) => row.bedNo).join(", "),
+      connectedDevices: gatewayDevices.length * 3,
+      cpu: offline ? 92 : 42 + index * 8,
+      memory: offline ? 88 : 55 + index * 7,
+      storage: offline ? 79 : 48 + index * 6,
+      temperature: offline ? 49 : 38 + index * 2,
+      status: offline ? "Offline" : weak ? "Degraded" : "Healthy",
+      lastHeartbeat: offline ? "42 min ago" : `${index + 1} min ago`,
+      owner: gatewayDevices[0]?.owner ?? "Biomedical",
+    };
+  });
+}
+
+function buildAutoDiscoveryRows() {
+  return [
+    { id: "disc-001", deviceName: "Philips Monitor MON-NEW-04", deviceType: "Bedside monitor", detectedAt: "2 min ago", signal: "Good", assignTo: "ICU-B03", status: "New device" },
+    { id: "disc-002", deviceName: "GE Ventilator VENT-NEW-02", deviceType: "Ventilator", detectedAt: "6 min ago", signal: "Good", assignTo: "ICU-D10", status: "Needs mapping" },
+    { id: "disc-003", deviceName: "Syringe Pump PUMP-NEW-09", deviceType: "Infusion pump", detectedAt: "11 min ago", signal: "Weak", assignTo: "ICU-A01", status: "Verify signal" },
+  ];
+}
+
+function buildAdmissionForecastRows() {
+  return [
+    { window: "Next 2 hours", expected: 2, source: "Emergency + post-op transfer expected", pressure: 74, tone: "warning" as StatusTone },
+    { window: "Next 6 hours", expected: 4, source: "ER hold, cardiac OT, neuro observation", pressure: 88, tone: "danger" as StatusTone },
+    { window: "Tomorrow morning", expected: 3, source: "Scheduled surgery + one ward escalation", pressure: 66, tone: "info" as StatusTone },
+  ];
+}
+
+function buildRiskRows() {
+  return icuPatients.map((patient) => {
+    const latestVital = [...icuVitals].reverse().find((row) => row.patientId === patient.id);
+    const openAlerts = icuAlerts.filter((row) => row.patientId === patient.id && row.status !== "Resolved").length;
+    const medicationRisk = medicationRows.filter((row) => row.patientId === patient.id && (row.status === "Late" || row.doubleVerification === "Required")).length;
+    const abnormalVital = latestVital?.abnormal ? 2 : 0;
+    const deviceRow = getCommandDeviceRows().find((row) => row.bedNo === patient.bedNo);
+    const deviceRisk = deviceRow?.signal !== "Good" ? 1 : 0;
+    const ventilationScore = patient.ventilatorStatus === "Room air" ? 1 : patient.ventilatorStatus.includes("Invasive") ? 9 : 6;
+    const infectionScore = patient.diagnosis.toLowerCase().includes("septic") || patient.diagnosis.toLowerCase().includes("infection") ? 9 : patient.diagnosis.toLowerCase().includes("pneumonia") ? 7 : 2;
+    const organSupportScore = patient.ventilatorStatus !== "Room air" || medicationRows.some((row) => row.patientId === patient.id && row.medication.toLowerCase().includes("noradrenaline")) ? 8 : patient.criticalityScore >= 6 ? 5 : 2;
+    const score = patient.criticalityScore + openAlerts + medicationRisk + abnormalVital + deviceRisk;
+    const riskLevel = score >= 11 ? "Critical" : score >= 8 ? "High" : score >= 5 ? "Watch" : "Stable";
+    const trendReason = [
+      latestVital?.abnormal ? "abnormal vitals" : "",
+      openAlerts ? `${openAlerts} open alert(s)` : "",
+      medicationRisk ? `${medicationRisk} medication risk` : "",
+      deviceRisk ? "device signal issue" : "",
+      ventilationScore >= 6 ? "respiratory support" : "",
+    ].filter(Boolean).join(", ") || "stable trend";
+    return {
+      id: patient.id,
+      bedNo: patient.bedNo,
+      patient: patient.patientName,
+      score,
+      riskLevel,
+      latestVitals: latestVital ? `${latestVital.bp}, SpO2 ${latestVital.spo2}%, GCS ${latestVital.gcs}` : "No vitals",
+      alerts: openAlerts,
+      medicationRisk,
+      ventilationScore,
+      infectionScore,
+      organSupportScore,
+      deviceSignal: deviceRow?.signal ?? "Not mapped",
+      trendReason,
+      owner: patient.dutyDoctor,
+    };
+  });
+}
+
+function RiskDot({ value }: { value: number }) {
+  const tone: DashboardCellTone = value >= 9 ? "critical" : value >= 7 ? "danger" : value >= 4 ? "warning" : "success";
+  return (
+    <span className={cn("mx-auto inline-flex h-7 min-w-7 items-center justify-center rounded-full px-2 text-xs font-bold", dashboardTonePillClass(tone))}>
+      {value}
+    </span>
   );
 }
 
 function SummaryGrid({ children }: { children: React.ReactNode }) {
   return <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">{children}</div>;
+}
+
+function CommandSection({ title, description, children }: { title: string; description: string; children: React.ReactNode }) {
+  return (
+    <Card>
+      <CardHeader>
+        <div>
+          <CardTitle>{title}</CardTitle>
+          <CardDescription>{description}</CardDescription>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-3">{children}</CardContent>
+    </Card>
+  );
+}
+
+function InfoLine({ label, value }: { label: string; value: React.ReactNode }) {
+  return (
+    <div className="flex items-center justify-between gap-3 rounded-md border border-border bg-background px-3 py-2 text-sm">
+      <span className="text-muted-foreground">{label}</span>
+      <span className="text-right font-medium text-foreground">{value}</span>
+    </div>
+  );
+}
+
+function InfoPanel({ title, rows }: { title: string; rows: Array<[string, string]> }) {
+  return (
+    <div className="rounded-md border border-border bg-background p-3">
+      <p className="text-sm font-semibold text-foreground">{title}</p>
+      <div className="mt-3 space-y-2">
+        {rows.map(([label, value]) => <InfoLine label={label} value={value} key={label} />)}
+      </div>
+    </div>
+  );
+}
+
+function PatientSelect({ label, value, onChange, patients }: { label: string; value: string; onChange: (value: string) => void; patients: IcuPatient[] }) {
+  return (
+    <label className="space-y-1 text-sm">
+      <span className="font-medium text-foreground">{label}</span>
+      <select
+        className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/20"
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+      >
+        {patients.map((patient) => (
+          <option key={patient.id} value={patient.id}>{patient.bedNo} - {patient.patientName}</option>
+        ))}
+      </select>
+    </label>
+  );
+}
+
+function PatientMiniCard({ patient }: { patient: IcuPatient }) {
+  return (
+    <div className="rounded-md border border-border bg-background p-3">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-sm font-semibold text-foreground">{patient.bedNo} - {patient.patientName}</p>
+          <p className="mt-1 text-xs text-muted-foreground">{patient.mrn} | {patient.ageGender}</p>
+        </div>
+        <Badge tone={toneForStatus(patient.currentStatus)}>{patient.currentStatus}</Badge>
+      </div>
+      <p className="mt-3 text-xs text-muted-foreground">{patient.diagnosis}</p>
+    </div>
+  );
+}
+
+function MiniMetric({ label, value, tone }: { label: string; value: React.ReactNode; tone: StatusTone }) {
+  return (
+    <div className={cn("rounded-md border p-3", tone === "critical" || tone === "danger" ? "border-danger/30 bg-danger/5" : tone === "warning" ? "border-warning/30 bg-warning/5" : tone === "success" ? "border-success/30 bg-success/5" : "border-info/30 bg-info/5")}>
+      <p className="text-xs font-medium uppercase text-muted-foreground">{label}</p>
+      <p className="mt-1 text-xl font-semibold text-foreground">{value}</p>
+    </div>
+  );
+}
+
+function MetricBar({ label, value, tone }: { label: string; value: number; tone: StatusTone }) {
+  const color = tone === "critical" || tone === "danger" ? "bg-danger" : tone === "warning" ? "bg-warning" : tone === "success" ? "bg-success" : "bg-info";
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between gap-3 text-sm">
+        <span className="font-medium text-foreground">{label}</span>
+        <span className="text-muted-foreground">{value}%</span>
+      </div>
+      <div className="h-2 overflow-hidden rounded-full bg-surface-muted">
+        <div className={cn("h-full rounded-full", color)} style={{ width: `${Math.min(100, Math.max(0, value))}%` }} />
+      </div>
+    </div>
+  );
+}
+
+function MiniList({ title, rows, empty = "No active item" }: { title: string; rows: string[]; empty?: string }) {
+  return (
+    <div className="rounded-md border border-border bg-background p-3">
+      <p className="text-sm font-semibold text-foreground">{title}</p>
+      <div className="mt-2 space-y-2">
+        {rows.length ? rows.slice(0, 4).map((row) => (
+          <div className="rounded-md border border-border bg-surface-muted px-3 py-2 text-xs text-muted-foreground" key={row}>{row}</div>
+        )) : <div className="rounded-md border border-dashed border-border bg-surface-muted px-3 py-3 text-xs text-muted-foreground">{empty}</div>}
+      </div>
+    </div>
+  );
+}
+
+function patientName(patientId: string) {
+  const patient = icuPatients.find((item) => item.id === patientId);
+  return patient ? `${patient.bedNo} - ${patient.patientName}` : patientId;
+}
+
+function buildTwelveBedMap() {
+  const occupied = icuPatients.map((patient) => ({
+    bedNo: patient.bedNo,
+    patient: patient.patientName,
+    status: patient.currentStatus === "Critical" ? "Critical" : patient.ventilatorStatus !== "Room air" ? "Ventilator" : "Occupied",
+    detail: `${patient.unit} | ${patient.assignedWardNurse}`,
+  }));
+  return [
+    ...occupied,
+    { bedNo: "ICU-C05", patient: "", status: "Available", detail: "Ready for emergency admission" },
+    { bedNo: "ICU-C06", patient: "", status: "Cleaning", detail: "Housekeeping turnover in progress" },
+    { bedNo: "ICU-C07", patient: "", status: "Reserved", detail: "Post-op transfer expected" },
+    { bedNo: "ICU-C08", patient: "", status: "Available", detail: "Monitor and oxygen ready" },
+    { bedNo: "ICU-D09", patient: "", status: "Available", detail: "Isolation compatible bed" },
+    { bedNo: "ICU-D10", patient: "", status: "Device Offline", detail: "Gateway signal needs biomedical review" },
+    { bedNo: "ICU-D11", patient: "", status: "Available", detail: "Step-down compatible bed" },
+    { bedNo: "ICU-D12", patient: "", status: "Available", detail: "Backup critical care bed" },
+  ].slice(0, 12);
 }
 
 type DashboardCellTone = "critical" | "danger" | "warning" | "success" | "info" | "purple" | "muted";
@@ -498,11 +2483,30 @@ type DashboardCell = {
   route?: string;
 };
 
+function IcuClassicTabs({ tabs }: { tabs: Array<{ label: string; route: string }> }) {
+  return (
+    <div className="flex gap-2 overflow-x-auto border-b border-sky-600 bg-white px-2 py-2">
+      {tabs.map((tab, index) => (
+        <Link
+          className={cn(
+            "inline-flex h-8 shrink-0 items-center rounded-full px-4 text-xs font-semibold transition",
+            index === 0 ? "bg-sky-700 text-white shadow-sm" : "text-slate-700 hover:bg-sky-50 hover:text-sky-700",
+          )}
+          href={tab.route}
+          key={tab.label}
+        >
+          {tab.label}
+        </Link>
+      ))}
+    </div>
+  );
+}
+
 function DashboardCommandMetric({ label, value, tone }: { label: string; value: React.ReactNode; tone: DashboardCellTone }) {
   return (
-    <div className={cn("rounded-md border px-3 py-2", dashboardToneSurfaceClass(tone))}>
-      <div className="text-[11px] font-bold uppercase tracking-wide">{label}</div>
-      <div className="mt-1 text-2xl font-bold">{value}</div>
+    <div className={cn("inline-flex min-w-32 shrink-0 items-center justify-between gap-3 rounded-full border px-3 py-1.5 shadow-sm", dashboardTonePillClass(tone))}>
+      <span className="text-[11px] font-bold uppercase">{label}</span>
+      <span className="text-sm font-black">{value}</span>
     </div>
   );
 }
@@ -510,7 +2514,6 @@ function DashboardCommandMetric({ label, value, tone }: { label: string; value: 
 function DashboardMatrix({ patients, density }: { patients: IcuPatient[]; density: "Compact" | "Comfortable" }) {
   const columns = [
     "Risk",
-    "Vitals",
     "Ventilation",
     "Input / Output",
     "Medication",
@@ -522,22 +2525,22 @@ function DashboardMatrix({ patients, density }: { patients: IcuPatient[]; densit
   ];
 
   return (
-    <div className="overflow-hidden rounded-md border border-slate-200 bg-white shadow-sm">
-      <div className="flex flex-col gap-2 border-b border-slate-200 bg-slate-50 p-4 sm:flex-row sm:items-center sm:justify-between">
+    <div className="overflow-hidden rounded-sm border border-slate-300 bg-white shadow-sm">
+      <div className="flex flex-col gap-2 border-b border-slate-200 bg-white px-3 py-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <p className="text-base font-bold text-slate-950">ICU command matrix</p>
-          <p className="mt-1 text-xs text-slate-500">Patient-wise dashboard with hospital traffic-light colours and clickable workflow cells.</p>
+          <p className="text-sm font-bold text-slate-950">ICU command matrix</p>
+          <p className="mt-0.5 text-xs text-slate-500">Patient-wise compact monitor grid.</p>
         </div>
-        <DashboardLegend />
+        <IcuLegend />
       </div>
-      <div className="overflow-auto">
-        <table className="w-full min-w-[1380px] border-collapse text-sm">
-          <thead>
-            <tr className="border-b border-slate-200 bg-slate-100 text-xs uppercase tracking-wide text-slate-600">
-              <th className="sticky left-0 z-30 min-w-[230px] border-r border-slate-200 bg-slate-100 px-4 py-3 text-left">Patient</th>
-              <th className="min-w-[240px] border-r border-slate-200 px-4 py-3 text-left">Diagnosis</th>
+      <div className="max-h-[620px] overflow-auto">
+        <table className="w-full min-w-[1360px] border-collapse bg-white text-sm">
+          <thead className="sticky top-0 z-20">
+            <tr className="border-b border-slate-300 bg-white text-[11px] uppercase text-sky-700">
+              <th className="sticky left-0 z-40 min-w-[190px] bg-white px-3 py-3 text-left">Patient</th>
+              <th className="min-w-[230px] px-3 py-3 text-left">Diagnosis</th>
               {columns.map((column) => (
-                <th className="min-w-[118px] border-r border-slate-200 px-3 py-3 text-center last:border-r-0" key={column}>{column}</th>
+                <th className="min-w-[112px] px-3 py-3 text-center" key={column}>{icuColumnLabel(column)}</th>
               ))}
             </tr>
           </thead>
@@ -545,35 +2548,22 @@ function DashboardMatrix({ patients, density }: { patients: IcuPatient[]; densit
             {patients.map((patient) => {
               const rowCells = buildDashboardCells(patient);
               return (
-                <tr className="border-b border-slate-200 last:border-b-0 hover:bg-slate-50" key={patient.id}>
-                  <td className="sticky left-0 z-20 border-r border-slate-200 bg-white px-4 py-3 align-top shadow-[8px_0_16px_-16px_rgba(15,23,42,0.5)]">
-                    <div className={cn("rounded-md border p-3", dashboardPatientSurfaceClass(patient))}>
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <p className="text-sm font-bold text-slate-950">{patient.bedNo}</p>
-                          <p className="mt-1 text-sm font-semibold text-slate-800">{patient.patientName}</p>
-                          <p className="mt-1 text-xs text-slate-500">{patient.mrn} | {patient.ageGender}</p>
-                        </div>
-                        <span className={cn("h-3 w-3 shrink-0 rounded-full", dashboardToneDotClass(patientDashboardTone(patient)))} />
-                      </div>
-                      <div className="mt-3 flex flex-wrap gap-2">
-                        <span className={cn("rounded-full border px-2 py-0.5 text-[11px] font-bold", dashboardTonePillClass(patientDashboardTone(patient)))}>Score {patient.criticalityScore}</span>
-                        <Link className="rounded-full border border-sky-300 bg-white px-2 py-0.5 text-[11px] font-bold text-sky-700" href={`/nursing-icu/patient-board?patient=${patient.id}&view=smart-bed`}>Open</Link>
-                      </div>
-                    </div>
+                <tr className="border-b border-slate-200 last:border-b-0 hover:bg-sky-50/40" key={patient.id}>
+                  <td className="sticky left-0 z-10 bg-white px-3 py-2 align-middle shadow-[8px_0_14px_-15px_rgba(15,23,42,0.45)]">
+                    <IcuMonitorPatientCell patient={patient} />
                   </td>
-                  <td className="border-r border-slate-200 px-4 py-3 align-top">
-                    <div className="min-h-20">
+                  <td className="px-4 py-2 align-middle">
+                    <div className="min-h-16">
                       <p className="text-sm font-semibold text-slate-900">{patient.diagnosis}</p>
-                      <p className="mt-2 text-xs text-slate-500">{patient.unit} | {patient.assignedWardNurse}</p>
+                      <p className="mt-1 text-xs text-slate-500">{patient.unit} | {patient.assignedWardNurse}</p>
                       <span className={cn("mt-2 inline-flex rounded-full border px-2 py-0.5 text-[11px] font-bold", dashboardTonePillClass(patientDashboardTone(patient)))}>{patient.currentStatus}</span>
                     </div>
                   </td>
                   {columns.map((column) => {
                     const cell = rowCells[column];
                     return (
-                      <td className={cn("border-r border-slate-200 px-2 align-middle text-center last:border-r-0", density === "Compact" ? "py-2" : "py-4")} key={`${patient.id}-${column}`}>
-                        <DashboardMatrixCell cell={cell} patient={patient} />
+                      <td className={cn("px-2 align-middle text-center", density === "Compact" ? "py-2" : "py-3")} key={`${patient.id}-${column}`}>
+                        <DashboardMatrixCell cell={cell} column={column} patient={patient} />
                       </td>
                     );
                   })}
@@ -582,7 +2572,7 @@ function DashboardMatrix({ patients, density }: { patients: IcuPatient[]; densit
             })}
             {!patients.length ? (
               <tr>
-                <td className="px-4 py-10 text-center text-sm text-slate-500" colSpan={12}>No ICU patient matched the selected dashboard filters.</td>
+                <td className="px-4 py-10 text-center text-sm text-slate-500" colSpan={columns.length + 2}>No ICU patient matched the selected dashboard filters.</td>
               </tr>
             ) : null}
           </tbody>
@@ -592,34 +2582,76 @@ function DashboardMatrix({ patients, density }: { patients: IcuPatient[]; densit
   );
 }
 
-function DashboardMatrixCell({ cell, patient }: { cell: DashboardCell; patient: IcuPatient }) {
-  const Icon = cell.icon;
-  const content = (
-    <>
-      <span className={cn("mx-auto flex h-9 w-9 items-center justify-center rounded-full text-white shadow-sm", dashboardToneSolidClass(cell.tone))}>
-        <Icon className="h-4 w-4" />
-      </span>
-      <span className="mt-2 block text-xs font-bold leading-tight">{cell.title}</span>
-      <span className="mt-1 block text-[11px] leading-tight opacity-80">{cell.detail}</span>
-    </>
+function IcuMonitorPatientCell({ patient }: { patient: IcuPatient }) {
+  const tone = patientDashboardTone(patient);
+  return (
+    <div className="relative min-h-24 rounded-md bg-white px-3 py-2">
+      <span className={cn("absolute right-3 top-3 h-2.5 w-2.5 rounded-full", dashboardToneDotClass(tone))} />
+      <p className="text-xs font-bold text-slate-950">{patient.bedNo}</p>
+      <p className="mt-1 text-sm font-bold text-slate-950">{patient.patientName}</p>
+      <p className="mt-1 text-xs text-slate-500">{patient.mrn} | {patient.ageGender}</p>
+      <div className="mt-2 flex flex-wrap gap-2">
+        <span className={cn("rounded-full border px-2 py-0.5 text-[11px] font-bold", dashboardTonePillClass(tone))}>Score {patient.criticalityScore}</span>
+        <Link className="rounded-full border border-sky-300 bg-sky-50 px-2 py-0.5 text-[11px] font-bold text-sky-700 hover:bg-sky-100" href={`/nursing-icu/patient-board?patient=${patient.id}&view=smart-bed`}>Open</Link>
+      </div>
+    </div>
   );
+}
+
+function DashboardMatrixCell({ cell, column, patient }: { cell: DashboardCell; column: string; patient: IcuPatient }) {
+  const Icon = cell.icon;
+  const isAction = ["Medication", "Lab", "Radiology", "Shift", "Events", "Collaborate"].includes(column);
 
   if (cell.route) {
     return (
-      <Link className={cn("block min-h-24 rounded-md border p-2 text-center transition hover:-translate-y-0.5 hover:shadow-sm", dashboardToneSurfaceClass(cell.tone))} href={cell.route}>
-        {content}
+      <Link className="inline-flex w-full justify-center" href={cell.route} title={`${icuColumnLabel(column)} - ${cell.title}`}>
+        {isAction ? <IcuActionCircleButton cell={cell} column={column} icon={Icon} /> : <VitalTrafficPill cell={cell} icon={Icon} />}
       </Link>
     );
   }
 
   return (
     <button
-      className={cn("block min-h-24 w-full rounded-md border p-2 text-center transition hover:-translate-y-0.5 hover:shadow-sm", dashboardToneSurfaceClass(cell.tone))}
+      className="inline-flex w-full justify-center"
       type="button"
       onClick={() => toast.info(`${cell.title} opened for ${patient.bedNo}`)}
+      title={`${icuColumnLabel(column)} - ${cell.title}`}
     >
-      {content}
+      {isAction ? <IcuActionCircleButton cell={cell} column={column} icon={Icon} /> : <VitalTrafficPill cell={cell} icon={Icon} />}
     </button>
+  );
+}
+
+function VitalTrafficPill({ cell, icon: Icon }: { cell: DashboardCell; icon: typeof Activity }) {
+  return (
+    <span className="flex min-h-16 w-full min-w-24 flex-col items-center justify-center">
+      <span className={cn("inline-flex h-9 min-w-24 items-center justify-center gap-1 rounded-full px-3 text-xs font-black text-white shadow-[0_3px_8px_rgba(0,0,0,0.28)]", dashboardToneSolidClass(cell.tone))}>
+        <Icon className="h-3.5 w-3.5" />
+        {cell.title}
+      </span>
+      <span className="mt-1 block max-w-28 text-center text-[11px] leading-tight text-slate-700">{cell.detail}</span>
+    </span>
+  );
+}
+
+function IcuActionCircleButton({ cell, column, icon: Icon }: { cell: DashboardCell; column: string; icon: typeof Activity }) {
+  const actionClass = column === "Events"
+    ? "bg-red-600 hover:bg-red-700"
+    : column === "Collaborate"
+      ? "bg-sky-600 hover:bg-sky-700"
+      : cell.tone === "danger" || cell.tone === "critical"
+        ? "bg-red-600 hover:bg-red-700"
+        : cell.tone === "warning"
+          ? "bg-amber-500 hover:bg-amber-600"
+          : "bg-slate-700 hover:bg-slate-800";
+  return (
+    <span className="flex min-h-16 w-full min-w-24 flex-col items-center justify-center">
+      <span className={cn("inline-flex h-9 w-9 items-center justify-center rounded-full text-white shadow-[0_3px_8px_rgba(0,0,0,0.28)] transition", actionClass)}>
+        <Icon className="h-4 w-4" />
+      </span>
+      <span className="mt-1 block text-center text-xs font-bold leading-tight text-slate-800">{cell.title}</span>
+      <span className="mt-0.5 block max-w-24 text-center text-[11px] leading-tight text-slate-500">{cell.detail}</span>
+    </span>
   );
 }
 
@@ -693,12 +2725,66 @@ function DashboardShiftPanel() {
   );
 }
 
+function DashboardOvernightEvents() {
+  const rows = [
+    { id: "night-001", time: "02:10", patient: "ICU-A01 - Aisha Khan", event: "SpO2 dropped to 90% with hypotension", source: "Vitals Chart", action: "Duty doctor informed, repeat vitals and sepsis review", tone: "critical" as DashboardCellTone },
+    { id: "night-002", time: "03:25", patient: "ICU-A02 - Rohan Das", event: "ABG requested after ventilator setting review", source: "ICU Monitor", action: "ABG pending in diagnostics queue", tone: "warning" as DashboardCellTone },
+    { id: "night-003", time: "04:40", patient: "ICU-B03 - Meera Sharma", event: "Neuro observation due with low GCS watch", source: "Nursing Station", action: "Hourly neuro checks continued", tone: "info" as DashboardCellTone },
+    { id: "night-004", time: "05:15", patient: "ICU-B04 - Kabir Ali", event: "Transfer readiness remained stable overnight", source: "Shift Handover", action: "Transfer checklist pending", tone: "success" as DashboardCellTone },
+  ];
+
+  return (
+    <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
+      <div className="rounded-md border border-slate-200 bg-white p-4 shadow-sm">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <p className="text-sm font-bold text-slate-950">Overnight deterioration & events</p>
+            <p className="mt-1 text-xs text-slate-500">For ICU head rounds priority: overnight alerts, labs, tasks, and escalation actions.</p>
+          </div>
+          <DashboardLegend />
+        </div>
+        <div className="mt-4 grid gap-2 lg:grid-cols-2">
+          {rows.map((row) => (
+            <div className={cn("rounded-md border p-3", dashboardToneSurfaceClass(row.tone))} key={row.id}>
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-sm font-bold">{row.patient}</p>
+                  <p className="mt-1 text-xs">{row.time} | {row.source}</p>
+                </div>
+                <span className={cn("h-2.5 w-2.5 shrink-0 rounded-full", dashboardToneDotClass(row.tone))} />
+              </div>
+              <p className="mt-3 text-sm font-semibold">{row.event}</p>
+              <p className="mt-1 text-xs">{row.action}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div className="rounded-md border border-slate-200 bg-white p-4 shadow-sm">
+        <div>
+          <p className="text-sm font-bold text-slate-950">One-minute round prep</p>
+          <p className="mt-1 text-xs text-slate-500">What ICU head should see before walking into rounds.</p>
+        </div>
+        <div className="mt-4 space-y-2">
+          <InfoLine label="Deteriorated overnight" value="2 patients" />
+          <InfoLine label="Critical lab watch" value="1 pending review" />
+          <InfoLine label="Escalated patients" value="2 active" />
+          <InfoLine label="Round priority" value="ICU-A01, ICU-A02, ICU-B03" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function DashboardLegend() {
+  return <IcuLegend />;
+}
+
+function IcuLegend() {
   const items: Array<[string, DashboardCellTone]> = [["Critical", "critical"], ["Warning", "warning"], ["Normal", "success"], ["Action", "info"], ["Ventilator", "purple"]];
   return (
     <div className="flex flex-wrap gap-2">
       {items.map(([label, tone]) => (
-        <span className={cn("inline-flex items-center gap-1.5 rounded-full border px-2 py-1 text-[11px] font-bold", dashboardTonePillClass(tone))} key={label}>
+        <span className={cn("inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-bold", dashboardTonePillClass(tone))} key={label}>
           <span className={cn("h-2 w-2 rounded-full", dashboardToneDotClass(tone))} />
           {label}
         </span>
@@ -792,15 +2878,17 @@ function buildDashboardCells(patient: IcuPatient): Record<string, DashboardCell>
   };
 }
 
+function icuColumnLabel(column: string) {
+  if (column === "Lab") return "Lab Results";
+  if (column === "Shift") return "Shift Summary";
+  return column;
+}
+
 function patientDashboardTone(patient: IcuPatient): DashboardCellTone {
   if (patient.currentStatus === "Critical" || patient.criticalityScore >= 8) return "critical";
   if (patient.ventilatorStatus !== "Room air") return "purple";
   if (patient.currentStatus === "Ready for transfer") return "success";
   return "info";
-}
-
-function dashboardPatientSurfaceClass(patient: IcuPatient) {
-  return dashboardToneSurfaceClass(patientDashboardTone(patient));
 }
 
 function dashboardToneSurfaceClass(tone: DashboardCellTone) {
@@ -814,32 +2902,32 @@ function dashboardToneSurfaceClass(tone: DashboardCellTone) {
 }
 
 function dashboardTonePillClass(tone: DashboardCellTone) {
-  if (tone === "critical") return "border-red-300 bg-red-50 text-red-700";
-  if (tone === "danger") return "border-rose-300 bg-rose-50 text-rose-700";
-  if (tone === "warning") return "border-amber-300 bg-amber-50 text-amber-700";
-  if (tone === "success") return "border-emerald-300 bg-emerald-50 text-emerald-700";
-  if (tone === "purple") return "border-violet-300 bg-violet-50 text-violet-700";
-  if (tone === "muted") return "border-slate-300 bg-slate-50 text-slate-600";
-  return "border-sky-300 bg-sky-50 text-sky-700";
+  if (tone === "critical") return "border-red-500 bg-red-50 text-red-700";
+  if (tone === "danger") return "border-red-500 bg-red-50 text-red-700";
+  if (tone === "warning") return "border-orange-400 bg-orange-50 text-orange-700";
+  if (tone === "success") return "border-green-600 bg-green-50 text-green-700";
+  if (tone === "purple") return "border-violet-500 bg-violet-50 text-violet-700";
+  if (tone === "muted") return "border-slate-500 bg-slate-50 text-slate-700";
+  return "border-sky-500 bg-sky-50 text-sky-700";
 }
 
 function dashboardToneSolidClass(tone: DashboardCellTone) {
   if (tone === "critical") return "bg-red-600";
-  if (tone === "danger") return "bg-rose-600";
-  if (tone === "warning") return "bg-amber-500";
-  if (tone === "success") return "bg-emerald-600";
+  if (tone === "danger") return "bg-red-600";
+  if (tone === "warning") return "bg-orange-500";
+  if (tone === "success") return "bg-green-700";
   if (tone === "purple") return "bg-violet-600";
-  if (tone === "muted") return "bg-slate-500";
+  if (tone === "muted") return "bg-zinc-700";
   return "bg-sky-600";
 }
 
 function dashboardToneDotClass(tone: DashboardCellTone) {
   if (tone === "critical") return "bg-red-600";
-  if (tone === "danger") return "bg-rose-600";
-  if (tone === "warning") return "bg-amber-500";
-  if (tone === "success") return "bg-emerald-600";
+  if (tone === "danger") return "bg-red-600";
+  if (tone === "warning") return "bg-orange-500";
+  if (tone === "success") return "bg-green-700";
   if (tone === "purple") return "bg-violet-600";
-  if (tone === "muted") return "bg-slate-500";
+  if (tone === "muted") return "bg-zinc-700";
   return "bg-sky-600";
 }
 
@@ -2974,13 +5062,14 @@ function ClinicalMiniBadge({ label, value, tone }: { label: string; value: strin
 }
 
 function DoctorRoundQueuePanel({ activePatientId, mode, onSelectPatient }: { activePatientId: string; mode: DoctorRoundMode; onSelectPatient: (patientId: string) => void }) {
+  const roundQueue = buildDoctorRoundQueue(mode);
   const roster = Array.from(new Set(icuPatients.map((patient) => mode === "Admitting Doctor" ? patient.admittingDoctor : patient.dutyDoctor))).map((doctor) => {
     const patients = icuPatients.filter((patient) => (mode === "Admitting Doctor" ? patient.admittingDoctor : patient.dutyDoctor) === doctor);
     const alertCount = patients.reduce((sum, patient) => sum + icuAlerts.filter((alert) => alert.patientId === patient.id && alert.status !== "Resolved").length, 0);
     return { doctor, patients, alertCount };
   });
-  const criticalCount = icuPatients.filter((patient) => patient.criticalityScore >= 8 || patient.currentStatus === "Critical").length;
-  const pendingTasks = icuPatients.reduce((sum, patient) => sum + patient.pendingTasks, 0);
+  const criticalCount = roundQueue.filter((row) => row.patient.criticalityScore >= 8 || row.patient.currentStatus === "Critical").length;
+  const pendingTasks = roundQueue.reduce((sum, row) => sum + row.patient.pendingTasks, 0);
   const title = mode === "Admitting Doctor" ? "Admission queue" : "Daily round queue";
 
   return (
@@ -2988,30 +5077,32 @@ function DoctorRoundQueuePanel({ activePatientId, mode, onSelectPatient }: { act
       <div className="flex items-start justify-between gap-3 px-1 py-1">
         <div>
           <p className="text-sm font-bold text-slate-900">{title}</p>
-          <p className="mt-1 text-xs text-slate-500">Risk, alerts, doctor load, and pending work.</p>
+          <p className="mt-1 text-xs text-slate-500">Compact 20-30 patient round queue with overnight events, pending labs, and pending orders.</p>
         </div>
-        <span className="rounded-full border border-sky-200 bg-white px-2.5 py-1 text-xs font-bold text-sky-700">{icuPatients.length}</span>
+        <span className="rounded-full border border-sky-200 bg-white px-2.5 py-1 text-xs font-bold text-sky-700">{roundQueue.length}</span>
       </div>
 
       <div className="mt-3 grid items-start gap-3 xl:grid-cols-[minmax(0,1fr)_300px]">
-        <div className="grid gap-2 md:grid-cols-2 2xl:grid-cols-4">
-          {icuPatients.map((patient) => {
-            const openAlertCount = icuAlerts.filter((alert) => alert.patientId === patient.id && alert.status !== "Resolved").length;
+        <div className="max-h-[520px] overflow-auto rounded-md border border-slate-200 bg-white p-2">
+          <div className="grid gap-2 md:grid-cols-2 2xl:grid-cols-3">
+          {roundQueue.map((row) => {
+            const patient = row.patient;
+            const openAlertCount = row.alertCount;
             return (
               <button
                 className={cn(
-                  "relative w-full overflow-hidden rounded-md border bg-white p-3 pt-4 text-left shadow-sm transition hover:-translate-y-0.5",
+                  "relative w-full overflow-hidden rounded-md border bg-white p-2.5 pt-4 text-left shadow-sm transition hover:-translate-y-0.5",
                   doctorPatientCardClass(patient, openAlertCount),
                   patient.id === activePatientId ? "ring-2 ring-sky-500 ring-offset-1" : "",
                 )}
-                key={patient.id}
+                key={row.id}
                 type="button"
                 onClick={() => onSelectPatient(patient.id)}
               >
                 <div className={cn("absolute inset-x-0 top-0 h-1.5", doctorPatientRailClass(patient, openAlertCount))} />
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
-                    <p className="text-sm font-bold text-slate-950">{patient.bedNo} - {patient.patientName}</p>
+                    <p className="text-sm font-bold text-slate-950">{row.roundNo}. {patient.bedNo} - {patient.patientName}</p>
                     <p className="mt-1 line-clamp-2 text-xs text-slate-600">{patient.diagnosis}</p>
                   </div>
                   <span className={cn("shrink-0 rounded-full border px-2 py-0.5 text-[11px] font-bold", doctorPatientStatusClass(patient, openAlertCount))}>{patient.currentStatus}</span>
@@ -3019,14 +5110,20 @@ function DoctorRoundQueuePanel({ activePatientId, mode, onSelectPatient }: { act
                 <p className="mt-2 truncate text-[11px] font-semibold text-slate-500">
                   {mode === "Admitting Doctor" ? patient.admittingDoctor : patient.dutyDoctor}
                 </p>
-                <div className="mt-3 grid grid-cols-3 gap-2">
+                <div className="mt-2 grid grid-cols-3 gap-2">
                   <ClinicalMiniBadge label="Score" value={`${patient.criticalityScore}`} tone={patient.criticalityScore >= 8 ? "critical" : patient.criticalityScore >= 6 ? "warning" : "success"} />
                   <ClinicalMiniBadge label="Alerts" value={`${openAlertCount}`} tone={openAlertCount ? "danger" : "success"} />
                   <ClinicalMiniBadge label="Tasks" value={`${patient.pendingTasks}`} tone={patient.pendingTasks ? "warning" : "success"} />
                 </div>
+                <div className="mt-2 grid gap-1 text-[11px] text-slate-600">
+                  <span>Overnight: {row.overnightEvent}</span>
+                  <span>Labs: {row.pendingLabs}</span>
+                  <span>Orders: {row.pendingOrders}</span>
+                </div>
               </button>
             );
           })}
+          </div>
         </div>
 
         <div className="space-y-3">
@@ -3051,7 +5148,7 @@ function DoctorRoundQueuePanel({ activePatientId, mode, onSelectPatient }: { act
           </div>
 
           <div className="grid grid-cols-3 gap-2">
-            <ClinicalMiniBadge label="Queue" value={`${icuPatients.length}`} tone="info" />
+            <ClinicalMiniBadge label="Queue" value={`${roundQueue.length}`} tone="info" />
             <ClinicalMiniBadge label="Critical" value={`${criticalCount}`} tone={criticalCount ? "danger" : "success"} />
             <ClinicalMiniBadge label="Tasks" value={`${pendingTasks}`} tone={pendingTasks ? "warning" : "success"} />
           </div>
@@ -3059,6 +5156,29 @@ function DoctorRoundQueuePanel({ activePatientId, mode, onSelectPatient }: { act
       </div>
     </section>
   );
+}
+
+function buildDoctorRoundQueue(mode: DoctorRoundMode) {
+  const overnightEvents = ["SpO2 dip", "ABG follow-up", "No major event", "Transfer stable", "Urine low", "Fever spike"];
+  const pendingLabs = ["Lactate", "ABG", "CBC", "Culture", "Electrolytes", "None"];
+  const pendingOrders = ["Medication review", "Ventilator order", "Fluid plan", "Transfer order", "Nursing task", "None"];
+  return Array.from({ length: mode === "Admitting Doctor" ? 12 : 24 }, (_, index) => {
+    const patient = icuPatients[index % icuPatients.length];
+    const alertCount = icuAlerts.filter((alert) => alert.patientId === patient.id && alert.status !== "Resolved").length + (index % 7 === 0 ? 1 : 0);
+    return {
+      id: `${mode}-${patient.id}-${index}`,
+      roundNo: index + 1,
+      patient,
+      alertCount,
+      overnightEvent: overnightEvents[index % overnightEvents.length],
+      pendingLabs: pendingLabs[index % pendingLabs.length],
+      pendingOrders: pendingOrders[index % pendingOrders.length],
+    };
+  }).sort((first, second) => {
+    const firstScore = first.patient.criticalityScore + first.alertCount * 2 + first.patient.pendingTasks / 2;
+    const secondScore = second.patient.criticalityScore + second.alertCount * 2 + second.patient.pendingTasks / 2;
+    return secondScore - firstScore;
+  }).map((row, index) => ({ ...row, roundNo: index + 1 }));
 }
 
 function doctorPatientCardClass(patient: IcuPatient, openAlertCount: number) {

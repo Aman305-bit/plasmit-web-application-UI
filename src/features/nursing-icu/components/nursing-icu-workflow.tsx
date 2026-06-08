@@ -166,26 +166,344 @@ type MedicationScenario = {
 };
 
 type AdmissionDraft = {
+  patientId: string;
   patientName: string;
   mrn: string;
+  icuAdmissionNo: string;
   ageGender: string;
   source: string;
+  currentLocation: string;
+  patientStatus: string;
+  sourceDetail: string;
+  handoverBy: string;
   diagnosis: string;
   condition: string;
   bedNo: string;
   unit: string;
   nurse: string;
   doctor: string;
+  admittingTeam: string;
+  acceptanceStatus: string;
   ventilator: string;
   devices: string;
   medication: string;
   risk: string;
   isolation: string;
+  readiness: string;
   notes: string;
 };
 
 const admissionSteps = ["Patient", "Condition", "Bed & Device", "Medication", "Review"];
+const admissionSourceOptions = ["Emergency", "Emergency direct ICU", "General ward", "Post-surgical unit", "HDU step-up", "External hospital transfer", "Direct ICU admission"];
+const admittingTeamOptions = ["ER + ICU rapid admit team", "Medical ICU admitting team", "Cardiac ICU admitting team", "Neuro ICU admitting team", "Surgical ICU admitting team", "Isolation ICU admitting team", "External transfer receive team"];
+const admissionRequiredFields: Array<keyof AdmissionDraft> = [
+  "patientId",
+  "patientName",
+  "mrn",
+  "icuAdmissionNo",
+  "ageGender",
+  "source",
+  "currentLocation",
+  "patientStatus",
+  "sourceDetail",
+  "handoverBy",
+  "diagnosis",
+  "condition",
+  "bedNo",
+  "unit",
+  "nurse",
+  "doctor",
+  "admittingTeam",
+  "acceptanceStatus",
+  "ventilator",
+  "devices",
+  "medication",
+  "risk",
+  "isolation",
+  "readiness",
+];
 const allNurses = Array.from(new Set(icuPatients.flatMap((patient) => [patient.assignedUnitNurse, patient.assignedWardNurse])));
+
+type AdmissionPatientState = "ICU request pending" | "Already admitted" | "ER stabilization" | "Emergency direct ICU" | "Ward deterioration" | "Post-op recovery" | "External transfer accepted" | "Planned ICU";
+
+type AdmissionPatientCandidate = {
+  id: string;
+  patientName: string;
+  mrn: string;
+  ageGender: string;
+  source: string;
+  currentLocation: string;
+  patientStatus: AdmissionPatientState;
+  diagnosis: string;
+  condition: string;
+  unit: string;
+  bedNo: string;
+  nurse: string;
+  doctor: string;
+  admittingTeam: string;
+  ventilator: string;
+  devices: string;
+  medication: string;
+  risk: string;
+  isolation: string;
+  sourceDetail: string;
+  handoverBy: string;
+  acceptanceStatus: string;
+  notes: string;
+  duplicateBlock?: boolean;
+};
+
+type IcuAdmissionBedOption = {
+  bedNo: string;
+  unit: string;
+  status: "Available" | "Cleaning" | "Occupied" | "Transfer pending" | "Isolation available" | "Reserved";
+  capability: string;
+  note: string;
+};
+
+type AdmissionSourceScenario = {
+  title: string;
+  detailLabel: string;
+  handoverLabel: string;
+  readinessFocus: string[];
+  risks: string[];
+};
+
+const admissionPatientCandidates: AdmissionPatientCandidate[] = [
+  ...icuPatients.map((patient) => ({
+    id: patient.id,
+    patientName: patient.patientName,
+    mrn: patient.mrn,
+    ageGender: patient.ageGender,
+    source: patient.admissionSource,
+    currentLocation: `${patient.bedNo} | ${patient.unit}`,
+    patientStatus: "Already admitted" as const,
+    diagnosis: patient.diagnosis,
+    condition: patient.currentStatus,
+    unit: patient.unit,
+    bedNo: patient.bedNo,
+    nurse: patient.assignedUnitNurse,
+    doctor: patient.admittingDoctor,
+    admittingTeam: "Existing ICU care team",
+    ventilator: patient.ventilatorStatus,
+    devices: "Monitor, oxygen, infusion pump mapped",
+    medication: "Continue active ICU medication plan",
+    risk: patient.criticalityScore >= 8 ? "Critical" : "High",
+    isolation: patient.alerts.some((alert) => alert.toLowerCase().includes("infection")) ? "Contact precaution" : "No",
+    sourceDetail: `Current ICU admission active since ${patient.admissionTime}`,
+    handoverBy: patient.assignedWardNurse,
+    acceptanceStatus: "Accepted",
+    notes: "Duplicate ICU admission should be blocked; open current admission or transfer workflow.",
+    duplicateBlock: true,
+  })),
+  {
+    id: "admit-er-direct-001",
+    patientName: "Samar Ali",
+    mrn: "PLH-ER-260608-0098",
+    ageGender: "34/M",
+    source: "Emergency direct ICU",
+    currentLocation: "Emergency triage red zone",
+    patientStatus: "Emergency direct ICU",
+    diagnosis: "Acute respiratory failure requiring immediate ICU bed",
+    condition: "Critical",
+    unit: "Medical ICU",
+    bedNo: "ICU-C05",
+    nurse: "Unit Nurse Priya",
+    doctor: "Dr. Sameer Mehta",
+    admittingTeam: "ER + ICU rapid admit team",
+    ventilator: "Invasive ventilation",
+    devices: "Monitor, ventilator, suction, infusion pump, emergency trolley",
+    medication: "Rapid sequence medication, vasopressor readiness, antibiotic stat dose",
+    risk: "Critical",
+    isolation: "No",
+    sourceDetail: "Emergency red-zone patient bypassing ward/admission queue for direct ICU receive.",
+    handoverBy: "ER Duty Doctor + ER Nurse Ritu",
+    acceptanceStatus: "Accepted",
+    notes: "Direct ICU admit: bed, ventilator, suction, and rapid response team must be ready before physical transfer.",
+  },
+  {
+    id: "admit-er-001",
+    patientName: "Farhan Sheikh",
+    mrn: "PLH-ER-260608-0012",
+    ageGender: "47/M",
+    source: "Emergency",
+    currentLocation: "ER Bay 2",
+    patientStatus: "ER stabilization",
+    diagnosis: "Septic shock with escalating oxygen requirement",
+    condition: "Critical",
+    unit: "Medical ICU",
+    bedNo: "ICU-C05",
+    nurse: "Unit Nurse Priya",
+    doctor: "Dr. Sameer Mehta",
+    admittingTeam: "ER + ICU rapid admit team",
+    ventilator: "NIV support",
+    devices: "Monitor, oxygen, suction, infusion pump",
+    medication: "Antibiotics, IV fluids, vasopressor readiness",
+    risk: "Critical",
+    isolation: "No",
+    sourceDetail: "ER stabilization complete; MAP support and oxygen escalation documented.",
+    handoverBy: "ER Nurse Ritu",
+    acceptanceStatus: "Accepted",
+    notes: "Receive in Medical ICU with sepsis bundle and hourly urine output.",
+  },
+  {
+    id: "admit-ward-001",
+    patientName: "Nisha Verma",
+    mrn: "PLH-IPD-260608-0041",
+    ageGender: "63/F",
+    source: "General ward",
+    currentLocation: "Medical Ward W-12",
+    patientStatus: "Ward deterioration",
+    diagnosis: "Pneumonia with SpO2 drop and hypotension",
+    condition: "Critical",
+    unit: "Medical ICU",
+    bedNo: "ICU-C06",
+    nurse: "Unit Nurse Sana",
+    doctor: "Dr. Aman Verma",
+    admittingTeam: "Medical ICU admitting team",
+    ventilator: "Oxygen mask",
+    devices: "Monitor, oxygen, suction",
+    medication: "Antibiotic escalation, nebulization, fluids review",
+    risk: "High",
+    isolation: "Contact precaution",
+    sourceDetail: "Ward escalation after persistent SpO2 below target despite oxygen support.",
+    handoverBy: "Ward Nurse Kavita",
+    acceptanceStatus: "Accepted",
+    notes: "Ward-to-ICU step-up; review ABG and repeat vitals on arrival.",
+  },
+  {
+    id: "admit-ot-001",
+    patientName: "Dev Malhotra",
+    mrn: "PLH-OT-260608-0029",
+    ageGender: "58/M",
+    source: "Post-surgical unit",
+    currentLocation: "OT Recovery 1",
+    patientStatus: "Post-op recovery",
+    diagnosis: "Post laparotomy monitoring with vasopressor watch",
+    condition: "Ventilated",
+    unit: "Surgical ICU",
+    bedNo: "ICU-S02",
+    nurse: "Unit Nurse Meera",
+    doctor: "Dr. Neha Malik",
+    admittingTeam: "Surgical ICU admitting team",
+    ventilator: "Invasive ventilation",
+    devices: "Monitor, ventilator, infusion pump, drain chart",
+    medication: "Analgesia, antibiotics, vasopressor infusion",
+    risk: "Critical",
+    isolation: "No",
+    sourceDetail: "Anesthesia handover pending: airway, blood loss, drain, and vasopressor plan.",
+    handoverBy: "OT Nurse Sanjana",
+    acceptanceStatus: "Pending ICU doctor acceptance",
+    notes: "Keep ventilator and pump ready before transfer from OT recovery.",
+  },
+  {
+    id: "admit-external-001",
+    patientName: "Reema Joshi",
+    mrn: "PLH-EXT-260608-0007",
+    ageGender: "39/F",
+    source: "External hospital transfer",
+    currentLocation: "Ambulance ETA 25 min",
+    patientStatus: "External transfer accepted",
+    diagnosis: "Acute stroke observation with low GCS",
+    condition: "Critical",
+    unit: "Neuro ICU",
+    bedNo: "ICU-N03",
+    nurse: "Unit Nurse Sana",
+    doctor: "Dr. Imran Shah",
+    admittingTeam: "Neuro ICU admitting team",
+    ventilator: "Oxygen mask",
+    devices: "Monitor, oxygen, suction, neuro observation chart",
+    medication: "Mannitol availability check, seizure precautions",
+    risk: "Critical",
+    isolation: "No",
+    sourceDetail: "Referral accepted by neuro ICU; transfer note and imaging CD expected.",
+    handoverBy: "Referring hospital coordinator",
+    acceptanceStatus: "Accepted",
+    notes: "Prepare neuro ICU receive and document external transfer handover.",
+  },
+];
+
+const icuAdmissionBedOptions: IcuAdmissionBedOption[] = [
+  { bedNo: "ICU-C05", unit: "Medical ICU", status: "Available", capability: "Monitor + oxygen + suction", note: "Ready for ER/ward ICU admission." },
+  { bedNo: "ICU-C06", unit: "Medical ICU", status: "Cleaning", capability: "Monitor + oxygen", note: "Housekeeping clearance pending." },
+  { bedNo: "ICU-A01", unit: "Medical ICU", status: "Occupied", capability: "NIV support", note: "Aisha Khan currently admitted." },
+  { bedNo: "ICU-B04", unit: "Medical ICU", status: "Transfer pending", capability: "Monitor-only bed", note: "Transfer checklist not complete." },
+  { bedNo: "ICU-N03", unit: "Neuro ICU", status: "Available", capability: "Neuro monitor + oxygen", note: "Ready for stroke/neuro observation." },
+  { bedNo: "ICU-S02", unit: "Surgical ICU", status: "Reserved", capability: "Ventilator + pump + drain chart", note: "Reserved until doctor acceptance is completed." },
+  { bedNo: "ICU-ISO1", unit: "Isolation ICU", status: "Isolation available", capability: "Negative pressure + PPE station", note: "Use for contact/airborne isolation." },
+];
+
+const admissionReadinessItems = [
+  "Patient ID band verified",
+  "Allergy band / alert checked",
+  "Bedside monitor ready",
+  "Oxygen and suction ready",
+  "Ventilator / NIV readiness checked",
+  "Infusion pump and emergency drugs ready",
+  "Initial vitals planned",
+  "Handover note received",
+];
+
+const admissionSourceScenarios: Record<string, AdmissionSourceScenario> = {
+  Emergency: {
+    title: "ER to ICU",
+    detailLabel: "ER stabilization summary",
+    handoverLabel: "ER handover by",
+    readinessFocus: ["oxygen/suction", "vasopressor readiness", "sepsis/shock bundle", "initial vitals"],
+    risks: ["unstable vitals", "unknown allergy", "pending labs", "family consent in progress"],
+  },
+  "Emergency direct ICU": {
+    title: "Emergency direct ICU admission",
+    detailLabel: "Direct ICU emergency reason",
+    handoverLabel: "ER rapid handover by",
+    readinessFocus: ["ICU bed before paperwork", "ventilator/suction ready", "rapid response team", "stat medication and consent"],
+    risks: ["unstable airway", "identity pending", "no ward handover", "family consent after stabilization"],
+  },
+  "General ward": {
+    title: "Ward to ICU step-up",
+    detailLabel: "Deterioration reason",
+    handoverLabel: "Ward handover by",
+    readinessFocus: ["transfer checklist", "ward medication reconciliation", "repeat vitals", "doctor escalation note"],
+    risks: ["SpO2 drop", "BP low", "GCS change", "delayed transport"],
+  },
+  "Post-surgical unit": {
+    title: "OT/Post-op to ICU",
+    detailLabel: "Surgery/anesthesia handover",
+    handoverLabel: "OT handover by",
+    readinessFocus: ["ventilator", "drain chart", "blood loss note", "analgesia/vasopressor plan"],
+    risks: ["airway risk", "bleeding", "post-op shock", "anesthesia note pending"],
+  },
+  "HDU step-up": {
+    title: "HDU to ICU",
+    detailLabel: "HDU escalation reason",
+    handoverLabel: "HDU handover by",
+    readinessFocus: ["oxygen escalation", "vasopressor need", "monitor continuity", "repeat ABG"],
+    risks: ["increasing oxygen demand", "renal watch", "fluid overload", "line access issue"],
+  },
+  "External hospital transfer": {
+    title: "External hospital transfer",
+    detailLabel: "Referral / ambulance summary",
+    handoverLabel: "Transfer handover by",
+    readinessFocus: ["acceptance note", "ambulance ETA", "outside reports", "receive team alert"],
+    risks: ["identity mismatch", "missing imaging", "ventilator during transfer", "bed hold time"],
+  },
+  "Direct ICU admission": {
+    title: "Planned/direct ICU admission",
+    detailLabel: "Planned ICU indication",
+    handoverLabel: "Admission coordinator",
+    readinessFocus: ["bed reservation", "insurance/consent", "doctor order", "nurse receive checklist"],
+    risks: ["billing hold", "late arrival", "bed reservation expiry", "procedure timing"],
+  },
+};
+const admissionHandoverOptions: Record<string, string[]> = {
+  Emergency: ["ER Nurse Ritu", "ER Duty Doctor + ER Nurse Ritu", "ER Charge Nurse Pooja", "Emergency Desk Coordinator"],
+  "Emergency direct ICU": ["ER Duty Doctor + ER Nurse Ritu", "ER Charge Nurse Pooja + ICU Doctor", "Code Blue Team Lead", "Emergency Desk Coordinator"],
+  "General ward": ["Ward Nurse Kavita", "Ward Nurse Arjun", "Ward Doctor + Ward Nurse", "Floor Coordinator"],
+  "Post-surgical unit": ["OT Nurse Sanjana", "Anesthetist + OT Nurse", "Recovery Nurse Lead", "Surgical Team Coordinator"],
+  "HDU step-up": ["HDU Nurse Lead", "HDU Duty Doctor + Nurse", "Step-up Coordinator", "Respiratory Therapist"],
+  "External hospital transfer": ["Referring hospital coordinator", "Ambulance paramedic", "External hospital duty doctor", "Transfer desk coordinator"],
+  "Direct ICU admission": ["Admission coordinator", "ICU duty doctor", "Billing + admission desk", "Consultant secretary"],
+};
 const alertStatusFlow: WorkflowAlertStatus[] = ["New", "Acknowledged", "Assigned", "Resolved", "Closed"];
 const medicationStatuses: Array<"All status" | WorkflowMedicationStatus> = ["All status", "Due", "Late", "Upcoming", "Administered", "Held", "Skipped", "Missed", "Refused", "Running", "Paused", "Stopped"];
 const medicationDepartments: MedicationDepartment[] = ["ICU", "Emergency", "Cardiology", "Neurology", "Pediatrics", "Surgery", "Anesthesia"];
@@ -268,24 +586,182 @@ const deviceRows = [
   { id: "dev-004", bedNo: "ICU-B04", patientName: "Kabir Ali", monitor: "Online", ventilator: "Room air", infusionPump: "Not mapped", lastData: "3 min ago", signal: "Review" },
 ];
 
-const emptyAdmissionDraft: AdmissionDraft = {
-  patientName: "",
-  mrn: "",
-  ageGender: "",
-  source: "Emergency",
-  diagnosis: "",
-  condition: "Critical",
-  bedNo: "ICU-C05",
-  unit: "Medical ICU",
-  nurse: "Unit Nurse Priya",
-  doctor: "Dr. Sameer Mehta",
-  ventilator: "NIV support",
-  devices: "Monitor, infusion pump",
-  medication: "Antibiotics, fluids, vasopressor review",
-  risk: "High",
-  isolation: "No",
-  notes: "",
-};
+function compactDateStamp(date = new Date()) {
+  const year = String(date.getFullYear()).slice(-2);
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}${month}${day}`;
+}
+
+function admissionSequence(date = new Date()) {
+  return String(date.getTime()).slice(-4).padStart(4, "0");
+}
+
+function generateIcuMrn(source: string, date = new Date()) {
+  const prefixMap: Record<string, string> = {
+    Emergency: "PLH-ER",
+    "Emergency direct ICU": "PLH-ERD",
+    "General ward": "PLH-IPD",
+    "Post-surgical unit": "PLH-OT",
+    "HDU step-up": "PLH-HDU",
+    "External hospital transfer": "PLH-EXT",
+    "Direct ICU admission": "PLH-ICU",
+    "Unknown emergency patient": "TEMP-ICU",
+  };
+  return `${prefixMap[source] ?? "PLH-ICU"}-${compactDateStamp(date)}-${admissionSequence(date)}`;
+}
+
+function generateIcuAdmissionNo(date = new Date()) {
+  return `ICU-ADM-${compactDateStamp(date)}-${admissionSequence(date)}`;
+}
+
+function generatedAdmissionIdentity(source: string) {
+  const date = new Date();
+  return {
+    mrn: generateIcuMrn(source, date),
+    icuAdmissionNo: generateIcuAdmissionNo(date),
+  };
+}
+
+function createEmptyAdmissionDraft(): AdmissionDraft {
+  const candidate = admissionPatientCandidates.find((patient) => !patient.duplicateBlock) ?? admissionPatientCandidates[0];
+  const source = candidate?.source ?? "Emergency";
+  return {
+    patientId: candidate?.id ?? "",
+    patientName: candidate?.patientName ?? "",
+    mrn: candidate?.mrn || generatedAdmissionIdentity(source).mrn,
+    icuAdmissionNo: generatedAdmissionIdentity(source).icuAdmissionNo,
+    ageGender: candidate?.ageGender ?? "",
+    source,
+    currentLocation: candidate?.currentLocation ?? "",
+    patientStatus: candidate?.patientStatus ?? "ICU request pending",
+    sourceDetail: candidate?.sourceDetail ?? "",
+    handoverBy: candidate?.handoverBy ?? "",
+    diagnosis: candidate?.diagnosis ?? "",
+    condition: candidate?.condition ?? "Critical",
+    bedNo: candidate?.bedNo ?? "ICU-C05",
+    unit: candidate?.unit ?? "Medical ICU",
+    nurse: candidate?.nurse ?? "Unit Nurse Priya",
+    doctor: candidate?.doctor ?? "Dr. Sameer Mehta",
+    admittingTeam: candidate?.admittingTeam ?? getAdmittingTeamDefault(source, candidate?.unit),
+    acceptanceStatus: candidate?.acceptanceStatus ?? "Pending ICU doctor acceptance",
+    ventilator: candidate?.ventilator ?? "NIV support",
+    devices: candidate?.devices ?? "Monitor, infusion pump",
+    medication: candidate?.medication ?? "Antibiotics, fluids, vasopressor review",
+    risk: candidate?.risk ?? "High",
+    isolation: candidate?.isolation ?? "No",
+    readiness: admissionReadinessItems.slice(0, 4).join("|"),
+    notes: candidate?.notes ?? "",
+  };
+}
+
+function getAdmissionCandidate(patientId: string) {
+  return admissionPatientCandidates.find((patient) => patient.id === patientId);
+}
+
+function applyAdmissionCandidate(candidate: AdmissionPatientCandidate): AdmissionDraft {
+  return {
+    patientId: candidate.id,
+    patientName: candidate.patientName,
+    mrn: candidate.mrn,
+    icuAdmissionNo: generatedAdmissionIdentity(candidate.source).icuAdmissionNo,
+    ageGender: candidate.ageGender,
+    source: candidate.source,
+    currentLocation: candidate.currentLocation,
+    patientStatus: candidate.patientStatus,
+    sourceDetail: candidate.sourceDetail,
+    handoverBy: candidate.handoverBy,
+    diagnosis: candidate.diagnosis,
+    condition: candidate.condition,
+    bedNo: candidate.bedNo,
+    unit: candidate.unit,
+    nurse: candidate.nurse,
+    doctor: candidate.doctor,
+    admittingTeam: candidate.admittingTeam,
+    acceptanceStatus: candidate.acceptanceStatus,
+    ventilator: candidate.ventilator,
+    devices: candidate.devices,
+    medication: candidate.medication,
+    risk: candidate.risk,
+    isolation: candidate.isolation,
+    readiness: candidate.duplicateBlock ? "" : admissionReadinessItems.slice(0, 4).join("|"),
+    notes: candidate.notes,
+  };
+}
+
+function getAdmissionBed(bedNo: string) {
+  return icuAdmissionBedOptions.find((bed) => bed.bedNo === bedNo);
+}
+
+function getAdmissionScenario(source: string) {
+  return admissionSourceScenarios[source] ?? admissionSourceScenarios.Emergency;
+}
+
+function getAdmissionHandoverOptions(source: string, current?: string) {
+  return Array.from(new Set([current, ...(admissionHandoverOptions[source] ?? admissionHandoverOptions.Emergency)].filter(Boolean) as string[]));
+}
+
+function getAdmittingTeamDefault(source: string, unit?: string) {
+  if (source === "Emergency direct ICU" || source === "Emergency") return "ER + ICU rapid admit team";
+  if (source === "External hospital transfer") return "External transfer receive team";
+  if (unit === "Cardiac ICU") return "Cardiac ICU admitting team";
+  if (unit === "Neuro ICU") return "Neuro ICU admitting team";
+  if (unit === "Surgical ICU") return "Surgical ICU admitting team";
+  if (unit === "Isolation ICU") return "Isolation ICU admitting team";
+  return "Medical ICU admitting team";
+}
+
+function getReadinessValues(readiness: string) {
+  return readiness.split("|").map((item) => item.trim()).filter(Boolean);
+}
+
+function readinessComplete(readiness: string) {
+  const selected = getReadinessValues(readiness);
+  return selected.length >= admissionReadinessItems.length;
+}
+
+function getAdmissionBlockReason(draft: AdmissionDraft, created: Array<AdmissionDraft & { id: string; status: string }>) {
+  const candidate = getAdmissionCandidate(draft.patientId);
+  const bed = getAdmissionBed(draft.bedNo);
+  const missingRequired = admissionRequiredFields.some((key) => key !== "readiness" && !draft[key]);
+
+  if (candidate?.duplicateBlock || draft.patientStatus === "Already admitted") return "Patient already has an active ICU admission. Use current admission or transfer workflow.";
+  if (missingRequired) return "Complete all required ICU admission fields before admitting.";
+  if (created.some((record) => record.mrn === draft.mrn)) return "This MRN already has an admission created in this session.";
+  if (!bed) return "Select a valid ICU bed.";
+  if (bed.status !== "Available" && bed.status !== "Isolation available") return `${bed.bedNo} is ${bed.status.toLowerCase()}. Select an available bed.`;
+  if (draft.isolation !== "No" && bed.status !== "Isolation available" && draft.unit !== "Isolation ICU") return "Isolation precaution selected. Use Isolation ICU bed or update isolation requirement.";
+  if (draft.acceptanceStatus !== "Accepted") return "ICU doctor acceptance is pending.";
+  if (!readinessComplete(draft.readiness)) return "Complete all ICU readiness checklist items before admitting.";
+  return "";
+}
+
+function admissionCandidateLabel(patientId: string) {
+  const patient = getAdmissionCandidate(patientId);
+  if (!patient) return patientId;
+  return `${patient.patientName} | ${patient.mrn} | ${patient.currentLocation}`;
+}
+
+function admissionBedLabel(bedNo: string) {
+  const bed = getAdmissionBed(bedNo);
+  if (!bed) return bedNo;
+  return `${bed.bedNo} | ${bed.unit} | ${bed.status} | ${bed.capability}`;
+}
+
+function admissionBedTone(status?: IcuAdmissionBedOption["status"]): StatusTone {
+  if (status === "Available" || status === "Isolation available") return "success";
+  if (status === "Cleaning" || status === "Transfer pending" || status === "Reserved") return "warning";
+  if (status === "Occupied") return "danger";
+  return "muted";
+}
+
+function admissionPatientTone(status?: AdmissionPatientState): StatusTone {
+  if (status === "Already admitted") return "danger";
+  if (status === "Emergency direct ICU") return "critical";
+  if (status === "External transfer accepted" || status === "ICU request pending") return "info";
+  if (status === "ER stabilization" || status === "Ward deterioration" || status === "Post-op recovery") return "warning";
+  return "success";
+}
 
 const patientMedicationProfiles: PatientMedicationProfile[] = [
   { patientId: "icu-001", weightKg: 32, allergies: ["Piperacillin/Tazobactam"], renalStatus: "Watch", liverStatus: "Normal", feedingStatus: "NG feeds", ageGroup: "Pediatric" },
@@ -876,18 +1352,71 @@ function PatientBoardLoading({ compact }: { compact?: boolean }) {
 
 export function AdmissionWizardWorkspace() {
   const [step, setStep] = React.useState(0);
-  const [draft, setDraft] = React.useState<AdmissionDraft>(emptyAdmissionDraft);
+  const [draft, setDraft] = React.useState<AdmissionDraft>(() => createEmptyAdmissionDraft());
   const [created, setCreated] = React.useState<Array<AdmissionDraft & { id: string; status: string }>>([]);
+  const [patientQuery, setPatientQuery] = React.useState("");
 
   const updateDraft = (key: keyof AdmissionDraft, value: string) => setDraft((current) => ({ ...current, [key]: value }));
-  const completeness = Math.round((Object.values(draft).filter(Boolean).length / Object.keys(draft).length) * 100);
+  const updateAdmissionPatient = (patientId: string) => {
+    const candidate = getAdmissionCandidate(patientId);
+    if (!candidate) return;
+    setDraft(applyAdmissionCandidate(candidate));
+  };
+  const updateAdmissionSource = (source: string) => {
+    setDraft((current) => ({
+      ...current,
+      source,
+      icuAdmissionNo: current.icuAdmissionNo || generatedAdmissionIdentity(source).icuAdmissionNo,
+      sourceDetail: current.source === source ? current.sourceDetail : "",
+      handoverBy: current.source === source ? current.handoverBy : getAdmissionHandoverOptions(source)[0],
+      admittingTeam: getAdmittingTeamDefault(source, current.unit),
+    }));
+  };
+  const updateAdmissionUnit = (unit: string) => {
+    setDraft((current) => ({
+      ...current,
+      unit,
+      admittingTeam: getAdmittingTeamDefault(current.source, unit),
+    }));
+  };
+  const resetDraft = () => {
+    setDraft(createEmptyAdmissionDraft());
+    setPatientQuery("");
+  };
+  const toggleReadiness = (item: string) => {
+    setDraft((current) => {
+      const selected = getReadinessValues(current.readiness);
+      const next = selected.includes(item) ? selected.filter((value) => value !== item) : [...selected, item];
+      return { ...current, readiness: next.join("|") };
+    });
+  };
+  const filteredPatientCandidates = React.useMemo(() => {
+    const query = patientQuery.trim().toLowerCase();
+    const rows = admissionPatientCandidates.filter((patient) => {
+      const text = `${patient.patientName} ${patient.mrn} ${patient.currentLocation} ${patient.patientStatus} ${patient.source} ${patient.diagnosis}`.toLowerCase();
+      return !query || text.includes(query);
+    });
+    return rows.some((patient) => patient.id === draft.patientId)
+      ? rows
+      : [getAdmissionCandidate(draft.patientId), ...rows].filter(Boolean) as AdmissionPatientCandidate[];
+  }, [draft.patientId, patientQuery]);
+  const selectedCandidate = getAdmissionCandidate(draft.patientId);
+  const selectedBed = getAdmissionBed(draft.bedNo);
+  const selectedReadiness = getReadinessValues(draft.readiness);
+  const admissionBlockReason = getAdmissionBlockReason(draft, created);
+  const completenessBase = admissionRequiredFields.filter((key) => key !== "readiness").filter((key) => Boolean(draft[key])).length;
+  const completeness = Math.round(((completenessBase + (readinessComplete(draft.readiness) ? 1 : 0)) / admissionRequiredFields.length) * 100);
 
   const saveAdmission = () => {
+    if (admissionBlockReason) {
+      toast.error(admissionBlockReason);
+      return;
+    }
     const record = { ...draft, id: `icu-adm-${created.length + 1}`, status: "Bed assigned" };
     setCreated((current) => [record, ...current]);
     toast.success(`${draft.patientName || "ICU patient"} admission wizard completed`);
     setStep(0);
-    setDraft(emptyAdmissionDraft);
+    resetDraft();
   };
 
   return (
@@ -934,10 +1463,16 @@ export function AdmissionWizardWorkspace() {
         <CardContent className="space-y-4">
           {step === 0 ? (
             <FormGrid>
-              <TextField label="Patient name" value={draft.patientName} onChange={(value) => updateDraft("patientName", value)} placeholder="Enter patient name" />
-              <TextField label="MRN / UHID" value={draft.mrn} onChange={(value) => updateDraft("mrn", value)} placeholder="PLH-..." />
-              <TextField label="Age / gender" value={draft.ageGender} onChange={(value) => updateDraft("ageGender", value)} placeholder="52/M" />
-              <SelectField label="Admission source" value={draft.source} onChange={(value) => updateDraft("source", value)} options={["Emergency", "General ward", "Post-surgical unit", "Direct ICU admission"]} />
+              <TextField label="Search patient / MRN / location" value={patientQuery} onChange={setPatientQuery} placeholder="Search admitted, ER, ward, OT, external transfer..." wide />
+              <SelectField label="Patient / MRN" value={draft.patientId} onChange={updateAdmissionPatient} options={filteredPatientCandidates.map((patient) => patient.id)} renderOption={admissionCandidateLabel} wide />
+              <SelectField label="Admission source" value={draft.source} onChange={updateAdmissionSource} options={admissionSourceOptions} />
+              <ReadOnlyField label="Patient name" value={draft.patientName} />
+              <ReadOnlyField label="MRN / UHID" value={draft.mrn} />
+              <ReadOnlyField label="ICU Admission No" value={draft.icuAdmissionNo} />
+              <ReadOnlyField label="Age / gender" value={draft.ageGender} />
+              <ReadOnlyField label="Current location" value={draft.currentLocation} />
+              <ReadOnlyField label="Current status" value={draft.patientStatus} />
+              <AdmissionCandidatePanel candidate={selectedCandidate} blockReason={admissionBlockReason} />
             </FormGrid>
           ) : null}
 
@@ -945,19 +1480,26 @@ export function AdmissionWizardWorkspace() {
             <FormGrid>
               <TextField label="Diagnosis" value={draft.diagnosis} onChange={(value) => updateDraft("diagnosis", value)} placeholder="Primary ICU diagnosis" />
               <SelectField label="Clinical condition" value={draft.condition} onChange={(value) => updateDraft("condition", value)} options={["Critical", "Ventilated", "Stable ICU care", "Ready for transfer"]} />
+              <TextField label={getAdmissionScenario(draft.source).detailLabel} value={draft.sourceDetail} onChange={(value) => updateDraft("sourceDetail", value)} placeholder="Admission source context..." wide />
+              <SelectField label={getAdmissionScenario(draft.source).handoverLabel} value={draft.handoverBy} onChange={(value) => updateDraft("handoverBy", value)} options={getAdmissionHandoverOptions(draft.source, draft.handoverBy)} />
               <SelectField label="Risk level" value={draft.risk} onChange={(value) => updateDraft("risk", value)} options={["Critical", "High", "Medium", "Routine"]} />
               <SelectField label="Isolation required" value={draft.isolation} onChange={(value) => updateDraft("isolation", value)} options={["No", "Yes", "Contact precaution", "Airborne precaution"]} />
+              <AdmissionSourceScenarioPanel source={draft.source} />
             </FormGrid>
           ) : null}
 
           {step === 2 ? (
             <FormGrid>
-              <SelectField label="ICU unit" value={draft.unit} onChange={(value) => updateDraft("unit", value)} options={["Medical ICU", "Cardiac ICU", "Neuro ICU", "Isolation ICU"]} />
-              <SelectField label="Bed number" value={draft.bedNo} onChange={(value) => updateDraft("bedNo", value)} options={["ICU-C05", "ICU-C06", "ICU-A01 review", "ICU-B04 transfer-ready"]} />
+              <SelectField label="ICU unit" value={draft.unit} onChange={updateAdmissionUnit} options={["Medical ICU", "Cardiac ICU", "Neuro ICU", "Surgical ICU", "Isolation ICU"]} />
+              <SelectField label="Bed number" value={draft.bedNo} onChange={(value) => updateDraft("bedNo", value)} options={icuAdmissionBedOptions.map((bed) => bed.bedNo)} renderOption={admissionBedLabel} />
               <SelectField label="Ventilator / oxygen" value={draft.ventilator} onChange={(value) => updateDraft("ventilator", value)} options={["Room air", "Oxygen mask", "NIV support", "Invasive ventilation", "Weaning trial"]} />
               <TextField label="Devices" value={draft.devices} onChange={(value) => updateDraft("devices", value)} placeholder="Monitor, pump, ventilator..." />
               <SelectField label="Unit nurse" value={draft.nurse} onChange={(value) => updateDraft("nurse", value)} options={["Unit Nurse Priya", "Unit Nurse Meera", "Unit Nurse Sana"]} />
               <SelectField label="Admitting doctor" value={draft.doctor} onChange={(value) => updateDraft("doctor", value)} options={["Dr. Sameer Mehta", "Dr. Neha Malik", "Dr. Imran Shah", "Dr. Aman Verma"]} />
+              <SelectField label="Admitting team" value={draft.admittingTeam} onChange={(value) => updateDraft("admittingTeam", value)} options={admittingTeamOptions} />
+              <SelectField label="ICU doctor acceptance" value={draft.acceptanceStatus} onChange={(value) => updateDraft("acceptanceStatus", value)} options={["Accepted", "Pending ICU doctor acceptance", "Rejected - bed not appropriate", "Hold - billing/consent"]} />
+              <AdmissionBedPanel bed={selectedBed} />
+              <AdmissionReadinessChecklist selected={selectedReadiness} onToggle={toggleReadiness} />
             </FormGrid>
           ) : null}
 
@@ -968,16 +1510,16 @@ export function AdmissionWizardWorkspace() {
             </FormGrid>
           ) : null}
 
-          {step === 4 ? <AdmissionReview draft={draft} /> : null}
+          {step === 4 ? <AdmissionReview draft={draft} blockReason={admissionBlockReason} bed={selectedBed} /> : null}
 
           <div className="flex flex-col gap-2 border-t border-border pt-4 sm:flex-row sm:items-center sm:justify-between">
             <Button variant="outline" onClick={() => setStep((current) => Math.max(0, current - 1))} disabled={step === 0}>Back</Button>
             <div className="flex flex-wrap gap-2">
-              <Button variant="outline" onClick={() => setDraft(emptyAdmissionDraft)}>Reset</Button>
+              <Button variant="outline" onClick={resetDraft}>Reset</Button>
               {step < admissionSteps.length - 1 ? (
                 <Button onClick={() => setStep((current) => Math.min(admissionSteps.length - 1, current + 1))}>Next <ArrowRight className="h-4 w-4" /></Button>
               ) : (
-                <Button onClick={saveAdmission}><Check className="h-4 w-4" />Admit patient</Button>
+                <Button disabled={Boolean(admissionBlockReason)} onClick={saveAdmission}><Check className="h-4 w-4" />Admit patient</Button>
               )}
             </div>
           </div>
@@ -998,7 +1540,9 @@ export function AdmissionWizardWorkspace() {
                 <div className="flex items-start justify-between gap-2">
                   <div>
                     <p className="text-sm font-semibold text-foreground">{record.patientName || "Unnamed patient"}</p>
+                    <p className="text-xs text-muted-foreground">{record.mrn} | {record.icuAdmissionNo}</p>
                     <p className="text-xs text-muted-foreground">{record.bedNo} | {record.unit} | {record.source}</p>
+                    <p className="text-xs text-muted-foreground">{record.admittingTeam}</p>
                   </div>
                   <StatusPill tone="success">{record.status}</StatusPill>
                 </div>
@@ -2859,15 +3403,167 @@ function PatientSnapshot({ patient }: { patient?: IcuPatient }) {
   );
 }
 
-function AdmissionReview({ draft }: { draft: AdmissionDraft }) {
+function AdmissionCandidatePanel({ candidate, blockReason }: { candidate?: AdmissionPatientCandidate; blockReason: string }) {
+  if (!candidate) return <EmptyPanel title="No patient selected" detail="Search and select patient/MRN to load ICU admission context." />;
+
   return (
-    <div className="grid gap-3 md:grid-cols-2">
-      {Object.entries(draft).map(([key, value]) => (
-        <div className="rounded-md border border-border bg-background p-3" key={key}>
-          <p className="text-xs font-medium uppercase text-muted-foreground">{labelize(key)}</p>
-          <p className="mt-1 text-sm font-semibold text-foreground">{value || "-"}</p>
+    <div className="rounded-md border border-border bg-background p-3 md:col-span-2">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <p className="text-sm font-semibold text-foreground">{candidate.patientName}</p>
+          <p className="mt-1 text-xs text-muted-foreground">{candidate.mrn} | {candidate.ageGender} | {candidate.currentLocation}</p>
+          <p className="mt-1 text-xs text-muted-foreground">{candidate.diagnosis}</p>
         </div>
-      ))}
+        <div className="flex flex-wrap gap-2">
+          <Badge tone={admissionPatientTone(candidate.patientStatus)}>{candidate.patientStatus}</Badge>
+          <Badge tone={candidate.duplicateBlock ? "danger" : "success"}>{candidate.duplicateBlock ? "Duplicate blocked" : "Eligible"}</Badge>
+        </div>
+      </div>
+      {blockReason ? (
+        <div className="mt-3 rounded-md border border-warning/30 bg-warning/10 p-2 text-xs font-medium text-warning">{blockReason}</div>
+      ) : (
+        <div className="mt-3 rounded-md border border-success/30 bg-success/10 p-2 text-xs font-medium text-success">Patient can proceed after bed, doctor acceptance, and readiness checks.</div>
+      )}
+    </div>
+  );
+}
+
+function AdmissionSourceScenarioPanel({ source }: { source: string }) {
+  const scenario = getAdmissionScenario(source);
+
+  return (
+    <div className="grid gap-3 md:col-span-2 lg:grid-cols-2">
+      <div className="rounded-md border border-border bg-background p-3">
+        <p className="text-sm font-semibold text-foreground">{scenario.title}</p>
+        <p className="mt-1 text-xs text-muted-foreground">Readiness focus for this admission source.</p>
+        <div className="mt-3 flex flex-wrap gap-2">
+          {scenario.readinessFocus.map((item) => <Badge key={item} tone="info">{item}</Badge>)}
+        </div>
+      </div>
+      <div className="rounded-md border border-border bg-background p-3">
+        <p className="text-sm font-semibold text-foreground">Scenario risks</p>
+        <div className="mt-3 space-y-2">
+          {scenario.risks.map((risk) => (
+            <div className="flex items-center gap-2 text-xs text-muted-foreground" key={risk}>
+              <AlertCircle className="h-3.5 w-3.5 text-warning" />
+              <span>{risk}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AdmissionBedPanel({ bed }: { bed?: IcuAdmissionBedOption }) {
+  if (!bed) return <EmptyPanel title="No ICU bed selected" detail="Select bed to verify availability and capability." />;
+
+  return (
+    <div className="rounded-md border border-border bg-background p-3 md:col-span-2">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <p className="text-sm font-semibold text-foreground">{bed.bedNo} | {bed.unit}</p>
+          <p className="mt-1 text-xs text-muted-foreground">{bed.capability}</p>
+          <p className="mt-1 text-xs text-muted-foreground">{bed.note}</p>
+        </div>
+        <Badge tone={admissionBedTone(bed.status)}>{bed.status}</Badge>
+      </div>
+    </div>
+  );
+}
+
+function AdmissionReadinessChecklist({ selected, onToggle }: { selected: string[]; onToggle: (item: string) => void }) {
+  return (
+    <div className="rounded-md border border-border bg-background p-3 md:col-span-2">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <p className="text-sm font-semibold text-foreground">ICU receive readiness checklist</p>
+          <p className="mt-1 text-xs text-muted-foreground">All checks must be complete before final admission.</p>
+        </div>
+        <Badge tone={selected.length === admissionReadinessItems.length ? "success" : "warning"}>{selected.length}/{admissionReadinessItems.length}</Badge>
+      </div>
+      <div className="mt-3 grid gap-2 sm:grid-cols-2">
+        {admissionReadinessItems.map((item) => {
+          const checked = selected.includes(item);
+          return (
+            <label className={cn("flex cursor-pointer items-center gap-2 rounded-md border p-2 text-sm", checked ? "border-success/40 bg-success/10 text-success" : "border-border bg-surface-muted text-muted-foreground")} key={item}>
+              <input checked={checked} className="h-4 w-4" type="checkbox" onChange={() => onToggle(item)} />
+              <span>{item}</span>
+            </label>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function AdmissionReview({ draft, blockReason, bed }: { draft: AdmissionDraft; blockReason: string; bed?: IcuAdmissionBedOption }) {
+  const readiness = getReadinessValues(draft.readiness);
+  return (
+    <div className="space-y-3">
+      {blockReason ? (
+        <div className="rounded-md border border-danger/30 bg-danger/10 p-3">
+          <div className="flex items-start gap-2">
+            <ShieldAlert className="mt-0.5 h-4 w-4 text-danger" />
+            <div>
+              <p className="text-sm font-semibold text-danger">Admission blocked</p>
+              <p className="mt-1 text-xs text-danger">{blockReason}</p>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="rounded-md border border-success/30 bg-success/10 p-3">
+          <div className="flex items-start gap-2">
+            <CheckCircle2 className="mt-0.5 h-4 w-4 text-success" />
+            <div>
+              <p className="text-sm font-semibold text-success">Ready for ICU admission</p>
+              <p className="mt-1 text-xs text-success">Patient, bed, acceptance, and receive checklist are complete.</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="grid gap-3 md:grid-cols-2">
+        <InfoPanel title="Patient" rows={[
+          ["Patient", draft.patientName],
+          ["MRN / UHID", draft.mrn],
+          ["Age / gender", draft.ageGender],
+          ["Current location", draft.currentLocation],
+          ["Status", draft.patientStatus],
+        ]} />
+        <InfoPanel title="Admission" rows={[
+          ["ICU admission no", draft.icuAdmissionNo],
+          ["Source", draft.source],
+          ["Source detail", draft.sourceDetail],
+          ["Handover by", draft.handoverBy],
+          ["Doctor acceptance", draft.acceptanceStatus],
+        ]} />
+        <InfoPanel title="Bed & device" rows={[
+          ["Unit", draft.unit],
+          ["Bed", draft.bedNo],
+          ["Bed status", bed?.status ?? "-"],
+          ["Admitting team", draft.admittingTeam],
+          ["Ventilator / oxygen", draft.ventilator],
+          ["Devices", draft.devices],
+        ]} />
+        <InfoPanel title="Clinical" rows={[
+          ["Diagnosis", draft.diagnosis],
+          ["Condition", draft.condition],
+          ["Risk", draft.risk],
+          ["Isolation", draft.isolation],
+          ["Medication", draft.medication],
+        ]} />
+      </div>
+
+      <div className="rounded-md border border-border bg-background p-3">
+        <div className="flex items-center justify-between gap-3">
+          <p className="text-sm font-semibold text-foreground">Receive checklist</p>
+          <Badge tone={readiness.length === admissionReadinessItems.length ? "success" : "warning"}>{readiness.length}/{admissionReadinessItems.length}</Badge>
+        </div>
+        <div className="mt-3 flex flex-wrap gap-2">
+          {admissionReadinessItems.map((item) => <Badge key={item} tone={readiness.includes(item) ? "success" : "muted"}>{item}</Badge>)}
+        </div>
+      </div>
     </div>
   );
 }
@@ -2952,6 +3648,17 @@ function TextField({
   );
 }
 
+function ReadOnlyField({ label, value }: { label: string; value: string }) {
+  return (
+    <label className="space-y-1 text-sm">
+      <span className="font-medium text-foreground">{label}</span>
+      <div className="flex h-10 w-full items-center rounded-md border border-input bg-surface-muted px-3 text-sm font-semibold text-foreground">
+        {value || "-"}
+      </div>
+    </label>
+  );
+}
+
 function TextAreaField({
   label,
   value,
@@ -2982,15 +3689,17 @@ function SelectField({
   onChange,
   options,
   renderOption,
+  wide,
 }: {
   label: string;
   value: string;
   onChange: (value: string) => void;
   options: string[];
   renderOption?: (value: string) => string;
+  wide?: boolean;
 }) {
   return (
-    <label className="space-y-1 text-sm">
+    <label className={cn("min-w-0 space-y-1 text-sm", wide ? "md:col-span-2" : "")}>
       <span className="font-medium text-foreground">{label}</span>
       <select
         className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/20"
@@ -3283,8 +3992,4 @@ function alertStatusTone(status: WorkflowAlertStatus): StatusTone {
   if (status === "Acknowledged" || status === "Assigned") return "warning";
   if (status === "Resolved" || status === "Closed") return "success";
   return "info";
-}
-
-function labelize(value: string) {
-  return value.replace(/([A-Z])/g, " $1").replace(/^./, (letter) => letter.toUpperCase());
 }
