@@ -54,6 +54,7 @@ export type AdmissionRequest = {
   instructions?: string;
   bedNo?: string;
   createdAt?: string;
+  admissionTime?: string;
 };
 
 export type BillingClearance = {

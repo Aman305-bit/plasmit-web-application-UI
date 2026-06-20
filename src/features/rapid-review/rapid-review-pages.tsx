@@ -21,12 +21,11 @@ import {
   Minimize2,
   PhoneCall,
   Plus,
-  Printer,
   RefreshCcw,
   Save,
+  Search,
   Send,
   ShieldAlert,
-  Stethoscope,
   Trash2,
   UserPlus,
   UserRound,
@@ -35,7 +34,6 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
-import { PageHeader } from "@/components/shell/page-header";
 import { useRole } from "@/components/providers/role-provider";
 import { AlertBanner } from "@/components/ui/alert-banner";
 import { Badge } from "@/components/ui/badge";
@@ -48,6 +46,7 @@ import { StatusPill } from "@/components/ui/status-pill";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DetailRow, FilterBar, NativeSelect } from "@/features/admin/admin-shared";
 import { cn } from "@/lib/utils";
+import { RapidReviewControlToggle } from "@/features/rapid-review/rapid-review-control-toggle";
 import type { Role, StatusTone } from "@/types";
 import {
   adultObservationChartRows,
@@ -538,42 +537,35 @@ export function RapidReviewPage() {
 
   return (
     <>
-      <PageHeader
-        eyebrow="Adult Observation Chart"
-        title="Doctor Rapid Review"
-        description="Quick review workspace for abnormal observations, escalation criteria, and audit-ready clinical response."
-        actions={
-          <>
-            <Button variant="outline" onClick={() => toast.success("Rapid review queue refreshed")}>
-              <RefreshCcw className="h-4 w-4" />
-              Refresh
-            </Button>
-            <Button variant="outline" onClick={() => window.print()}>
-              <Printer className="h-4 w-4" />
-              Print
-            </Button>
-            <Button variant="outline" onClick={() => setActiveTab("entry")} disabled={readOnly}>
-              <Plus className="h-4 w-4" />
-              Add observation
-            </Button>
-            <Button onClick={() => rows[0] && handleOpenDoctorReview(rows[0])} disabled={!rows.length}>
-              <Stethoscope className="h-4 w-4" />
-              Start review
-            </Button>
-          </>
-        }
-      />
+      <RapidReviewControlToggle label="Review queue controls">
+          <div className="space-y-3">
+            <SummaryGrid>
+              <StatCard label="MER calls" value={merCount} change="Immediate" context="Purple zone" tone="critical" icon={ShieldAlert} />
+              <StatCard label="MDT review" value={mdtCount} change="30 min" context="Red zone or urine risk" tone="danger" icon={HeartPulse} />
+              <StatCard label="RN review" value={rnCount} change="Prompt" context="Yellow zone" tone="warning" icon={BellRing} />
+              <StatCard label="Doctor pending" value={pendingObservationCount} change="Review" context={`${openCount} active queue`} tone="info" icon={Eye} />
+            </SummaryGrid>
 
-      <SummaryGrid>
-        <StatCard label="MER calls" value={merCount} change="Immediate" context="Purple zone" tone="critical" icon={ShieldAlert} />
-        <StatCard label="MDT review" value={mdtCount} change="30 min" context="Red zone or urine risk" tone="danger" icon={HeartPulse} />
-        <StatCard label="RN review" value={rnCount} change="Prompt" context="Yellow zone" tone="warning" icon={BellRing} />
-        <StatCard label="Doctor pending" value={pendingObservationCount} change="Review" context={`${openCount} active queue`} tone="info" icon={Eye} />
-      </SummaryGrid>
-
-      <AlertBanner icon={UserRound} tone={readOnly ? "warning" : "info"} title={`Current role: ${role}`}>
-        {roleProfile.summary} Available actions: {roleProfile.actions.join(", ")}.
-      </AlertBanner>
+            <div className="flex flex-col gap-3 border-t border-border pt-3 lg:flex-row lg:items-center">
+              <label className="relative min-w-0 flex-1">
+                <span className="sr-only">Search review queue</span>
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <input
+                  aria-label="Search patient, UHID, ward, bed, trigger, consultant"
+                  className="h-9 w-full rounded-md border border-input bg-background pl-9 pr-3 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring/20"
+                  onChange={(event) => setSearch(event.target.value)}
+                  placeholder="Search patient, UHID, ward, bed, trigger, consultant..."
+                  value={search}
+                />
+              </label>
+              <div className="flex flex-wrap gap-2">
+                <NativeSelect label="Response level" value={response} onChange={setResponse} options={["All response", "MER Call", "MDT Review", "RN Review", "Routine"]} />
+                <NativeSelect label="Ward" value={ward} onChange={setWard} options={wards} />
+                <NativeSelect label="Sort" value={sortBy} onChange={setSortBy} options={["Clinical priority", "Oldest wait", "Newest wait", "Patient name", "Ward"]} />
+              </div>
+            </div>
+          </div>
+      </RapidReviewControlToggle>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         <TabsList className="w-full justify-start">
@@ -589,12 +581,6 @@ export function RapidReviewPage() {
         </TabsList>
 
         <TabsContent value="queue" className="space-y-4">
-          <FilterBar search={search} onSearch={setSearch} placeholder="Search patient, UHID, ward, bed, trigger, consultant...">
-            <NativeSelect label="Response level" value={response} onChange={setResponse} options={["All response", "MER Call", "MDT Review", "RN Review", "Routine"]} />
-            <NativeSelect label="Ward" value={ward} onChange={setWard} options={wards} />
-            <NativeSelect label="Sort" value={sortBy} onChange={setSortBy} options={["Clinical priority", "Oldest wait", "Newest wait", "Patient name", "Ward"]} />
-          </FilterBar>
-
           <div className="grid min-w-0 gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
             <DataTable data={rows} columns={columns} />
             <QueueCommandPanel
@@ -1070,7 +1056,8 @@ function NurseReviewTab({
 
   return (
     <div className="space-y-4">
-      <Card>
+      <RapidReviewControlToggle label="Nurse review controls">
+        <Card>
         <CardHeader>
           <div>
             <CardTitle>Nurse Review</CardTitle>
@@ -1118,7 +1105,8 @@ function NurseReviewTab({
             <NurseReviewStat label="Voided" value={voidedCount} tone="danger" />
           </div>
         </CardContent>
-      </Card>
+        </Card>
+      </RapidReviewControlToggle>
 
       <Card>
         <CardHeader>
@@ -1663,7 +1651,8 @@ function ClinicalConsultQueueTab({
 
   return (
     <div className="space-y-4">
-      <Card>
+      <RapidReviewControlToggle label="Consult queue controls">
+        <Card>
         <CardHeader>
           <div>
             <CardTitle>Consult Queue</CardTitle>
@@ -1691,7 +1680,8 @@ function ClinicalConsultQueueTab({
             <ClinicalConsultQueueStat label="Completed" value={completedCount} tone="muted" />
           </div>
         </CardContent>
-      </Card>
+        </Card>
+      </RapidReviewControlToggle>
 
       <Card>
         <CardHeader>
@@ -2132,7 +2122,8 @@ function DoctorReviewTab({
 
   return (
     <div className="space-y-4">
-      <Card>
+      <RapidReviewControlToggle label="Doctor review controls">
+        <Card>
         <CardHeader>
           <div>
             <CardTitle>Doctor Review Command Center</CardTitle>
@@ -2196,7 +2187,8 @@ function DoctorReviewTab({
             timeTo={timeTo}
           />
         </CardContent>
-      </Card>
+        </Card>
+      </RapidReviewControlToggle>
 
       <AdultObservationChartCard
         patient={chartPatient}
@@ -3144,14 +3136,16 @@ function DateWiseLogTab({
 
   return (
     <div className="space-y-4">
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard label="Filtered records" value={rows.length} change={dateFilterSummary(dateMode, selectedDates, singleDate, dateFrom, dateTo, latestDataDate)} context="Observation log rows" tone="info" icon={FileText} />
-        <StatCard label="Patients" value={selectedPatientCount} change={patientFilter === "All patients" ? "All selected" : "Focused"} context="Matched patient records" tone="success" icon={UserRound} />
-        <StatCard label="Pending reviews" value={pendingCount} change="Action needed" context="Doctor review status" tone="warning" icon={Clock3} />
-        <StatCard label="Critical / MER" value={criticalCount} change="Priority" context="Purple zone or MER call" tone="critical" icon={ShieldAlert} />
-      </div>
+      <RapidReviewControlToggle label="Date wise log controls">
+        <div className="space-y-3">
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <StatCard label="Filtered records" value={rows.length} change={dateFilterSummary(dateMode, selectedDates, singleDate, dateFrom, dateTo, latestDataDate)} context="Observation log rows" tone="info" icon={FileText} />
+            <StatCard label="Patients" value={selectedPatientCount} change={patientFilter === "All patients" ? "All selected" : "Focused"} context="Matched patient records" tone="success" icon={UserRound} />
+            <StatCard label="Pending reviews" value={pendingCount} change="Action needed" context="Doctor review status" tone="warning" icon={Clock3} />
+            <StatCard label="Critical / MER" value={criticalCount} change="Priority" context="Purple zone or MER call" tone="critical" icon={ShieldAlert} />
+          </div>
 
-      <Card>
+          <Card>
         <CardHeader>
           <div>
             <CardTitle>Date Wise Log Filters</CardTitle>
@@ -3229,7 +3223,9 @@ function DateWiseLogTab({
             <NativeSelect label="Reviewed by" value={reviewedByFilter} onChange={(value) => { setReviewedByFilter(value); setPage(1); }} options={reviewedByOptions} />
           </div>
         </CardContent>
-      </Card>
+          </Card>
+        </div>
+      </RapidReviewControlToggle>
 
       <ObservationLogTable
         rows={paginatedRows}
@@ -3834,7 +3830,9 @@ function ObservationChartTab({
 
   return (
     <div className="space-y-4">
-      <Card>
+      <RapidReviewControlToggle label="Patient timeline controls">
+        <div className="space-y-3">
+          <Card>
         <CardContent className="flex flex-col gap-3 p-3 lg:flex-row lg:items-center">
           <div className="flex min-w-0 flex-1 items-center gap-2">
             <Activity className="h-4 w-4 text-muted-foreground" />
@@ -3856,14 +3854,16 @@ function ObservationChartTab({
             Record timeline note
           </Button>
         </CardContent>
-      </Card>
+          </Card>
 
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <TimelineSummaryTile label="Latest response" value={summary.latest?.responseLevel ?? "-"} change={summary.latest ? observationTimeLabel(summary.latest) : "-"} context="Current clinical state" tone={summary.latest ? rapidLevelTone(summary.latest.responseLevel) : "info"} icon={Activity} />
-        <TimelineSummaryTile label="First warning" value={summary.firstWarning ? observationTimeLabel(summary.firstWarning) : "-"} change={summary.firstWarning?.responseLevel ?? "None"} context="First non-routine trigger" tone={summary.firstWarning ? rapidLevelTone(summary.firstWarning.responseLevel) : "success"} icon={BellRing} />
-        <TimelineSummaryTile label="Peak risk" value={summary.peak ? summary.peak.responseLevel : "-"} change={summary.peak ? observationTimeLabel(summary.peak) : "-"} context={summary.peak?.dominantZone ?? "No high risk"} tone={summary.peak ? rapidLevelTone(summary.peak.responseLevel) : "info"} icon={ShieldAlert} />
-        <TimelineSummaryTile label="Readings" value={timeline.length} change="Timeline" context={`${summary.reviewedCount} reviewed / ${summary.pendingCount} pending`} tone="info" icon={Clock3} />
-      </div>
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <TimelineSummaryTile label="Latest response" value={summary.latest?.responseLevel ?? "-"} change={summary.latest ? observationTimeLabel(summary.latest) : "-"} context="Current clinical state" tone={summary.latest ? rapidLevelTone(summary.latest.responseLevel) : "info"} icon={Activity} />
+            <TimelineSummaryTile label="First warning" value={summary.firstWarning ? observationTimeLabel(summary.firstWarning) : "-"} change={summary.firstWarning?.responseLevel ?? "None"} context="First non-routine trigger" tone={summary.firstWarning ? rapidLevelTone(summary.firstWarning.responseLevel) : "success"} icon={BellRing} />
+            <TimelineSummaryTile label="Peak risk" value={summary.peak ? summary.peak.responseLevel : "-"} change={summary.peak ? observationTimeLabel(summary.peak) : "-"} context={summary.peak?.dominantZone ?? "No high risk"} tone={summary.peak ? rapidLevelTone(summary.peak.responseLevel) : "info"} icon={ShieldAlert} />
+            <TimelineSummaryTile label="Readings" value={timeline.length} change="Timeline" context={`${summary.reviewedCount} reviewed / ${summary.pendingCount} pending`} tone="info" icon={Clock3} />
+          </div>
+        </div>
+      </RapidReviewControlToggle>
 
       <TimelineRiskJourney observations={timeline} />
 
@@ -4277,9 +4277,11 @@ function ResponseRulesTab({ role }: { role: Role }) {
 
   return (
     <>
-      <FilterBar search={search} onSearch={setSearch} placeholder="Search response criteria, action, owner...">
-        <NativeSelect label="Level" value={level} onChange={setLevel} options={["All levels", "MER Call", "MDT Review", "RN Review"]} />
-      </FilterBar>
+      <RapidReviewControlToggle label="Response rule controls">
+        <FilterBar search={search} onSearch={setSearch} placeholder="Search response criteria, action, owner...">
+          <NativeSelect label="Level" value={level} onChange={setLevel} options={["All levels", "MER Call", "MDT Review", "RN Review"]} />
+        </FilterBar>
+      </RapidReviewControlToggle>
 
       <div className="grid gap-4 xl:grid-cols-3">
         {rules.map((rule) => (

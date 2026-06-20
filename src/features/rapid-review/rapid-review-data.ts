@@ -98,6 +98,7 @@ export type RapidObservationSet = {
   temperature: string;
   consciousness: string;
   painScore: string;
+  fluidIntake?: string;
   urineOutput: string;
   dominantZone: RapidZone;
   responseLevel: RapidResponseLevel;

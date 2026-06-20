@@ -69,7 +69,11 @@ function withActivity(state: AdmissionStoreState, title: string, detail: string)
 }
 
 function initialState(): AdmissionStoreState {
-  const requests = admissionRequests.map((request) => ({ ...request, createdAt: "20 May, 04:31 PM" }));
+  const requests = admissionRequests.map((request) => ({
+    ...request,
+    createdAt: request.createdAt ?? request.admissionTime ?? "20 May, 04:31 PM",
+    admissionTime: request.admissionTime ?? request.createdAt ?? "20 May, 04:31 PM",
+  }));
   return {
     patients: lookupPatients,
     requests,
@@ -132,7 +136,7 @@ export function useAdmissionStore() {
   const [state, setState] = React.useState<AdmissionStoreState>(() => initialState());
 
   React.useEffect(() => {
-    setState(readState());
+    queueMicrotask(() => setState(readState()));
 
     const handleStoreEvent = (event: Event) => {
       setState((event as CustomEvent<AdmissionStoreState>).detail ?? readState());
@@ -197,6 +201,7 @@ export function useAdmissionStore() {
         const patient =
           current.patients.find((item) => item.id === current.selectedPatientId) ??
           current.patients.find((item) => item.uhid === input.uhid);
+        const admissionTime = nowLabel();
         const request: AdmissionRequest = {
           id: `req-${Date.now()}`,
           patient: input.patientName || patient?.name || "Admission Patient",
@@ -209,7 +214,8 @@ export function useAdmissionStore() {
           priority: input.priority,
           status: "Pending Bed Allotment",
           instructions: input.instructions,
-          createdAt: nowLabel(),
+          createdAt: admissionTime,
+          admissionTime,
         };
         const clearance: BillingClearance = {
           id: `bill-${Date.now()}`,

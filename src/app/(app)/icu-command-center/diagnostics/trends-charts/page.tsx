@@ -1,5 +1,5 @@
-import { NursingIcuModulePage } from "@/features/nursing-icu/nursing-icu-pages";
+import { DiagnosticTrendsPage } from "@/features/diagnostic-hub/diagnostic-hub-page";
 
 export default function IcuCommandCenterRoute() {
-  return <NursingIcuModulePage page="monitoring-chart" />;
+  return <DiagnosticTrendsPage />;
 }

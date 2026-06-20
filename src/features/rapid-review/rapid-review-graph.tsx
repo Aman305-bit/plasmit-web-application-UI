@@ -11,6 +11,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { StatusPill } from "@/components/ui/status-pill";
 import { NativeSelect } from "@/features/admin/admin-shared";
 import { cn } from "@/lib/utils";
+import { RapidReviewControlToggle } from "@/features/rapid-review/rapid-review-control-toggle";
 import type { StatusTone } from "@/types";
 import {
   adultObservationRiskPalette,
@@ -78,6 +79,15 @@ type AllVitalsGraphSection = {
   title: string;
   description: string;
   metrics: ReviewGraphMetricId[];
+};
+
+type RapidReviewGraphTabProps = {
+  patients: RapidReviewPatient[];
+  lockedPatientId?: string;
+  defaultMetricId?: ReviewGraphMetricId;
+  defaultViewMode?: string;
+  title?: string;
+  description?: string;
 };
 
 const reviewGraphLineColor = "#2563eb";
@@ -275,21 +285,28 @@ const allVitalsGraphSections: AllVitalsGraphSection[] = [
   },
 ];
 
-export function RapidReviewGraphTab({ patients }: { patients: RapidReviewPatient[] }) {
-  const [metricId, setMetricId] = React.useState<ReviewGraphMetricId>("respiratoryRate");
-  const [patientId, setPatientId] = React.useState(patients[0]?.id ?? "");
-  const [viewMode, setViewMode] = React.useState("Graph + table");
+export function RapidReviewGraphTab({
+  patients,
+  lockedPatientId,
+  defaultMetricId = "respiratoryRate",
+  defaultViewMode = "Graph + table",
+  title = "Review Graph",
+  description = "Select one patient and review focused vital trends or the complete combined clinical trend.",
+}: RapidReviewGraphTabProps) {
+  const [metricId, setMetricId] = React.useState<ReviewGraphMetricId>(defaultMetricId);
+  const [patientId, setPatientId] = React.useState(lockedPatientId ?? patients[0]?.id ?? "");
+  const [viewMode, setViewMode] = React.useState(defaultViewMode);
   const [search, setSearch] = React.useState("");
-  const [dateMode, setDateMode] = React.useState("All dates");
+  const [dateMode, setDateMode] = React.useState("Latest record date");
   const [singleDate, setSingleDate] = React.useState("");
   const [dateFrom, setDateFrom] = React.useState("");
   const [dateTo, setDateTo] = React.useState("");
-  const [timeMode, setTimeMode] = React.useState("All times");
+  const [timeMode, setTimeMode] = React.useState("24 Hours");
   const [timeFrom, setTimeFrom] = React.useState("");
   const [timeTo, setTimeTo] = React.useState("");
 
   const metric = reviewGraphMetrics.find((item) => item.id === metricId) ?? reviewGraphMetrics[0];
-  const selectedPatient = patients.find((patient) => patient.id === patientId) ?? patients[0];
+  const selectedPatient = patients.find((patient) => patient.id === (lockedPatientId ?? patientId)) ?? patients[0];
   const patientDates = selectedPatient ? uniqueObservationDates(selectedPatient.observationHistory) : [];
   const latestDataDate = latestAvailableDate(patientDates);
   const filteredObservations = selectedPatient
@@ -299,11 +316,12 @@ export function RapidReviewGraphTab({ patients }: { patients: RapidReviewPatient
       .sort((a, b) => observationDateTimeSortValue(a).localeCompare(observationDateTimeSortValue(b)))
     : [];
   const patientMatches = React.useMemo(() => {
+    if (lockedPatientId) return patients.filter((patient) => patient.id === lockedPatientId);
     return patients.filter((patient) => {
       const searchText = `${patient.patientName} ${patient.uhid} ${patient.bed} ${patient.ward} ${patient.consultant}`;
       return searchText.toLowerCase().includes(search.toLowerCase());
     });
-  }, [patients, search]);
+  }, [lockedPatientId, patients, search]);
   const isAllVitalsGraph = viewMode === allVitalsGraphView;
   const graphData = buildReviewGraphData(filteredObservations, metric);
   const summary = buildReviewGraphSummary(filteredObservations, metric);
@@ -328,42 +346,55 @@ export function RapidReviewGraphTab({ patients }: { patients: RapidReviewPatient
 
   return (
     <div className="space-y-4">
-      <Card>
+      <RapidReviewControlToggle label="Review graph controls">
+        <Card>
         <CardHeader>
           <div>
-            <CardTitle>Review Graph</CardTitle>
-            <CardDescription>Select one patient and review focused vital trends or the complete combined clinical trend.</CardDescription>
+            <CardTitle>{title}</CardTitle>
+            <CardDescription>{description}</CardDescription>
           </div>
-          <Badge tone="info">Patient-wise</Badge>
+          <Badge tone="info">{lockedPatientId ? "Patient locked" : "Patient-wise"}</Badge>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid gap-3 lg:grid-cols-[minmax(260px,1.35fr)_minmax(240px,1fr)_180px] lg:items-end">
-            <label className="space-y-1 text-sm">
-              <span className="font-medium text-foreground">Search patient</span>
-              <div className="relative">
-                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <input
-                  className="h-9 w-full rounded-md border border-input bg-background px-9 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring/20"
-                  placeholder="Search name, UHID, bed, ward..."
-                  value={search}
-                  onChange={(event) => setSearch(event.target.value)}
-                />
+          <div className={cn("grid gap-3 lg:items-end", lockedPatientId ? "lg:grid-cols-[minmax(260px,1fr)_180px]" : "lg:grid-cols-[minmax(260px,1.35fr)_minmax(240px,1fr)_180px]")}>
+            {lockedPatientId ? (
+              <div className="space-y-1 text-sm">
+                <span className="font-medium text-foreground">Selected patient</span>
+                <div className="flex min-h-9 flex-wrap items-center gap-2 rounded-md border border-input bg-surface-muted px-3 py-2 text-sm text-foreground">
+                  <span className="font-semibold">{selectedPatient?.patientName ?? "Patient"}</span>
+                  <span className="text-muted-foreground">{selectedPatient?.uhid} - {selectedPatient?.bed}</span>
+                </div>
               </div>
-            </label>
-            <label className="space-y-1 text-sm">
-              <span className="font-medium text-foreground">Patient filter</span>
-              <select
-                className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring/20"
-                value={patientId}
-                onChange={(event) => setPatientId(event.target.value)}
-              >
-                {patients.map((patient) => (
-                  <option key={patient.id} value={patient.id}>
-                    {patient.patientName} - {patient.uhid} - {patient.bed}
-                  </option>
-                ))}
-              </select>
-            </label>
+            ) : (
+              <>
+                <label className="space-y-1 text-sm">
+                  <span className="font-medium text-foreground">Search patient</span>
+                  <div className="relative">
+                    <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <input
+                      className="h-9 w-full rounded-md border border-input bg-background px-9 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring/20"
+                      placeholder="Search name, UHID, bed, ward..."
+                      value={search}
+                      onChange={(event) => setSearch(event.target.value)}
+                    />
+                  </div>
+                </label>
+                <label className="space-y-1 text-sm">
+                  <span className="font-medium text-foreground">Patient filter</span>
+                  <select
+                    className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring/20"
+                    value={patientId}
+                    onChange={(event) => setPatientId(event.target.value)}
+                  >
+                    {patients.map((patient) => (
+                      <option key={patient.id} value={patient.id}>
+                        {patient.patientName} - {patient.uhid} - {patient.bed}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </>
+            )}
             <NativeSelect
               label="View"
               value={viewMode}
@@ -390,7 +421,7 @@ export function RapidReviewGraphTab({ patients }: { patients: RapidReviewPatient
             timeTo={timeTo}
           />
 
-          {search.trim() ? (
+          {!lockedPatientId && search.trim() ? (
             <div className="rounded-md border border-border bg-surface-muted p-3">
               <div className="mb-2 text-xs font-semibold uppercase text-muted-foreground">Matching patients</div>
               <div className="flex flex-wrap gap-2">
@@ -434,7 +465,8 @@ export function RapidReviewGraphTab({ patients }: { patients: RapidReviewPatient
             ))}
           </div>
         </CardContent>
-      </Card>
+        </Card>
+      </RapidReviewControlToggle>
 
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <GraphStatCard label="Selected vital" value={isAllVitalsGraph ? "All graphs" : metric.shortLabel} context={isAllVitalsGraph ? `${allVitalsGraphSections.length} panels` : metric.unit} tone="info" icon={BarChart3} />
@@ -490,7 +522,7 @@ function ReviewGraphDateFilter({
   onTimeTo: (time: string) => void;
 }) {
   const modes = ["All dates", "Latest record date", "Today", "Yesterday", "Last 7 days", "Last 30 days", "Single date", "Custom range"];
-  const timeModes = ["All times", "Morning 06-13", "Afternoon 14-17", "Evening 18-21", "Night 22-05", "Business hours", "Custom time range"];
+  const timeModes = ["24 Hours", "Morning 06-13", "Afternoon 14-17", "Evening 18-21", "Night 22-05", "Business hours", "Custom time range"];
   const invalidRange = dateMode === "Custom range" && Boolean(dateFrom && dateTo && dateFrom > dateTo);
 
   return (
@@ -823,18 +855,6 @@ function AllVitalsGraphDashboard({
 }) {
   return (
     <div className="space-y-4">
-      <div className="rounded-md border border-border bg-surface-muted px-4 py-3">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <h3 className="text-base font-semibold text-foreground">All Vitals Graph</h3>
-            <p className="mt-1 text-sm text-muted-foreground">
-              {patient.patientName} - {patient.uhid} - {patient.bed}. {dateSummary}. Each section uses a normalized 0-100 trend scale so different vitals can be compared together.
-            </p>
-          </div>
-          <StatusPill tone="info">{reviewGraphMetrics.length} vitals</StatusPill>
-        </div>
-      </div>
-
       {allVitalsGraphSections.map((section) => (
         <AllVitalsGraphSectionCard data={data} key={section.title} section={section} />
       ))}
@@ -1131,6 +1151,8 @@ function urineOutputRiskLevel(value: string | number | null | undefined): AdultO
 }
 
 function rapidReviewFluidIntakeValue(observation: RapidObservationSet) {
+  const documentedIntake = parseObservationNumber(observation.fluidIntake ?? "");
+  if (documentedIntake !== null) return documentedIntake;
   const urine = parseObservationNumber(observation.urineOutput);
   if (urine === null) return null;
   const oxygenFlow = oxygenFlowValue(observation.oxygenFlow) ?? 0;
@@ -1245,7 +1267,7 @@ function observationMatchesDateFilter(
 function observationMatchesTimeFilter(observation: RapidObservationSet, mode: string, timeFrom: string, timeTo: string) {
   const minutes = observationTimeMinutes(observation);
   if (minutes === null) return true;
-  if (mode === "All times") return true;
+  if (mode === "24 Hours" || mode === "All times") return true;
   if (mode === "Morning 06-13") return minutesWithinRange(minutes, 6 * 60, 13 * 60 + 59);
   if (mode === "Afternoon 14-17") return minutesWithinRange(minutes, 14 * 60, 17 * 60 + 59);
   if (mode === "Evening 18-21") return minutesWithinRange(minutes, 18 * 60, 21 * 60 + 59);

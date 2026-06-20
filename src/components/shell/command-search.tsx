@@ -43,16 +43,16 @@ export function CommandSearch({ triggerClassName, compact = false }: { triggerCl
       ) : (
         <>
           <button
-            className="hidden h-9 min-w-64 items-center gap-2 rounded-md border border-border bg-surface px-3 text-left text-sm text-muted-foreground hover:bg-surface-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring lg:flex"
+            className="hidden h-9 min-w-64 items-center gap-2 rounded-lg border border-slate-200 bg-slate-50/80 px-3 text-left text-sm font-semibold text-slate-500 shadow-inner hover:border-sky-200 hover:bg-sky-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring lg:flex"
             onClick={() => setOpen(true)}
             type="button"
           >
             <Search className="h-4 w-4" />
             Search patient, module, bill...
-            <span className="ml-auto rounded border border-border px-1.5 py-0.5 text-[10px]">/</span>
+            <span className="ml-auto rounded-md border border-slate-200 bg-white px-1.5 py-0.5 text-[10px] font-black text-slate-500">/</span>
           </button>
           <button
-            className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-border bg-surface text-muted-foreground hover:bg-surface-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring lg:hidden"
+            className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-500 shadow-sm hover:bg-sky-50 hover:text-sky-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring lg:hidden"
             onClick={() => setOpen(true)}
             aria-label="Open global search"
             type="button"

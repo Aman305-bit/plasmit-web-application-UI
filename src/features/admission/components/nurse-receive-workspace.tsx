@@ -18,15 +18,18 @@ export function NurseReceiveWorkspace() {
   const readyRequests = state.requests.filter((request) => ["Ready for Nursing", "Received", "Care Started"].includes(request.status));
   const currentRequest = readyRequests.find((request) => request.id === activeRequest?.id) ?? readyRequests[0] ?? null;
   const existing = state.receiveRecords.find((record) => record.requestId === currentRequest?.id);
+  const admissionTime = currentRequest ? admissionTimeLabel(currentRequest) : "";
   const [receivedBy, setReceivedBy] = React.useState(existing?.receivedBy ?? "");
   const [receivedTime, setReceivedTime] = React.useState(existing?.receivedTime ?? "");
   const [checked, setChecked] = React.useState<string[]>(existing?.checklist ?? []);
 
   React.useEffect(() => {
     const nextExisting = state.receiveRecords.find((record) => record.requestId === currentRequest?.id);
-    setReceivedBy(nextExisting?.receivedBy ?? "");
-    setReceivedTime(nextExisting?.receivedTime ?? "");
-    setChecked(nextExisting?.checklist ?? []);
+    queueMicrotask(() => {
+      setReceivedBy(nextExisting?.receivedBy ?? "");
+      setReceivedTime(nextExisting?.receivedTime ?? "");
+      setChecked(nextExisting?.checklist ?? []);
+    });
   }, [currentRequest?.id, state.receiveRecords]);
 
   function toggle(item: string) {
@@ -67,7 +70,9 @@ export function NurseReceiveWorkspace() {
             <div className="mt-2 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
               <div>
                 <div className="text-sm font-semibold">{currentRequest.patient}</div>
-                <div className="text-xs text-muted-foreground">{currentRequest.uhid} | Bed: {currentRequest.bedNo ?? "Not assigned"}</div>
+                <div className="text-xs text-muted-foreground">
+                  {currentRequest.uhid} | Bed: {currentRequest.bedNo ?? "Not assigned"} | Admission: {admissionTime}
+                </div>
               </div>
               <AdmissionStatusBadge value={currentRequest.status} />
             </div>
@@ -89,14 +94,20 @@ export function NurseReceiveWorkspace() {
         >
           <option value="" disabled>Select patient to receive</option>
           {readyRequests.map((request) => (
-            <option key={request.id} value={request.id}>{request.patient} | {request.uhid} | {request.bedNo ?? "No bed"}</option>
+            <option key={request.id} value={request.id}>
+              {request.patient} | {request.uhid} | {request.bedNo ?? "No bed"} | Admission {admissionTimeLabel(request)}
+            </option>
           ))}
         </select>
 
-        <div className="grid gap-3 md:grid-cols-2">
+        <div className="grid gap-3 lg:grid-cols-3">
           <label className="space-y-1 text-sm">
             <span className="font-medium">Received By</span>
             <Input placeholder="Enter nurse name" value={receivedBy} onChange={(event) => setReceivedBy(event.target.value)} />
+          </label>
+          <label className="space-y-1 text-sm">
+            <span className="font-medium">Admission Time</span>
+            <Input readOnly value={admissionTime} />
           </label>
           <label className="space-y-1 text-sm">
             <span className="font-medium">Received Time</span>
@@ -127,4 +138,8 @@ export function NurseReceiveWorkspace() {
       </CardContent>
     </Card>
   );
+}
+
+function admissionTimeLabel(request: { admissionTime?: string; createdAt?: string }) {
+  return request.admissionTime ?? request.createdAt ?? "Auto from admission order";
 }

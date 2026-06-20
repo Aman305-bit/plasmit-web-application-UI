@@ -22,6 +22,8 @@ pnpm-debug.log*
 # local caches / generated temp
 .npm-cache/
 .tmp_*/
+.codex-logs/
+~$*
 
 # typescript
 *.tsbuildinfo

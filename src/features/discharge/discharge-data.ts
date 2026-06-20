@@ -22,13 +22,20 @@ export type DischargePatientPlan = {
   patientName: string;
   uhid: string;
   ageGender: string;
+  address: string;
+  contactNumber: string;
   bed: string;
   ward: string;
   consultant: string;
+  admittingConsultant: string;
   department: string;
+  specialty: string;
   diagnosis: string;
   dischargeType: "Routine" | "LAMA" | "Transfer" | "Deceased" | "Against advice" | "Day care";
+  finalDischargeStatus: "Alive" | "Death";
   status: DischargeStatus;
+  admissionDateTime: string;
+  dischargeDateTime: string;
   dischargePlannedAt: string;
   expectedDeparture: string;
   orderLock: "Active" | "Not active";
@@ -47,17 +54,28 @@ export type DischargePatientPlan = {
     recordedAt: string;
   };
   clinicalSummary: {
+    chiefComplaints: string;
+    complaintDuration: string;
     hpi: string;
+    briefClinicalHistory: string;
+    pastHistory: string;
+    medicalHistory: string;
+    socialHistory: string;
+    allergicHistory: string;
     primaryDiagnosis: string;
     secondaryDiagnosis: string;
     procedure: string;
-    hospitalCourse: string;
+    clinicalFindings: string[];
+    treatmentProvided: string;
+    conditionAtDischarge: string[];
   };
   instructions: {
     dischargeNote: string;
     patientInstructions: string;
     diet: string;
     activity: string;
+    woundCare: string;
+    lifestyle: string;
     warningSigns: string;
   };
   followUp: {
@@ -66,6 +84,11 @@ export type DischargePatientPlan = {
     date: string;
     time: string;
     mode: "OPD" | "Teleconsultation" | "Emergency return";
+  };
+  consultantSignature: {
+    name: string;
+    registrationNumber: string;
+    date: string;
   };
 };
 
@@ -136,13 +159,20 @@ export const mockDischargePlans: DischargePatientPlan[] = [
     patientName: "Aisha Khan",
     uhid: "PLH-240221",
     ageGender: "12 / Female",
+    address: "Flat 304, Green Park Society, Pune",
+    contactNumber: "+91 98765 24021",
     bed: "PW-014",
     ward: "Pediatric Ward",
     consultant: "Dr. Neha Malik",
+    admittingConsultant: "Dr. Neha Malik",
     department: "Pediatrics",
+    specialty: "Pediatric respiratory care",
     diagnosis: "Acute asthma observation",
     dischargeType: "Routine",
+    finalDischargeStatus: "Alive",
     status: "Checklist in progress",
+    admissionDateTime: "27 May 2026, 06:45 PM",
+    dischargeDateTime: "28 May 2026, 04:00 PM",
     dischargePlannedAt: "28 May 2026, 10:30 AM",
     expectedDeparture: "28 May 2026, 04:00 PM",
     orderLock: "Active",
@@ -155,20 +185,32 @@ export const mockDischargePlans: DischargePatientPlan[] = [
     riskFlags: ["Minor guardian consent", "Asthma action plan"],
     vitals: { bp: "104/68", pulse: "92/min", spo2: "98%", temp: "36.8 C", recordedAt: "Today 09:45" },
     clinicalSummary: {
+      chiefComplaints: "Wheeze, cough, and shortness of breath.",
+      complaintDuration: "1 day, worsened over 6 hours before admission.",
       hpi: "Admitted for wheeze and shortness of breath observation after OPD review.",
+      briefClinicalHistory: "Child presented with acute wheeze after seasonal exposure and required nebulization observation.",
+      pastHistory: "Known episodic wheeze with seasonal allergic rhinitis.",
+      medicalHistory: "No major surgery. No known drug allergy documented.",
+      socialHistory: "Lives with parents. No household smoking exposure reported.",
+      allergicHistory: "Seasonal allergy history present. No known drug allergy documented.",
       primaryDiagnosis: "Bronchial asthma with acute exacerbation, improving",
       secondaryDiagnosis: "Seasonal allergic rhinitis",
       procedure: "Nebulization and observation, no invasive procedure",
-      hospitalCourse: "Oxygen saturation remained stable on room air after bronchodilator therapy.",
+      clinicalFindings: ["Bilateral mild wheeze improved after nebulization; no respiratory distress at discharge review."],
+      treatmentProvided: "Nebulization, inhaler education, spacer technique counselling, and observation vitals monitoring.",
+      conditionAtDischarge: ["Hemodynamically stable", "Afebrile/stable symptoms", "Ambulatory"],
     },
     instructions: {
       dischargeNote: "Clinically stable for discharge after medication reconciliation, guardian counselling, and final billing clearance.",
       patientInstructions: "Continue inhaler as advised. Use spacer. Return immediately if breathing difficulty, bluish lips, drowsiness, or poor oral intake occurs.",
       diet: "Regular age-appropriate diet. Maintain hydration.",
       activity: "Avoid exertion for 48 hours. Resume school after pediatric review if asymptomatic.",
+      woundCare: "Not applicable.",
+      lifestyle: "Avoid smoke, dust exposure, and known asthma triggers. Keep rescue inhaler available.",
       warningSigns: "Breathlessness at rest, persistent wheeze, SpO2 below advised threshold, fever, poor response to inhaler.",
     },
     followUp: { physician: "Dr. Neha Malik", department: "Pediatrics", date: "31 May 2026", time: "11:30 AM", mode: "OPD" },
+    consultantSignature: { name: "Dr. Neha Malik", registrationNumber: "MMC-PAED-20451", date: "28 May 2026" },
   },
   {
     id: "disc-plan-002",
@@ -177,13 +219,20 @@ export const mockDischargePlans: DischargePatientPlan[] = [
     patientName: "Arjun Kapoor",
     uhid: "PLH-240076",
     ageGender: "58 / Male",
+    address: "B-17, Kalyani Nagar, Pune",
+    contactNumber: "+91 98765 40076",
     bed: "OW-204",
     ward: "Ortho Ward",
     consultant: "Dr. Aman Verma",
+    admittingConsultant: "Dr. Aman Verma",
     department: "Orthopedics",
+    specialty: "Orthopedic trauma",
     diagnosis: "Post fracture stabilization",
     dischargeType: "Routine",
+    finalDischargeStatus: "Alive",
     status: "Ready for clearance",
+    admissionDateTime: "27 May 2026, 01:10 PM",
+    dischargeDateTime: "29 May 2026, 10:00 AM",
     dischargePlannedAt: "28 May 2026, 11:00 AM",
     expectedDeparture: "29 May 2026, 10:00 AM",
     orderLock: "Active",
@@ -196,20 +245,32 @@ export const mockDischargePlans: DischargePatientPlan[] = [
     riskFlags: ["Outstanding balance", "Physiotherapy follow-up"],
     vitals: { bp: "132/82", pulse: "84/min", spo2: "97%", temp: "37.0 C", recordedAt: "Today 10:10" },
     clinicalSummary: {
+      chiefComplaints: "Pain and swelling in forearm after fall.",
+      complaintDuration: "Same day presentation, approximately 3 hours before admission.",
       hpi: "Admitted following orthopedic trauma stabilization and pain management.",
+      briefClinicalHistory: "Patient presented after fall with suspected forearm fracture and was admitted for reduction, immobilization, pain control, and neurovascular observation.",
+      pastHistory: "Known hypertension on treatment.",
+      medicalHistory: "No diabetes. No known drug allergy recorded.",
+      socialHistory: "Independent daily activity before admission. No alcohol or smoking risk documented in this record.",
+      allergicHistory: "No known drug allergy recorded.",
       primaryDiagnosis: "Closed fracture, post stabilization",
       secondaryDiagnosis: "Hypertension under treatment",
       procedure: "Closed reduction and immobilization",
-      hospitalCourse: "Pain controlled, limb perfusion intact, mobilization training completed.",
+      clinicalFindings: ["Cast intact, distal pulse palpable, finger movement and sensation preserved."],
+      treatmentProvided: "Analgesics, limb elevation, closed reduction, immobilization, physiotherapy and device handover education.",
+      conditionAtDischarge: ["Hemodynamically stable", "Afebrile/stable symptoms", "Ambulatory with support"],
     },
     instructions: {
       dischargeNote: "Discharge after insurance query closure and doctor signature.",
       patientInstructions: "Keep limb elevated. Do not wet cast. Take analgesics after food. Report numbness, severe swelling, or uncontrolled pain.",
       diet: "High-protein diet with adequate fluids unless restricted.",
       activity: "Non-weight-bearing mobilization with walker until ortho review.",
+      woundCare: "Keep cast/dressing dry. Do not insert objects inside cast. Return if cast becomes tight or wet.",
+      lifestyle: "Fall-prevention measures at home, assisted walking, and blood pressure medicine compliance.",
       warningSigns: "Increasing pain, finger discoloration, fever, cast tightness, chest pain, or breathlessness.",
     },
     followUp: { physician: "Dr. Aman Verma", department: "Orthopedics", date: "03 Jun 2026", time: "09:15 AM", mode: "OPD" },
+    consultantSignature: { name: "Dr. Aman Verma", registrationNumber: "MMC-ORTH-11782", date: "29 May 2026" },
   },
   {
     id: "disc-plan-003",
@@ -218,13 +279,20 @@ export const mockDischargePlans: DischargePatientPlan[] = [
     patientName: "Unknown Emergency",
     uhid: "TMP-ER-0098",
     ageGender: "35 / Unknown",
+    address: "Identity pending",
+    contactNumber: "Attendant contact pending",
     bed: "ICU-01",
     ward: "ICU",
     consultant: "Emergency Team",
+    admittingConsultant: "Emergency Team",
     department: "Emergency",
+    specialty: "Emergency stabilization",
     diagnosis: "Observation after emergency stabilization",
     dischargeType: "Transfer",
+    finalDischargeStatus: "Alive",
     status: "On hold",
+    admissionDateTime: "28 May 2026, 09:58 AM",
+    dischargeDateTime: "Pending receiving facility acceptance",
     dischargePlannedAt: "Pending",
     expectedDeparture: "Pending",
     orderLock: "Not active",
@@ -237,20 +305,32 @@ export const mockDischargePlans: DischargePatientPlan[] = [
     riskFlags: ["Identity pending", "Transfer documents pending"],
     vitals: { bp: "118/76", pulse: "96/min", spo2: "96%", temp: "37.1 C", recordedAt: "Today 10:55" },
     clinicalSummary: {
+      chiefComplaints: "Emergency presentation with incomplete history.",
+      complaintDuration: "Unknown duration at arrival.",
       hpi: "Unknown emergency patient stabilized and kept under observation.",
+      briefClinicalHistory: "Patient brought to emergency with incomplete identity details, stabilized, and planned for monitored referral after documentation completion.",
+      pastHistory: "Not available at admission.",
+      medicalHistory: "Medication and allergy history pending confirmation.",
+      socialHistory: "Not available due to emergency presentation and identity pending.",
+      allergicHistory: "Allergy history pending confirmation.",
       primaryDiagnosis: "Post emergency stabilization",
       secondaryDiagnosis: "Identity unknown",
       procedure: "Emergency stabilization and monitoring",
-      hospitalCourse: "Stable currently, but transfer documentation and identity process remain pending.",
+      clinicalFindings: ["Airway patent, vitals stable after emergency stabilization, ongoing observation advised."],
+      treatmentProvided: "Primary survey, IV access, monitoring, supportive therapy, and transfer-readiness review.",
+      conditionAtDischarge: ["Hemodynamically stable", "Afebrile/stable symptoms", "Stretcher transfer"],
     },
     instructions: {
       dischargeNote: "Transfer discharge cannot proceed until identity, consent, and transfer summary are completed.",
       patientInstructions: "Transfer handover instructions pending receiving facility confirmation.",
       diet: "As per receiving facility.",
       activity: "Stretcher transfer with nursing handover.",
+      woundCare: "Maintain IV site and monitoring leads as per transfer protocol.",
+      lifestyle: "Not applicable during emergency transfer.",
       warningSigns: "Deterioration during transfer, fall risk, altered sensorium.",
     },
     followUp: { physician: "Emergency Team", department: "Emergency", date: "Pending", time: "Pending", mode: "Emergency return" },
+    consultantSignature: { name: "Emergency Team", registrationNumber: "ER-TEAM-ON-DUTY", date: "Pending" },
   },
 ];
 
@@ -295,9 +375,9 @@ export const mockDischargeAudit: DischargeAuditEvent[] = [
 ];
 
 export function getDischargeTone(status: DischargeStatus | DischargeChecklistStatus | string): StatusTone {
-  if (["Discharged", "Done", "Cleared", "Signed", "Reconciled", "Ready for clearance"].includes(status)) return "success";
+  if (["Discharged", "Done", "Cleared", "Signed", "Reconciled", "Ready for clearance", "Alive"].includes(status)) return "success";
   if (["Planned", "Checklist in progress", "Billing pending", "Summary pending", "Pending", "Education due"].includes(status)) return "warning";
-  if (["Blocked", "On hold", "Query raised", "Clarification required"].includes(status)) return "danger";
+  if (["Blocked", "On hold", "Query raised", "Clarification required", "Death"].includes(status)) return "danger";
   if (["Not required", "Not planned"].includes(status)) return "muted";
   return "info";
 }
@@ -321,11 +401,23 @@ export function dischargeSearchText(plan: DischargePatientPlan) {
     plan.patientName,
     plan.uhid,
     plan.admissionId,
+    plan.address,
+    plan.contactNumber,
     plan.bed,
     plan.ward,
     plan.consultant,
+    plan.admittingConsultant,
     plan.department,
+    plan.specialty,
     plan.diagnosis,
+    plan.clinicalSummary.chiefComplaints,
+    plan.clinicalSummary.socialHistory,
+    plan.clinicalSummary.allergicHistory,
+    plan.clinicalSummary.clinicalFindings.join(" "),
+    plan.clinicalSummary.primaryDiagnosis,
+    plan.clinicalSummary.secondaryDiagnosis,
+    plan.admissionDateTime,
+    plan.dischargeDateTime,
     plan.status,
     plan.billingStatus,
   ]

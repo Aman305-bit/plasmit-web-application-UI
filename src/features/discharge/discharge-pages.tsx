@@ -2,6 +2,8 @@
 
 import * as React from "react";
 import * as Dialog from "@radix-ui/react-dialog";
+import { flushSync } from "react-dom";
+import { createRoot } from "react-dom/client";
 import {
   AlertTriangle,
   CheckCircle2,
@@ -13,6 +15,7 @@ import {
   FileText,
   Languages,
   LockKeyhole,
+  Plus,
   Printer,
   QrCode,
   RefreshCcw,
@@ -238,6 +241,23 @@ export function DischargeManagementPage() {
     updatePlan(selected.id, (plan) => ({ ...plan, followUp: { ...plan.followUp, [field]: value as DischargePatientPlan["followUp"][typeof field] } }));
   };
 
+  const updateSelectedFinalDischargeStatus = (value: DischargePatientPlan["finalDischargeStatus"]) => {
+    if (!selected) return;
+    updatePlan(selected.id, (plan) => ({ ...plan, finalDischargeStatus: value }));
+    addAudit(selected.id, "Final discharge status updated", `Discharge status changed to ${value}.`, value === "Death" ? "Critical" : "Info");
+  };
+
+  const updateSelectedClinicalFindings = (clinicalFindings: string[]) => {
+    if (!selected) return;
+    updatePlan(selected.id, (plan) => ({
+      ...plan,
+      clinicalSummary: {
+        ...plan.clinicalSummary,
+        clinicalFindings: clinicalFindings.length ? clinicalFindings : [""],
+      },
+    }));
+  };
+
   if (!access.allowed) {
     return <EmptyState icon={LockKeyhole} title="Discharge permission required" description="Switch to an inpatient, doctor, nurse, pharmacy, billing, admin, or management role to open discharge coordination." />;
   }
@@ -352,7 +372,14 @@ export function DischargeManagementPage() {
 
         <TabsContent value="summary" className="space-y-4">
           <PatientWorkspaceContext plan={selected} progress={progress} blockers={blockers} />
-          <PremiumSummaryTab plan={selected} checklist={selectedChecklist} medications={selectedMedications} />
+          <PremiumSummaryTab
+            plan={selected}
+            checklist={selectedChecklist}
+            medications={selectedMedications}
+            readOnly={access.readOnly}
+            onFinalDischargeStatusChange={updateSelectedFinalDischargeStatus}
+            onClinicalFindingsChange={updateSelectedClinicalFindings}
+          />
         </TabsContent>
 
         <TabsContent value="audit" className="space-y-4">
@@ -672,6 +699,16 @@ const instructionAdviceLibrary: Record<string, Partial<Record<InstructionField, 
       "Avoid strenuous activity for 48 hours.",
       "Take adequate rest and avoid unnecessary travel on the day of discharge.",
     ],
+    woundCare: [
+      "Keep wound or dressing clean and dry if applicable.",
+      "Return for review if redness, swelling, discharge, bleeding, or dressing soakage occurs.",
+      "Not applicable if no wound or procedure site is present.",
+    ],
+    lifestyle: [
+      "Avoid smoking and alcohol during recovery.",
+      "Maintain sleep, hydration, and medicine adherence.",
+      "Resume work or school only as advised by the consultant.",
+    ],
     warningSigns: [
       "Visit emergency immediately if fever, chest pain, breathing difficulty, severe weakness, persistent vomiting, bleeding, or altered sensorium occurs.",
       "Return to hospital if symptoms worsen or new symptoms develop.",
@@ -685,6 +722,7 @@ const instructionAdviceLibrary: Record<string, Partial<Record<InstructionField, 
     ],
     diet: ["Regular diet with adequate hydration.", "Avoid food items known to trigger allergy or wheeze."],
     activity: ["Avoid heavy exertion for 48 hours.", "Resume school/work only after symptoms remain controlled."],
+    lifestyle: ["Avoid smoke, dust, cold exposure, and known asthma triggers.", "Keep rescue inhaler available at all times."],
     warningSigns: [
       "Visit emergency immediately if breathlessness at rest, bluish lips, drowsiness, poor oral intake, or poor response to inhaler occurs.",
     ],
@@ -700,6 +738,7 @@ const instructionAdviceLibrary: Record<string, Partial<Record<InstructionField, 
       "Do not remove dressing unless advised.",
     ],
     activity: ["Avoid heavy lifting until review.", "Gradual mobilization is advised.", "Physiotherapy as advised."],
+    woundCare: ["Keep dressing or cast dry and intact.", "Do not remove dressing unless advised by the consultant."],
     warningSigns: [
       "Visit emergency immediately if severe pain, swelling, fever, bleeding, wound discharge, limb discoloration, or breathing difficulty occurs.",
     ],
@@ -722,7 +761,7 @@ const instructionAdviceLibrary: Record<string, Partial<Record<InstructionField, 
   "LAMA discharge": {
     dischargeNote: [
       "Patient/attendant has chosen discharge against medical advice after counselling regarding risks.",
-      "Risks, possible complications, and need for urgent return if symptoms worsen have been explained.",
+      "Risks and need for urgent return if symptoms worsen have been explained.",
     ],
     patientInstructions: [
       "Return to emergency immediately if condition worsens.",
@@ -758,6 +797,8 @@ function getDepartmentInstructionOptions(department: string, field: InstructionF
     const options: Partial<Record<InstructionField, string[]>> = {
       patientInstructions: ["Keep limb elevated and do not wet the cast or dressing.", "Report numbness, severe swelling, or increasing pain immediately."],
       activity: ["Non-weight-bearing mobilization with walker until orthopedic review.", "Physiotherapy and limb elevation as advised."],
+      woundCare: ["Keep cast or dressing dry.", "Do not insert objects inside cast or remove dressing unless advised."],
+      lifestyle: ["Use fall-prevention precautions at home.", "Continue blood pressure medicine and follow assisted walking advice."],
       warningSigns: ["Visit emergency if finger/toe discoloration, severe swelling, cast tightness, fever, or uncontrolled pain occurs."],
     };
     return options[field] ?? [];
@@ -766,6 +807,7 @@ function getDepartmentInstructionOptions(department: string, field: InstructionF
     const options: Partial<Record<InstructionField, string[]>> = {
       patientInstructions: ["Guardian has been counselled regarding medicine dose, danger signs, and follow-up.", "Ensure adequate oral intake and age-appropriate rest."],
       diet: ["Age-appropriate diet with adequate fluids.", "Avoid known allergens if any."],
+      lifestyle: ["Avoid smoke, dust, and known allergy triggers.", "Keep rescue medicines available as advised."],
       warningSigns: ["Return immediately if child has poor feeding, drowsiness, breathing difficulty, high fever, convulsion, or bluish lips."],
     };
     return options[field] ?? [];
@@ -774,6 +816,7 @@ function getDepartmentInstructionOptions(department: string, field: InstructionF
     const options: Partial<Record<InstructionField, string[]>> = {
       dischargeNote: ["Emergency stabilization summary prepared with transfer/return precautions."],
       patientInstructions: ["Attend emergency immediately if any symptom worsens after discharge or transfer."],
+      woundCare: ["Maintain IV site or dressing as advised during transfer."],
       warningSigns: ["Emergency return is required for altered consciousness, breathing difficulty, chest pain, bleeding, seizure, or severe weakness."],
     };
     return options[field] ?? [];
@@ -839,6 +882,20 @@ function InstructionsTab({
           suggestions={getInstructionAdviceOptions(template, plan.department, "activity")}
           onChange={(value) => onInstructionChange("activity", value)}
         />
+        <TextAreaField
+          label="Wound care"
+          value={plan.instructions.woundCare}
+          readOnly={readOnly}
+          suggestions={getInstructionAdviceOptions(template, plan.department, "woundCare")}
+          onChange={(value) => onInstructionChange("woundCare", value)}
+        />
+        <TextAreaField
+          label="Lifestyle modifications"
+          value={plan.instructions.lifestyle}
+          readOnly={readOnly}
+          suggestions={getInstructionAdviceOptions(template, plan.department, "lifestyle")}
+          onChange={(value) => onInstructionChange("lifestyle", value)}
+        />
         <div className="xl:col-span-2">
           <TextAreaField
             label="Warning signs"
@@ -902,6 +959,68 @@ function TextAreaField({
         </div>
       ) : null}
       <textarea className={textareaClassName} value={value} disabled={readOnly} onChange={(event) => onChange(event.target.value)} />
+    </div>
+  );
+}
+
+function ClinicalFindingsEditor({
+  findings,
+  readOnly,
+  onChange,
+}: {
+  findings: string[];
+  readOnly: boolean;
+  onChange: (findings: string[]) => void;
+}) {
+  const rows = findings.length ? findings : [""];
+
+  const updateFinding = (index: number, value: string) => {
+    onChange(rows.map((finding, rowIndex) => (rowIndex === index ? value : finding)));
+  };
+
+  const addFinding = () => {
+    onChange([...rows, ""]);
+  };
+
+  const removeFinding = (index: number) => {
+    const nextRows = rows.filter((_, rowIndex) => rowIndex !== index);
+    onChange(nextRows.length ? nextRows : [""]);
+  };
+
+  return (
+    <div className="min-w-0 space-y-2 text-sm">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="font-medium text-foreground">Clinical findings</div>
+        <Button type="button" size="sm" variant="outline" disabled={readOnly} onClick={addFinding}>
+          <Plus className="h-4 w-4" />
+          Add
+        </Button>
+      </div>
+      <div className="space-y-2">
+        {rows.map((finding, index) => (
+          <div className="grid gap-2 sm:grid-cols-[36px_minmax(0,1fr)_36px]" key={`clinical-finding-${index}`}>
+            <div className="grid h-9 place-items-center rounded-md border border-border bg-surface-muted text-sm font-semibold text-muted-foreground">
+              {index + 1}
+            </div>
+            <Input
+              value={finding}
+              disabled={readOnly}
+              placeholder={`Clinical finding ${index + 1}`}
+              onChange={(event) => updateFinding(index, event.target.value)}
+            />
+            <Button
+              type="button"
+              size="icon"
+              variant="ghost"
+              disabled={readOnly || rows.length === 1}
+              aria-label={`Remove clinical finding ${index + 1}`}
+              onClick={() => removeFinding(index)}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -985,13 +1104,13 @@ function getSummaryReadinessItems(
   const items: SummaryReadinessSeed[] = [
     { label: "Patient identity", source: "Admission", status: plan.uhid && plan.patientName ? "Complete" : "Blocked", detail: plan.uhid || "UHID missing" },
     { label: "Diagnosis", source: "Doctor", status: plan.clinicalSummary.primaryDiagnosis ? "Complete" : "Blocked", detail: plan.clinicalSummary.primaryDiagnosis || "Final diagnosis required" },
-    { label: "Clinical summary", source: "EMR notes", status: plan.clinicalSummary.hpi && plan.clinicalSummary.hospitalCourse ? "Complete" : "Review", detail: "HPI and hospital course" },
+    { label: "Clinical summary", source: "EMR notes", status: plan.clinicalSummary.hpi && getClinicalFindingRows(plan).length && plan.clinicalSummary.treatmentProvided ? "Complete" : "Review", detail: "HPI, findings, and treatment" },
     { label: "Diagnostics reviewed", source: "Checklist", ...diagnostics },
     { label: "Medication reconciliation", source: "Checklist / MAR", ...medication },
     { label: "Discharge medicines", source: "Pharmacy", status: dischargeMeds.length ? "Complete" : "Review", detail: dischargeMeds.length ? `${dischargeMeds.length} take-home medicines` : "Confirm no discharge medicine" },
     { label: "Nursing education", source: "Checklist", ...nursing },
     { label: "Billing clearance", source: "Checklist / Billing", status: plan.billingStatus === "Cleared" ? billing.status : "Review", detail: plan.billingStatus },
-    { label: "Instructions and diet", source: "Patient advice", status: plan.instructions.patientInstructions && plan.instructions.diet && plan.instructions.warningSigns ? "Complete" : "Review", detail: "Patient-friendly advice" },
+    { label: "Instructions and diet", source: "Patient advice", status: plan.instructions.patientInstructions && plan.instructions.diet && plan.instructions.activity && plan.instructions.woundCare && plan.instructions.lifestyle && plan.instructions.warningSigns ? "Complete" : "Review", detail: "Patient-friendly advice" },
     { label: "Follow-up", source: "Appointment", status: plan.followUp.date !== "Pending" && plan.followUp.physician ? "Complete" : "Review", detail: `${plan.followUp.physician}, ${plan.followUp.date}` },
     { label: "Pending reports", source: "Lab / Radiology", status: pendingOpen.length ? "Review" : "Complete", detail: pendingOpen.length ? `${pendingOpen.length} pending` : "No pending critical report" },
     { label: "Legal sign-off", source: "Summary approval", status: plan.summaryStatus === "Signed" ? "Complete" : summary.status, detail: plan.summaryStatus },
@@ -1070,10 +1189,16 @@ function buildSummaryReadinessEvidence(
             { label: "Patient", value: plan.patientName },
             { label: "UHID / MRN", value: plan.uhid },
             { label: "Age / Gender", value: plan.ageGender },
+            { label: "Address", value: plan.address },
+            { label: "Contact number", value: plan.contactNumber },
             { label: "Admission", value: plan.admissionId },
+            { label: "Admission date/time", value: plan.admissionDateTime },
+            { label: "Discharge date/time", value: plan.dischargeDateTime },
             { label: "Ward / Bed", value: `${plan.ward}, ${plan.bed}` },
+            { label: "Admitting consultant", value: plan.admittingConsultant },
             { label: "Consultant", value: plan.consultant },
             { label: "Department", value: plan.department },
+            { label: "Specialty", value: plan.specialty },
           ],
         },
         defaultSection,
@@ -1093,7 +1218,8 @@ function buildSummaryReadinessEvidence(
             { label: "Final diagnosis", value: plan.clinicalSummary.primaryDiagnosis },
             { label: "Secondary diagnosis", value: plan.clinicalSummary.secondaryDiagnosis },
             { label: "Department", value: plan.department },
-            { label: "Discharge type", value: plan.dischargeType },
+            { label: "Type of discharge", value: getDischargeTypeLabel(plan) },
+            { label: "Discharge status", value: plan.finalDischargeStatus },
             { label: "Destination", value: plan.destination },
           ],
         },
@@ -1105,15 +1231,24 @@ function buildSummaryReadinessEvidence(
   if (item.label === "Clinical summary") {
     return {
       title: "Clinical summary preview",
-      subtitle: "HPI, hospital course, and procedure summary",
+      subtitle: "HPI, history, findings, treatment, and procedure summary",
       status: item.status,
       sections: [
         {
           title: "Clinical content",
           rows: [
             { label: "History of present illness", value: plan.clinicalSummary.hpi },
-            { label: "Hospital course", value: plan.clinicalSummary.hospitalCourse },
+            { label: "Chief complaints", value: plan.clinicalSummary.chiefComplaints },
+            { label: "Duration", value: plan.clinicalSummary.complaintDuration },
+            { label: "Brief clinical history", value: plan.clinicalSummary.briefClinicalHistory },
+            { label: "Past history", value: plan.clinicalSummary.pastHistory },
+            { label: "Medical history", value: plan.clinicalSummary.medicalHistory },
+            { label: "Social history", value: plan.clinicalSummary.socialHistory },
+            { label: "Allergic history", value: plan.clinicalSummary.allergicHistory },
+            { label: "Clinical findings", value: getClinicalFindingsText(plan) },
+            { label: "Treatment provided", value: plan.clinicalSummary.treatmentProvided },
             { label: "Procedure", value: plan.clinicalSummary.procedure },
+            { label: "Condition at discharge", value: getConditionAtDischargeText(plan) },
           ],
         },
         defaultSection,
@@ -1153,6 +1288,8 @@ function buildSummaryReadinessEvidence(
             { label: "Patient instructions", value: plan.instructions.patientInstructions },
             { label: "Diet advice", value: plan.instructions.diet },
             { label: "Activity advice", value: plan.instructions.activity },
+            { label: "Wound care", value: plan.instructions.woundCare },
+            { label: "Lifestyle modifications", value: plan.instructions.lifestyle },
             { label: "Red flag symptoms", value: plan.instructions.warningSigns },
           ],
         },
@@ -1254,10 +1391,16 @@ function PremiumSummaryTab({
   plan,
   checklist,
   medications,
+  readOnly,
+  onFinalDischargeStatusChange,
+  onClinicalFindingsChange,
 }: {
   plan: DischargePatientPlan;
   checklist: DischargeChecklistItem[];
   medications: DischargeMedication[];
+  readOnly: boolean;
+  onFinalDischargeStatusChange: (value: DischargePatientPlan["finalDischargeStatus"]) => void;
+  onClinicalFindingsChange: (clinicalFindings: string[]) => void;
 }) {
   const progress = getChecklistProgress(checklist);
   const dischargeMeds = medications.filter((medication) => medication.dischargeMedication);
@@ -1280,7 +1423,7 @@ function PremiumSummaryTab({
         plan={plan}
         completion={completion}
         pendingCount={pendingCount}
-        onDownload={() => downloadDischargeSummaryPdf(plan, dischargeMeds, labs, procedures, pendingReports)}
+        onDownload={() => downloadDischargeSummaryPdf(plan, progress.percent, medications, dischargeMeds, labs, procedures, pendingReports)}
         onPreview={openPdfPreview}
       />
       <SummaryReadinessPanel items={readinessItems} completion={completion} />
@@ -1301,7 +1444,7 @@ function PremiumSummaryTab({
                 <Languages className="h-4 w-4" />
                 Language
               </Button>
-              <Button size="sm" variant="outline" onClick={() => downloadDischargeSummaryPdf(plan, dischargeMeds, labs, procedures, pendingReports)}>
+              <Button size="sm" variant="outline" onClick={() => downloadDischargeSummaryPdf(plan, progress.percent, medications, dischargeMeds, labs, procedures, pendingReports)}>
                 <Download className="h-4 w-4" />
                 Download PDF
               </Button>
@@ -1311,11 +1454,23 @@ function PremiumSummaryTab({
               </Button>
             </div>
           </CardHeader>
-          <CardContent className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <CardContent className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
             <SummaryStatusTile label="Summary No." value={getPremiumSummaryNo(plan)} tone="info" />
             <SummaryStatusTile label="Document status" value={plan.summaryStatus} tone={getDischargeTone(plan.summaryStatus)} />
             <SummaryStatusTile label="Version" value="v1.0 draft" tone="muted" />
             <SummaryStatusTile label="Lock state" value={plan.summaryStatus === "Signed" ? "Locked" : "Editable"} tone={plan.summaryStatus === "Signed" ? "success" : "warning"} />
+            <label className="rounded-lg border border-border bg-background p-3 text-xs">
+              <span className="font-medium text-muted-foreground">Discharge status</span>
+              <select
+                className={cn(inputClassName, "mt-2")}
+                value={plan.finalDischargeStatus}
+                disabled={readOnly}
+                onChange={(event) => onFinalDischargeStatusChange(event.target.value as DischargePatientPlan["finalDischargeStatus"])}
+              >
+                <option value="Alive">Alive</option>
+                <option value="Death">Death</option>
+              </select>
+            </label>
           </CardContent>
         </Card>
 
@@ -1330,10 +1485,24 @@ function PremiumSummaryTab({
             <details className="rounded-lg border border-border bg-background p-3" open>
               <summary className="cursor-pointer text-sm font-semibold text-foreground">Diagnosis and clinical summary</summary>
               <div className="mt-3 grid gap-3 xl:grid-cols-2">
+                <Field label="Type of discharge" value={getDischargeTypeLabel(plan)} disabled />
+                <Field label="Discharge status" value={plan.finalDischargeStatus} disabled />
                 <Field label="Final diagnosis" value={plan.clinicalSummary.primaryDiagnosis} />
                 <Field label="ICD-10 code" value={plan.department === "Pediatrics" ? "J45.901" : plan.department === "Orthopedics" ? "S52.90XA" : "Z04.9"} />
+                <TextAreaField label="Chief complaints" value={`${plan.clinicalSummary.chiefComplaints}\nDuration: ${plan.clinicalSummary.complaintDuration}`} readOnly={false} onChange={() => undefined} />
                 <TextAreaField label="History of present illness" value={plan.clinicalSummary.hpi} readOnly={false} onChange={() => undefined} />
-                <TextAreaField label="Hospital course / treatment summary" value={plan.clinicalSummary.hospitalCourse} readOnly={false} onChange={() => undefined} />
+                <TextAreaField label="Brief clinical history leading to admission" value={plan.clinicalSummary.briefClinicalHistory} readOnly={false} onChange={() => undefined} />
+                <TextAreaField label="Past and medical history" value={`Past history: ${plan.clinicalSummary.pastHistory}\nMedical history: ${plan.clinicalSummary.medicalHistory}`} readOnly={false} onChange={() => undefined} />
+                <TextAreaField label="Social history" value={plan.clinicalSummary.socialHistory} readOnly={false} onChange={() => undefined} />
+                <TextAreaField label="Allergic history" value={plan.clinicalSummary.allergicHistory} readOnly={false} onChange={() => undefined} />
+                <div className="xl:col-span-2">
+                  <ClinicalFindingsEditor
+                    findings={plan.clinicalSummary.clinicalFindings}
+                    readOnly={readOnly}
+                    onChange={onClinicalFindingsChange}
+                  />
+                </div>
+                <TextAreaField label="Treatment provided during hospital course" value={plan.clinicalSummary.treatmentProvided} readOnly={false} onChange={() => undefined} />
               </div>
             </details>
 
@@ -1346,6 +1515,13 @@ function PremiumSummaryTab({
                   <SummaryVital label="Blood pressure" value={plan.vitals.bp} />
                   <SummaryVital label="SpO2" value={plan.vitals.spo2} />
                   <SummaryVital label="Recorded" value={plan.vitals.recordedAt} />
+                </div>
+                <div className="grid gap-2 md:grid-cols-3">
+                  {plan.clinicalSummary.conditionAtDischarge.map((condition) => (
+                    <div className="rounded-md border border-success/30 bg-success/10 p-2 text-xs font-semibold text-success" key={condition}>
+                      {condition}
+                    </div>
+                  ))}
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {alerts.map((alert) => (
@@ -1368,6 +1544,8 @@ function PremiumSummaryTab({
                   <TextAreaField label="Red flag symptoms" value={plan.instructions.warningSigns} readOnly={false} onChange={() => undefined} />
                   <TextAreaField label="Diet advice" value={plan.instructions.diet} readOnly={false} onChange={() => undefined} />
                   <TextAreaField label="Activity advice" value={plan.instructions.activity} readOnly={false} onChange={() => undefined} />
+                  <TextAreaField label="Wound care" value={plan.instructions.woundCare} readOnly={false} onChange={() => undefined} />
+                  <TextAreaField label="Lifestyle modifications" value={plan.instructions.lifestyle} readOnly={false} onChange={() => undefined} />
                 </div>
               </div>
             </details>
@@ -1400,6 +1578,9 @@ function PremiumSummaryTab({
             <div className="font-semibold text-foreground">{plan.patientName}</div>
             <div className="mt-1 text-xs text-muted-foreground">{plan.uhid} | {plan.ageGender}</div>
             <div className="mt-1 text-xs text-muted-foreground">{plan.bed}, {plan.ward}</div>
+            <div className="mt-1 text-xs text-muted-foreground">{plan.contactNumber}</div>
+            <div className="mt-1 text-xs text-muted-foreground">Admit: {plan.admissionDateTime}</div>
+            <div className="mt-1 text-xs text-muted-foreground">Discharge: {plan.dischargeDateTime}</div>
             <div className="mt-1 text-xs text-muted-foreground">{plan.consultant}</div>
           </div>
           <HandoverRow label="Billing" value={plan.billingStatus} />
@@ -1425,7 +1606,7 @@ function PremiumSummaryTab({
       <PdfPreviewModal
         open={pdfPreviewOpen}
         onClose={() => setPdfPreviewOpen(false)}
-        onDownload={() => downloadDischargeSummaryPdf(plan, dischargeMeds, labs, procedures, pendingReports)}
+        onDownload={() => downloadDischargeSummaryPdf(plan, progress.percent, medications, dischargeMeds, labs, procedures, pendingReports)}
         plan={plan}
         progress={progress.percent}
         dischargeMeds={dischargeMeds}
@@ -1615,8 +1796,8 @@ function SummaryExecutiveHeader({
           </div>
           <div className="grid gap-2 sm:grid-cols-3 xl:min-w-[460px]">
             <SummaryHeroMetric label="Completion" value={`${completion}%`} />
-            <SummaryHeroMetric label="Discharge type" value={plan.dischargeType} />
-            <SummaryHeroMetric label="Destination" value={plan.destination} />
+            <SummaryHeroMetric label="Discharge type" value={getDischargeTypeLabel(plan)} />
+            <SummaryHeroMetric label="Status" value={plan.finalDischargeStatus} />
           </div>
         </div>
       </div>
@@ -1650,6 +1831,27 @@ function SummaryHeroMetric({ label, value }: { label: string; value: string }) {
 
 function getPremiumSummaryNo(plan: DischargePatientPlan) {
   return `DS-${plan.uhid.replace(/[^A-Z0-9]/gi, "")}-${plan.id.slice(-3).toUpperCase()}`;
+}
+
+function getDischargeTypeLabel(plan: DischargePatientPlan) {
+  if (plan.dischargeType === "Transfer") return "Referred";
+  if (plan.dischargeType === "LAMA" || plan.dischargeType === "Against advice") return "LAMA / Against Medical Advice";
+  if (plan.dischargeType === "Day care") return "Normal - Day care";
+  if (plan.dischargeType === "Deceased") return "Others - Deceased";
+  return "Normal";
+}
+
+function getConditionAtDischargeText(plan: DischargePatientPlan) {
+  return plan.clinicalSummary.conditionAtDischarge.join(", ");
+}
+
+function getClinicalFindingRows(plan: DischargePatientPlan) {
+  return plan.clinicalSummary.clinicalFindings.map((finding) => finding.trim()).filter(Boolean);
+}
+
+function getClinicalFindingsText(plan: DischargePatientPlan) {
+  const rows = getClinicalFindingRows(plan);
+  return rows.length ? rows.map((finding, index) => `${index + 1}. ${finding}`).join("\n") : "No clinical finding recorded.";
 }
 
 function getPremiumLabRows(plan: DischargePatientPlan) {
@@ -1708,203 +1910,99 @@ function premiumLabTone(flag: string): StatusTone {
   return "info";
 }
 
-function downloadDischargeSummaryPdf(
+async function downloadDischargeSummaryPdf(
   plan: DischargePatientPlan,
+  progress: number,
+  admissionMeds: DischargeMedication[],
   dischargeMeds: DischargeMedication[],
   labs: ReturnType<typeof getPremiumLabRows>,
   procedures: ReturnType<typeof getPremiumProcedureRows>,
   pendingReports: ReturnType<typeof getPremiumPendingRows>,
 ) {
-  const url = createDischargeSummaryPdfUrl(plan, dischargeMeds, labs, procedures, pendingReports);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = `${getPremiumSummaryNo(plan)}.pdf`;
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
-  URL.revokeObjectURL(url);
-  toast.success("PDF downloaded");
-}
+  const toastId = toast.loading("Preparing discharge PDF...");
+  let container: HTMLDivElement | null = null;
+  let root: ReturnType<typeof createRoot> | null = null;
 
-function createDischargeSummaryPdfUrl(
-  plan: DischargePatientPlan,
-  dischargeMeds: DischargeMedication[],
-  labs: ReturnType<typeof getPremiumLabRows>,
-  procedures: ReturnType<typeof getPremiumProcedureRows>,
-  pendingReports: ReturnType<typeof getPremiumPendingRows>,
-) {
-  const pages = [
-    [
-      hospitalProfile.name,
-      `${hospitalProfile.branch} | ${hospitalProfile.accreditation}`,
-      hospitalProfile.address,
-      "",
-      "DISCHARGE SUMMARY",
-      `Summary No: ${getPremiumSummaryNo(plan)}`,
-      `UHID/MRN: ${plan.uhid}`,
-      `IPD/Encounter: ${plan.admissionId}`,
-      `Patient: ${plan.patientName}`,
-      `Age/Gender: ${plan.ageGender}`,
-      `Ward/Bed: ${plan.ward}, ${plan.bed}`,
-      `Consultant: ${plan.consultant}`,
-      `Department: ${plan.department}`,
-      `Discharge status: ${plan.status}`,
-      "",
-      "DIAGNOSIS",
-      `Final diagnosis: ${plan.clinicalSummary.primaryDiagnosis}`,
-      `Secondary diagnosis: ${plan.clinicalSummary.secondaryDiagnosis}`,
-      "",
-      "CLINICAL SUMMARY",
-      plan.clinicalSummary.hpi,
-      plan.clinicalSummary.hospitalCourse,
-    ],
-    [
-      `${hospitalProfile.name} - Discharge Summary`,
-      `Patient: ${plan.patientName} | UHID: ${plan.uhid}`,
-      "",
-      "RECENT VITALS",
-      `BP ${plan.vitals.bp}, Pulse ${plan.vitals.pulse}, SpO2 ${plan.vitals.spo2}, Temp ${plan.vitals.temp}, Recorded ${plan.vitals.recordedAt}`,
-      "",
-      "INVESTIGATIONS",
-      ...labs.map((row) => `${row.test}: ${row.value} ${row.unit} (${row.flag}) - ${row.remark}`),
-      "",
-      "PROCEDURES",
-      ...procedures.map((row) => `${row.name} | ${row.at} | ${row.doctor} | ${row.finding}. Advice: ${row.advice}`),
-      "",
-      "MEDICATION DURING ADMISSION",
-      ...dischargeMeds.map((row) => `${row.medicine} ${row.dose} ${row.route} ${row.frequency} - ${row.status}`),
-    ],
-    [
-      `${hospitalProfile.name} - Discharge Summary`,
-      `Patient: ${plan.patientName} | UHID: ${plan.uhid}`,
-      "",
-      "DISCHARGE MEDICATIONS",
-      ...dischargeMeds.map((row) => `${row.medicine}: ${row.dose}, ${row.frequency}, ${row.duration}. ${row.instructions}`),
-      "",
-      "INSTRUCTIONS",
-      plan.instructions.patientInstructions,
-      `Diet: ${plan.instructions.diet}`,
-      `Activity: ${plan.instructions.activity}`,
-      `Red flags: ${plan.instructions.warningSigns}`,
-      "",
-      "FOLLOW-UP",
-      `${plan.followUp.physician}, ${plan.followUp.department}, ${plan.followUp.date} ${plan.followUp.time} (${plan.followUp.mode})`,
-      "",
-      "PENDING REPORTS",
-      ...pendingReports.map((row) => `${row.item} | Expected: ${row.expectedAt} | Owner: ${row.owner} | Status: ${row.status}`),
-      "",
-      "SIGNATURES",
-      "Treating consultant: ____________________",
-      "Resident doctor: _______________________",
-      "Nurse in-charge: _______________________",
-      "Patient / attendant: ___________________",
-    ],
-  ];
-  return URL.createObjectURL(new Blob([buildSimplePdf(pages)], { type: "application/pdf" }));
-}
+  try {
+    const [{ default: html2canvas }, { jsPDF }] = await Promise.all([
+      import("html2canvas"),
+      import("jspdf"),
+    ]);
+    const alerts = getPremiumAlertRows(plan);
 
-function buildSimplePdf(pages: string[][]) {
-  const fontObjectId = 3 + pages.length * 2;
-  const boldFontObjectId = fontObjectId + 1;
-  const objects: string[] = [];
-  objects[1] = "<< /Type /Catalog /Pages 2 0 R >>";
-  const kids = pages.map((_, index) => `${3 + index * 2} 0 R`).join(" ");
-  objects[2] = `<< /Type /Pages /Kids [${kids}] /Count ${pages.length} >>`;
-  pages.forEach((lines, index) => {
-    const pageObjectId = 3 + index * 2;
-    const contentObjectId = pageObjectId + 1;
-    const content = buildPdfPageContent(lines, index + 1, pages.length);
-    objects[pageObjectId] = `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 ${fontObjectId} 0 R /F2 ${boldFontObjectId} 0 R >> >> /Contents ${contentObjectId} 0 R >>`;
-    objects[contentObjectId] = `<< /Length ${content.length} >>\nstream\n${content}\nendstream`;
-  });
-  objects[fontObjectId] = "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>";
-  objects[boldFontObjectId] = "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>";
+    container = document.createElement("div");
+    container.style.position = "fixed";
+    container.style.left = "-12000px";
+    container.style.top = "0";
+    container.style.width = "826px";
+    container.style.background = "#f1f5f9";
+    container.style.pointerEvents = "none";
+    container.style.zIndex = "-1";
+    document.body.appendChild(container);
 
-  let pdf = "%PDF-1.4\n";
-  const offsets = [0];
-  for (let objectId = 1; objectId < objects.length; objectId += 1) {
-    if (!objects[objectId]) continue;
-    offsets[objectId] = pdf.length;
-    pdf += `${objectId} 0 obj\n${objects[objectId]}\nendobj\n`;
-  }
-  const xrefOffset = pdf.length;
-  pdf += `xref\n0 ${objects.length}\n0000000000 65535 f \n`;
-  for (let objectId = 1; objectId < objects.length; objectId += 1) {
-    pdf += `${String(offsets[objectId] ?? 0).padStart(10, "0")} 00000 n \n`;
-  }
-  pdf += `trailer\n<< /Size ${objects.length} /Root 1 0 R >>\nstartxref\n${xrefOffset}\n%%EOF`;
-  return pdf;
-}
-
-function buildPdfPageContent(lines: string[], pageNo: number, totalPages: number) {
-  const commands: string[] = [
-    "0.96 0.98 1 rg 36 742 523 62 re f",
-    "0.05 0.20 0.45 rg 36 735 523 3 re f",
-    "0.05 0.20 0.45 rg",
-    textCommand("F2", 16, 50, 780, hospitalProfile.name),
-    textCommand("F1", 8, 50, 766, `${hospitalProfile.branch} | ${hospitalProfile.accreditation}`),
-    textCommand("F1", 8, 50, 754, `${hospitalProfile.address} | ${hospitalProfile.phone}`),
-    textCommand("F2", 14, 382, 780, "DISCHARGE SUMMARY"),
-    textCommand("F1", 8, 382, 766, `Page ${pageNo} of ${totalPages}`),
-    "0 g",
-  ];
-
-  let y = 715;
-  lines.slice(4).forEach((rawLine) => {
-    const line = rawLine.trim();
-    if (y < 72) return;
-    if (!line) {
-      y -= 9;
-      return;
-    }
-    const isHeading = /^[A-Z0-9 /()-]+$/.test(line) && line.length <= 42;
-    if (isHeading) {
-      commands.push("0.90 0.95 1 rg 42 " + (y - 5) + " 510 17 re f");
-      commands.push("0.05 0.20 0.45 rg");
-      commands.push(textCommand("F2", 9, 50, y, line));
-      commands.push("0 g");
-      y -= 21;
-      return;
-    }
-    const wrapped = wrapPdfLine(line, 88);
-    wrapped.forEach((wrappedLine) => {
-      if (y < 72) return;
-      commands.push(textCommand("F1", 8.5, 50, y, wrappedLine));
-      y -= 12;
+    root = createRoot(container);
+    flushSync(() => {
+      root?.render(
+        <div className="space-y-5 bg-slate-100 p-4">
+          <DischargeSummaryPdfPages
+            plan={plan}
+            progress={progress}
+            dischargeMeds={dischargeMeds}
+            admissionMeds={admissionMeds}
+            labs={labs}
+            procedures={procedures}
+            alerts={alerts}
+            pendingReports={pendingReports}
+          />
+        </div>,
+      );
     });
-  });
 
-  commands.push("0.75 g 36 48 523 1 re f");
-  commands.push("0.35 g");
-  commands.push(textCommand("F1", 8, 50, 34, "Digitally verifiable document. QR/barcode verification enabled in EMR."));
-  commands.push(textCommand("F1", 8, 490, 34, `Page ${pageNo}/${totalPages}`));
-  return commands.join("\n");
-}
+    await waitForPdfPaint();
+    const pageElements = Array.from(container.querySelectorAll<HTMLElement>("[data-discharge-pdf-page='true']"));
+    if (!pageElements.length) throw new Error("PDF pages are not available.");
 
-function textCommand(font: "F1" | "F2", size: number, x: number, y: number, value: string) {
-  return `BT /${font} ${size} Tf ${x} ${y} Td (${escapePdfText(value)}) Tj ET`;
-}
+    const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4", compress: true });
+    const pdfWidth = pdf.internal.pageSize.getWidth();
+    const pdfHeight = pdf.internal.pageSize.getHeight();
 
-function wrapPdfLine(value: string, maxLength: number) {
-  if (!value) return [""];
-  const words = value.replace(/[^\x20-\x7E]/g, "").split(/\s+/);
-  const lines: string[] = [];
-  let current = "";
-  words.forEach((word) => {
-    const next = current ? `${current} ${word}` : word;
-    if (next.length > maxLength) {
-      lines.push(current);
-      current = word;
-    } else {
-      current = next;
+    for (const [index, pageElement] of pageElements.entries()) {
+      const canvas = await html2canvas(pageElement, {
+        backgroundColor: "#ffffff",
+        logging: false,
+        scale: 2,
+        useCORS: true,
+        windowWidth: pageElement.scrollWidth,
+        windowHeight: pageElement.scrollHeight,
+      });
+      const imageData = canvas.toDataURL("image/png");
+      const ratio = Math.min(pdfWidth / canvas.width, pdfHeight / canvas.height);
+      const renderWidth = canvas.width * ratio;
+      const renderHeight = canvas.height * ratio;
+      const x = (pdfWidth - renderWidth) / 2;
+
+      if (index > 0) pdf.addPage();
+      pdf.addImage(imageData, "PNG", x, 0, renderWidth, renderHeight, undefined, "FAST");
     }
-  });
-  if (current) lines.push(current);
-  return lines;
+
+    pdf.save(`${getPremiumSummaryNo(plan)}.pdf`);
+    toast.success("PDF downloaded like preview", { id: toastId });
+  } catch (error) {
+    console.error(error);
+    toast.error("PDF download failed. Please use Preview PDF > Print for now.", { id: toastId });
+  } finally {
+    root?.unmount();
+    container?.remove();
+  }
 }
 
-function escapePdfText(value: string) {
-  return value.replace(/\\/g, "\\\\").replace(/\(/g, "\\(").replace(/\)/g, "\\)");
+async function waitForPdfPaint() {
+  if ("fonts" in document) {
+    await document.fonts.ready;
+  }
+  await new Promise<void>((resolve) => {
+    requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+  });
 }
 
 function SummaryStatusTile({ label, value, tone }: { label: string; value: string; tone: StatusTone }) {
@@ -2028,7 +2126,7 @@ function PremiumA4Preview({
             <CardDescription>Collapsed by default to keep the workspace light. Expand only when checking print layout.</CardDescription>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Button size="sm" variant="outline" onClick={(event) => { event.preventDefault(); downloadDischargeSummaryPdf(plan, dischargeMeds, labs, procedures, pendingReports); }}>
+            <Button size="sm" variant="outline" onClick={(event) => { event.preventDefault(); downloadDischargeSummaryPdf(plan, progress, admissionMeds, dischargeMeds, labs, procedures, pendingReports); }}>
               <Download className="h-4 w-4" />
               Download PDF
             </Button>
@@ -2039,85 +2137,179 @@ function PremiumA4Preview({
           </div>
         </summary>
         <CardContent className="space-y-5 bg-surface-muted">
-        <PdfPage>
-          <PdfHeader plan={plan} progress={progress} />
-          <PdfSection title="Patient Identification">
-            <div className="grid gap-2 text-[11px] sm:grid-cols-2">
-              <PdfLine label="Patient" value={plan.patientName} />
-              <PdfLine label="UHID / MRN" value={plan.uhid} />
-              <PdfLine label="Age / Gender" value={plan.ageGender} />
-              <PdfLine label="Ward / Bed" value={`${plan.ward}, ${plan.bed}`} />
-              <PdfLine label="Consultant" value={plan.consultant} />
-              <PdfLine label="Department" value={plan.department} />
-              <PdfLine label="Admission" value={plan.admissionId} />
-              <PdfLine label="Discharge planned" value={plan.dischargePlannedAt} />
-            </div>
-          </PdfSection>
-          <PdfSection title="Diagnosis and Clinical Summary">
-            <PdfParagraph title="Final diagnosis" value={plan.clinicalSummary.primaryDiagnosis} />
-            <PdfParagraph title="Secondary diagnosis" value={plan.clinicalSummary.secondaryDiagnosis} />
-            <PdfParagraph title="History of present illness" value={plan.clinicalSummary.hpi} />
-            <PdfParagraph title="Hospital course" value={plan.clinicalSummary.hospitalCourse} />
-          </PdfSection>
-          <PdfFooter pageNo={1} />
-        </PdfPage>
-
-        <PdfPage>
-          <PdfHeader plan={plan} progress={progress} compact />
-          <PdfSection title="Vitals, Alerts, Investigations and Procedures">
-            <div className="grid gap-2 text-[11px] sm:grid-cols-5">
-              <PdfMetric label="Temp" value={plan.vitals.temp} />
-              <PdfMetric label="Pulse" value={plan.vitals.pulse} />
-              <PdfMetric label="BP" value={plan.vitals.bp} />
-              <PdfMetric label="SpO2" value={plan.vitals.spo2} />
-              <PdfMetric label="Recorded" value={plan.vitals.recordedAt} />
-            </div>
-            <div className="mt-3 flex flex-wrap gap-1">
-              {alerts.map((alert) => <span className="rounded-full border border-amber-300 bg-amber-50 px-2 py-0.5 text-[10px]" key={alert.label}>{alert.label}</span>)}
-            </div>
-            <PdfTable headers={["Test", "Date/time", "Value", "Range", "Flag"]} rows={labs.map((row) => [row.test, row.sampleAt, `${row.value} ${row.unit}`, row.range, row.flag])} />
-            <PdfTable headers={["Procedure", "Date/time", "Doctor", "Finding", "Advice"]} rows={procedures.map((row) => [row.name, row.at, row.doctor, row.finding, row.advice])} />
-          </PdfSection>
-          <PdfSection title="Medication During Admission">
-            <PdfTable headers={["Drug", "Dose", "Route", "Frequency", "Status"]} rows={admissionMeds.map((row) => [row.medicine, row.dose, row.route, row.frequency, row.status])} />
-          </PdfSection>
-          <PdfFooter pageNo={2} />
-        </PdfPage>
-
-        <PdfPage>
-          <PdfHeader plan={plan} progress={progress} compact />
-          <PdfSection title="Discharge Medication">
-            <PdfTable headers={["Medicine", "Dose", "Frequency", "Duration", "Instruction"]} rows={dischargeMeds.map((row) => [row.medicine, row.dose, row.frequency, row.duration, row.instructions])} />
-          </PdfSection>
-          <PdfSection title="Instructions, Diet and Follow-up">
-            <PdfParagraph title="General instructions" value={plan.instructions.patientInstructions} />
-            <PdfParagraph title="Diet" value={plan.instructions.diet} />
-            <PdfParagraph title="Activity" value={plan.instructions.activity} />
-            <PdfParagraph title="Red flag symptoms" value={plan.instructions.warningSigns} />
-            <PdfParagraph title="Follow-up" value={`${plan.followUp.physician}, ${plan.followUp.department}, ${plan.followUp.date} ${plan.followUp.time} (${plan.followUp.mode})`} />
-            <PdfTable headers={["Pending item", "Expected", "Owner", "Contact", "Status"]} rows={pendingReports.map((row) => [row.item, row.expectedAt, row.owner, row.contact, row.status])} />
-          </PdfSection>
-          <PdfSection title="Signatures and Acknowledgement">
-            <div className="grid gap-3 text-[11px] sm:grid-cols-4">
-              {["Treating consultant", "Resident doctor", "Nurse in-charge", "Patient / attendant"].map((label) => (
-                <div className="h-20 rounded border border-slate-300 p-2" key={label}>
-                  <div className="text-slate-500">{label}</div>
-                  <div className="mt-8 border-t border-slate-300 pt-1">Signature</div>
-                </div>
-              ))}
-            </div>
-          </PdfSection>
-          <PdfFooter pageNo={3} />
-        </PdfPage>
+          <DischargeSummaryPdfPages
+            plan={plan}
+            progress={progress}
+            dischargeMeds={dischargeMeds}
+            admissionMeds={admissionMeds}
+            labs={labs}
+            procedures={procedures}
+            alerts={alerts}
+            pendingReports={pendingReports}
+          />
         </CardContent>
       </details>
     </Card>
   );
 }
 
+function DischargeSummaryPdfPages({
+  plan,
+  progress,
+  dischargeMeds,
+  admissionMeds,
+  labs,
+  procedures,
+  alerts,
+  pendingReports,
+}: {
+  plan: DischargePatientPlan;
+  progress: number;
+  dischargeMeds: DischargeMedication[];
+  admissionMeds: DischargeMedication[];
+  labs: ReturnType<typeof getPremiumLabRows>;
+  procedures: ReturnType<typeof getPremiumProcedureRows>;
+  alerts: ReturnType<typeof getPremiumAlertRows>;
+  pendingReports: ReturnType<typeof getPremiumPendingRows>;
+}) {
+  return (
+    <>
+      <PdfPage>
+        <PdfHeader plan={plan} progress={progress} />
+        <PdfSection title="Patient Details">
+          <div className="grid gap-2 text-[11px] sm:grid-cols-2">
+            <PdfLine label="Name" value={plan.patientName} />
+            <PdfLine label="UHID / MRN" value={plan.uhid} />
+            <PdfLine label="Age / Sex" value={plan.ageGender} />
+            <PdfLine label="Contact" value={plan.contactNumber} />
+            <PdfLine label="Address" value={plan.address} />
+            <PdfLine label="Ward / Bed" value={`${plan.ward}, ${plan.bed}`} />
+          </div>
+        </PdfSection>
+        <PdfSection title="Type of Discharge">
+          <PdfParagraph title="Type" value={getDischargeTypeLabel(plan)} />
+        </PdfSection>
+        <PdfSection title="Admission Details">
+          <div className="grid gap-2 text-[11px] sm:grid-cols-2">
+            <PdfLine label="Admission" value={plan.admissionDateTime} />
+            <PdfLine label="Discharge" value={plan.dischargeDateTime} />
+            <PdfLine label="Admitting consultant" value={plan.admittingConsultant} />
+            <PdfLine label="Department" value={plan.department} />
+            <PdfLine label="Specialty" value={plan.specialty} />
+            <PdfLine label="Encounter" value={plan.admissionId} />
+          </div>
+        </PdfSection>
+        <PdfSection title="Diagnosis">
+          <PdfParagraph title="Primary diagnosis" value={plan.clinicalSummary.primaryDiagnosis} />
+          <PdfParagraph title="Secondary diagnoses / comorbidities" value={plan.clinicalSummary.secondaryDiagnosis} />
+          <PdfParagraph title="Discharge status" value={plan.finalDischargeStatus} />
+        </PdfSection>
+        <PdfFooter pageNo={1} />
+      </PdfPage>
+
+      <PdfPage>
+        <PdfHeader plan={plan} progress={progress} compact />
+        <PdfSection title="Chief Complaints">
+          <PdfParagraph title="Duration and presenting symptoms" value={`${plan.clinicalSummary.complaintDuration}; ${plan.clinicalSummary.chiefComplaints}`} />
+          <PdfParagraph title="History of present illness" value={plan.clinicalSummary.hpi} />
+          <PdfParagraph title="Brief clinical history leading to admission" value={plan.clinicalSummary.briefClinicalHistory} />
+          <PdfParagraph title="Past history" value={plan.clinicalSummary.pastHistory} />
+          <PdfParagraph title="Medical history" value={plan.clinicalSummary.medicalHistory} />
+          <PdfParagraph title="Social history" value={plan.clinicalSummary.socialHistory} />
+          <PdfParagraph title="Allergic history" value={plan.clinicalSummary.allergicHistory} />
+        </PdfSection>
+        <PdfSection title="Hospital Course">
+          <div className="mt-2 text-xs leading-5">
+            <div className="font-semibold">Clinical findings:</div>
+            <PdfNumberedList rows={getClinicalFindingRows(plan)} />
+          </div>
+          <PdfParagraph title="Treatment provided during hospital course" value={plan.clinicalSummary.treatmentProvided} />
+        </PdfSection>
+        <PdfSection title="Condition at Discharge">
+          <div className="grid gap-2 text-[11px] sm:grid-cols-3">
+            {plan.clinicalSummary.conditionAtDischarge.map((condition) => (
+              <div className="rounded border border-emerald-200 bg-emerald-50 px-2 py-1 font-semibold text-emerald-700" key={condition}>
+                {condition}
+              </div>
+            ))}
+          </div>
+        </PdfSection>
+        <PdfFooter pageNo={2} />
+      </PdfPage>
+
+      <PdfPage>
+        <PdfHeader plan={plan} progress={progress} compact />
+        <PdfSection title="Vitals, Investigations and Procedures">
+          <div className="grid gap-2 text-[11px] sm:grid-cols-5">
+            <PdfMetric label="Temp" value={plan.vitals.temp} />
+            <PdfMetric label="Pulse" value={plan.vitals.pulse} />
+            <PdfMetric label="BP" value={plan.vitals.bp} />
+            <PdfMetric label="SpO2" value={plan.vitals.spo2} />
+            <PdfMetric label="Recorded" value={plan.vitals.recordedAt} />
+          </div>
+          <div className="mt-3 flex flex-wrap gap-1">
+            {alerts.map((alert) => <span className="rounded-full border border-amber-300 bg-amber-50 px-2 py-0.5 text-[10px]" key={alert.label}>{alert.label}</span>)}
+          </div>
+          <PdfTable headers={["Test", "Date/time", "Value", "Range", "Flag"]} rows={labs.map((row) => [row.test, row.sampleAt, `${row.value} ${row.unit}`, row.range, row.flag])} />
+          <PdfTable headers={["Procedure name", "Date", "Surgeon / consultant", "Finding", "Advice"]} rows={procedures.map((row) => [row.name, row.at, row.doctor, row.finding, row.advice])} />
+        </PdfSection>
+        <PdfSection title="Medication During Admission">
+          <PdfTable headers={["Medication", "Dose", "Route", "Frequency", "Status"]} rows={admissionMeds.map((row) => [row.medicine, row.dose, row.route, row.frequency, row.status])} />
+        </PdfSection>
+        <PdfSection title="Medication at the Time of Discharge">
+          <PdfTable headers={["Medication", "Dose", "Route", "Frequency", "Duration", "Advice"]} rows={dischargeMeds.map((row) => [row.medicine, row.dose, row.route, row.frequency, row.duration, row.instructions])} />
+        </PdfSection>
+        <PdfFooter pageNo={3} />
+      </PdfPage>
+
+      <PdfPage>
+        <PdfHeader plan={plan} progress={progress} compact />
+        <PdfSection title="Discharge Advice">
+          <PdfParagraph title="General advice" value={plan.instructions.patientInstructions} />
+          <PdfParagraph title="Diet" value={plan.instructions.diet} />
+          <PdfParagraph title="Activity restrictions" value={plan.instructions.activity} />
+          <PdfParagraph title="Wound care" value={plan.instructions.woundCare} />
+          <PdfParagraph title="Lifestyle modifications" value={plan.instructions.lifestyle} />
+          <PdfParagraph title="Warning signs requiring urgent medical attention" value={plan.instructions.warningSigns} />
+        </PdfSection>
+        <PdfSection title="Follow-Up">
+          <div className="grid gap-2 text-[11px] sm:grid-cols-2">
+            <PdfLine label="Follow-up date" value={`${plan.followUp.date} ${plan.followUp.time}`} />
+            <PdfLine label="Department" value={plan.followUp.department} />
+            <PdfLine label="Consultant" value={plan.followUp.physician} />
+            <PdfLine label="Mode" value={plan.followUp.mode} />
+          </div>
+          <PdfTable headers={["Pending investigation", "Expected", "Owner", "Contact", "Status"]} rows={pendingReports.map((row) => [row.item, row.expectedAt, row.owner, row.contact, row.status])} />
+        </PdfSection>
+        <PdfSection title="Consultant Signature">
+          <div className="grid gap-3 text-[11px] sm:grid-cols-4">
+            <div className="rounded border border-slate-300 p-2">
+              <div className="text-slate-500">Name</div>
+              <div className="mt-2 font-semibold">{plan.consultantSignature.name}</div>
+            </div>
+            <div className="rounded border border-slate-300 p-2">
+              <div className="text-slate-500">Registration number</div>
+              <div className="mt-2 font-semibold">{plan.consultantSignature.registrationNumber}</div>
+            </div>
+            <div className="rounded border border-slate-300 p-2">
+              <div className="text-slate-500">Date</div>
+              <div className="mt-2 font-semibold">{plan.consultantSignature.date}</div>
+            </div>
+            <div className="h-20 rounded border border-slate-300 p-2">
+              <div className="text-slate-500">Signature</div>
+              <div className="mt-8 border-t border-slate-300 pt-1">Signed by consultant</div>
+            </div>
+          </div>
+        </PdfSection>
+        <PdfFooter pageNo={4} />
+      </PdfPage>
+    </>
+  );
+}
+
 function PdfPage({ children }: { children: React.ReactNode }) {
   return (
-    <section className="mx-auto min-h-[1123px] w-full max-w-[794px] border-l-4 border-blue-700 bg-white p-8 text-slate-950 shadow-sm ring-1 ring-slate-200 print:min-h-screen print:max-w-none print:rounded-none print:border-l-0 print:p-6 print:shadow-none print:ring-0">
+    <section data-discharge-pdf-page="true" className="mx-auto min-h-[1123px] w-full max-w-[794px] border-l-4 border-blue-700 bg-white p-8 text-slate-950 shadow-sm ring-1 ring-slate-200 print:min-h-screen print:max-w-none print:rounded-none print:border-l-0 print:p-6 print:shadow-none print:ring-0">
       {children}
     </section>
   );
@@ -2172,7 +2364,7 @@ function PdfSection({ title, children }: { title: string; children: React.ReactN
 
 function PdfLine({ label, value }: { label: string; value: string }) {
   return (
-    <div className="grid grid-cols-[110px_1fr] gap-2 rounded border border-slate-200 px-2 py-1">
+    <div className="grid grid-cols-[135px_1fr] gap-2 rounded border border-slate-200 px-2 py-1">
       <span className="font-semibold text-slate-500">{label}</span>
       <span>{value}</span>
     </div>
@@ -2197,6 +2389,20 @@ function PdfParagraph({ title, value }: { title: string; value: string }) {
   );
 }
 
+function PdfNumberedList({ rows }: { rows: string[] }) {
+  const visibleRows = rows.length ? rows : ["No clinical finding recorded."];
+  return (
+    <div className="mt-1 space-y-1 text-slate-700">
+      {visibleRows.map((row, index) => (
+        <div className="grid grid-cols-[20px_1fr] gap-1" key={`${row}-${index}`}>
+          <span className="font-semibold text-slate-500">{index + 1}.</span>
+          <span>{row}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function PdfTable({ headers, rows }: { headers: string[]; rows: string[][] }) {
   return (
     <div className="mt-3 overflow-hidden rounded border border-slate-200">
@@ -2216,11 +2422,11 @@ function PdfTable({ headers, rows }: { headers: string[]; rows: string[][] }) {
   );
 }
 
-function PdfFooter({ pageNo }: { pageNo: number }) {
+function PdfFooter({ pageNo, totalPages = 4 }: { pageNo: number; totalPages?: number }) {
   return (
     <footer className="mt-6 flex items-center justify-between border-t border-slate-200 pt-2 text-[10px] text-slate-500">
       <span>Digitally verifiable document. Use QR code to verify authenticity.</span>
-      <span>Page {pageNo} of 3</span>
+      <span>Page {pageNo} of {totalPages}</span>
     </footer>
   );
 }
@@ -2286,83 +2492,23 @@ function PdfPreviewModal({
                 <div className="mt-2"><StatusPill tone={getDischargeTone(plan.status)}>{plan.status}</StatusPill></div>
               </div>
               <div className="mt-3 space-y-2 text-xs">
-                {["Page 1: Patient & clinical summary", "Page 2: Investigations & procedures", "Page 3: Medicines & follow-up"].map((item) => (
+                {["Page 1: Patient, admission & diagnosis", "Page 2: History, course & condition", "Page 3: Procedures & medicines", "Page 4: Advice, follow-up & signature"].map((item) => (
                   <div className="rounded-md border border-border bg-background p-2 text-muted-foreground" key={item}>{item}</div>
                 ))}
               </div>
             </aside>
             <div className="min-h-0 overflow-auto p-4">
               <div className="space-y-5">
-                <PdfPage>
-                  <PdfHeader plan={plan} progress={progress} />
-                  <PdfSection title="Patient Identification">
-                    <div className="grid gap-2 text-[11px] sm:grid-cols-2">
-                      <PdfLine label="Patient" value={plan.patientName} />
-                      <PdfLine label="UHID / MRN" value={plan.uhid} />
-                      <PdfLine label="Age / Gender" value={plan.ageGender} />
-                      <PdfLine label="Ward / Bed" value={`${plan.ward}, ${plan.bed}`} />
-                      <PdfLine label="Consultant" value={plan.consultant} />
-                      <PdfLine label="Department" value={plan.department} />
-                      <PdfLine label="Admission" value={plan.admissionId} />
-                      <PdfLine label="Discharge planned" value={plan.dischargePlannedAt} />
-                    </div>
-                  </PdfSection>
-                  <PdfSection title="Diagnosis and Clinical Summary">
-                    <PdfParagraph title="Final diagnosis" value={plan.clinicalSummary.primaryDiagnosis} />
-                    <PdfParagraph title="Secondary diagnosis" value={plan.clinicalSummary.secondaryDiagnosis} />
-                    <PdfParagraph title="History of present illness" value={plan.clinicalSummary.hpi} />
-                    <PdfParagraph title="Hospital course" value={plan.clinicalSummary.hospitalCourse} />
-                  </PdfSection>
-                  <PdfFooter pageNo={1} />
-                </PdfPage>
-
-                <PdfPage>
-                  <PdfHeader plan={plan} progress={progress} compact />
-                  <PdfSection title="Vitals, Alerts, Investigations and Procedures">
-                    <div className="grid gap-2 text-[11px] sm:grid-cols-5">
-                      <PdfMetric label="Temp" value={plan.vitals.temp} />
-                      <PdfMetric label="Pulse" value={plan.vitals.pulse} />
-                      <PdfMetric label="BP" value={plan.vitals.bp} />
-                      <PdfMetric label="SpO2" value={plan.vitals.spo2} />
-                      <PdfMetric label="Recorded" value={plan.vitals.recordedAt} />
-                    </div>
-                    <div className="mt-3 flex flex-wrap gap-1">
-                      {alerts.map((alert) => <span className="rounded-full border border-amber-300 bg-amber-50 px-2 py-0.5 text-[10px]" key={alert.label}>{alert.label}</span>)}
-                    </div>
-                    <PdfTable headers={["Test", "Date/time", "Value", "Range", "Flag"]} rows={labs.map((row) => [row.test, row.sampleAt, `${row.value} ${row.unit}`, row.range, row.flag])} />
-                    <PdfTable headers={["Procedure", "Date/time", "Doctor", "Finding", "Advice"]} rows={procedures.map((row) => [row.name, row.at, row.doctor, row.finding, row.advice])} />
-                  </PdfSection>
-                  <PdfSection title="Medication During Admission">
-                    <PdfTable headers={["Drug", "Dose", "Route", "Frequency", "Status"]} rows={admissionMeds.map((row) => [row.medicine, row.dose, row.route, row.frequency, row.status])} />
-                  </PdfSection>
-                  <PdfFooter pageNo={2} />
-                </PdfPage>
-
-                <PdfPage>
-                  <PdfHeader plan={plan} progress={progress} compact />
-                  <PdfSection title="Discharge Medication">
-                    <PdfTable headers={["Medicine", "Dose", "Frequency", "Duration", "Instruction"]} rows={dischargeMeds.map((row) => [row.medicine, row.dose, row.frequency, row.duration, row.instructions])} />
-                  </PdfSection>
-                  <PdfSection title="Instructions, Diet and Follow-up">
-                    <PdfParagraph title="General instructions" value={plan.instructions.patientInstructions} />
-                    <PdfParagraph title="Diet" value={plan.instructions.diet} />
-                    <PdfParagraph title="Activity" value={plan.instructions.activity} />
-                    <PdfParagraph title="Red flag symptoms" value={plan.instructions.warningSigns} />
-                    <PdfParagraph title="Follow-up" value={`${plan.followUp.physician}, ${plan.followUp.department}, ${plan.followUp.date} ${plan.followUp.time} (${plan.followUp.mode})`} />
-                    <PdfTable headers={["Pending item", "Expected", "Owner", "Contact", "Status"]} rows={pendingReports.map((row) => [row.item, row.expectedAt, row.owner, row.contact, row.status])} />
-                  </PdfSection>
-                  <PdfSection title="Signatures and Acknowledgement">
-                    <div className="grid gap-3 text-[11px] sm:grid-cols-4">
-                      {["Treating consultant", "Resident doctor", "Nurse in-charge", "Patient / attendant"].map((label) => (
-                        <div className="h-20 rounded border border-slate-300 p-2" key={label}>
-                          <div className="text-slate-500">{label}</div>
-                          <div className="mt-8 border-t border-slate-300 pt-1">Signature</div>
-                        </div>
-                      ))}
-                    </div>
-                  </PdfSection>
-                  <PdfFooter pageNo={3} />
-                </PdfPage>
+                <DischargeSummaryPdfPages
+                  plan={plan}
+                  progress={progress}
+                  dischargeMeds={dischargeMeds}
+                  admissionMeds={admissionMeds}
+                  labs={labs}
+                  procedures={procedures}
+                  alerts={alerts}
+                  pendingReports={pendingReports}
+                />
               </div>
             </div>
           </div>

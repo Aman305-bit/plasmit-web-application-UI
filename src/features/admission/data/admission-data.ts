@@ -177,6 +177,7 @@ export const admissionRequests: AdmissionRequest[] = [
     ward: "ICU",
     priority: "Urgent",
     status: "Pending Bed Allotment",
+    admissionTime: "20 May, 04:31 PM",
   },
   {
     id: "req-002",
@@ -188,6 +189,7 @@ export const admissionRequests: AdmissionRequest[] = [
     ward: "General Ward",
     priority: "Critical",
     status: "Pending Bed Allotment",
+    admissionTime: "20 May, 05:05 PM",
   },
   {
     id: "req-003",
@@ -199,6 +201,7 @@ export const admissionRequests: AdmissionRequest[] = [
     ward: "Private Ward",
     priority: "Routine",
     status: "Accepted",
+    admissionTime: "20 May, 05:40 PM",
   },
 ];
 

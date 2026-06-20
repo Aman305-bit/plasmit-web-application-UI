@@ -5,15 +5,15 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium outline-none transition focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg text-sm font-semibold outline-none transition focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50",
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground shadow-sm hover:brightness-95 active:brightness-90",
-        secondary: "bg-secondary text-secondary-foreground hover:bg-muted",
-        outline: "border border-border bg-background hover:bg-surface-muted",
-        ghost: "hover:bg-surface-muted",
-        danger: "bg-danger text-danger-foreground hover:brightness-95",
+        default: "bg-gradient-to-r from-sky-600 to-blue-600 text-primary-foreground shadow-[0_8px_18px_rgba(37,99,235,0.22)] hover:brightness-105 active:brightness-95",
+        secondary: "bg-secondary text-secondary-foreground shadow-sm hover:bg-muted",
+        outline: "border border-border bg-white text-foreground shadow-sm hover:border-sky-200 hover:bg-sky-50",
+        ghost: "text-muted-foreground hover:bg-surface-muted hover:text-foreground",
+        danger: "bg-danger text-danger-foreground shadow-sm hover:brightness-95",
       },
       size: {
         sm: "h-[var(--density-control-height-sm)] px-[var(--density-control-x-sm)] text-xs",
