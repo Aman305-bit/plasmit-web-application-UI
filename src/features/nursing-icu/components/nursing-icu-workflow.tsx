@@ -2672,11 +2672,6 @@ function TaskDashboardTable({
         <div className="flex flex-col gap-2 border-b border-slate-200 bg-white px-3 py-2 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p className="text-sm font-bold text-slate-950">Task command matrix</p>
-            <p className="mt-0.5 text-xs text-slate-500">Patient-wise grid: patient cells redirect, workflow cells open the matching patient tab, task action buttons open confirmation popups.</p>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <Badge tone={rows.length ? "info" : "muted"}>{rows.length} patients</Badge>
-            <Badge tone={tasks.length ? "warning" : "muted"}>{tasks.length} tasks</Badge>
           </div>
         </div>
         <div className="max-h-[660px] overflow-auto">
@@ -2776,10 +2771,6 @@ function TaskDashboardTable({
                     </td>
                     <td className="px-4 py-2 align-middle">
                       <p className="text-sm font-bold text-slate-950">{topTask?.assignedTo ?? row.patient?.assignedWardNurse ?? "Ward Nurse"}</p>
-                      <p className="mt-1 text-xs text-slate-500">{topTask ? `${topTask.assignedBy ?? topTask.createdBy} -> ${topTask.assignedToRole ?? "Nurse"}` : row.patient?.assignedUnitNurse ?? "Unit nurse"}</p>
-                      <div className="mt-2 flex flex-wrap gap-1.5">
-                        {row.tasks.slice(0, 2).map((task) => <Badge key={task.id} tone={taskMatrixToneFromTask(task)}>{task.status}</Badge>)}
-                      </div>
                     </td>
                     <td className="px-3 py-2 align-middle">
                       <TaskMatrixActionButtons task={topTask} bedNo={row.bedNo} onOpenAction={onOpenAction} />
@@ -2858,10 +2849,6 @@ function TaskMatrixPatientCell({ row }: { row: TaskMatrixGroup }) {
         </div>
       </div>
       <p className="mt-1 text-xs text-slate-500">{row.mrn} | {row.unit}</p>
-      <div className="mt-3 flex flex-wrap gap-2">
-        <span className={cn("rounded-full border px-2 py-0.5 text-[11px] font-bold", taskMatrixPillClass(tone))}>{row.topTask?.priority ?? row.assessment?.risk ?? "Routine"}</span>
-        <span className="rounded-full border border-sky-300 bg-sky-50 px-2 py-0.5 text-[11px] font-bold text-sky-700">{row.tasks.length} task{row.tasks.length === 1 ? "" : "s"}</span>
-      </div>
     </Link>
   );
 }
@@ -2882,12 +2869,11 @@ function TaskMatrixCell({
   tone: StatusTone;
 }) {
   const content = (
-      <span className="flex min-h-16 w-full min-w-24 flex-col items-center justify-center">
+      <span className="flex min-h-14 w-full min-w-24 flex-col items-center justify-center">
         <span className={cn("inline-flex h-9 min-w-24 items-center justify-center gap-1 rounded-full px-3 text-xs font-black text-white shadow-[0_3px_8px_rgba(0,0,0,0.28)]", taskMatrixSolidClass(tone))}>
           <Icon className="h-3.5 w-3.5" />
           {title}
         </span>
-        <span className="mt-1 block max-w-28 text-center text-[11px] leading-tight text-slate-700">{detail}</span>
       </span>
   );
 
@@ -3034,7 +3020,6 @@ function TaskMatrixActionButtons({
       >
         Escalate
       </Button>
-      <p className="col-span-3 mt-0.5 truncate text-center text-[11px] text-slate-500">{bedNo} | {task.dueTime}</p>
     </div>
   );
 }
