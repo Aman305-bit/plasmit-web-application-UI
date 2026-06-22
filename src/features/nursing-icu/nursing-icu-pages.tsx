@@ -6302,8 +6302,8 @@ function EscalationCenterCommand() {
             <DashboardCommandMetric label="Unassigned" value={unassignedRows.length} tone={unassignedRows.length ? "warning" : "success"} />
             <DashboardCommandMetric label="Owners" value={ownerLoad.length} tone="info" />
           </div>
-          <div className="grid gap-3 px-4 py-3 lg:grid-cols-[minmax(220px,1fr)_170px_150px_150px_180px_minmax(112px,0.7fr)] lg:items-end">
-            <label className="space-y-1 text-sm">
+          <div className="grid min-w-0 gap-3 px-4 py-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-[minmax(180px,1.25fr)_repeat(4,minmax(115px,0.8fr))_104px] xl:items-end">
+            <label className="min-w-0 space-y-1 text-sm">
               <span className="font-medium text-slate-700">Search escalation</span>
               <div className="relative">
                 <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
@@ -6314,7 +6314,7 @@ function EscalationCenterCommand() {
             <NativeSelect label="Severity" value={severity} onChange={setSeverity} options={["All severity", "Critical", "High", "Medium", "Info"]} />
             <NativeSelect label="Source" value={source} onChange={setSource} options={sourceOptions} />
             <NativeSelect label="Owner" value={owner} onChange={setOwner} options={ownerOptions} />
-            <Button className="h-10 w-full" variant="outline" onClick={resetFilters}>Reset</Button>
+            <Button className="h-10 w-full min-w-0" variant="outline" onClick={resetFilters}>Reset</Button>
           </div>
         </CollapsibleCommandPanel>
 
@@ -6327,7 +6327,7 @@ function EscalationCenterCommand() {
                   <th className="min-w-[122px] px-3 py-3 text-center">Priority</th>
                   <th className="min-w-[150px] px-3 py-3 text-center">Trigger</th>
                   <th className="min-w-[130px] px-3 py-3 text-center">Source</th>
-                  <th className="min-w-[145px] px-3 py-3 text-center">Owner</th>
+                  <th className="min-w-[145px] px-3 py-3 text-center">Assigned To</th>
                   <th className="min-w-[125px] px-3 py-3 text-center">SLA</th>
                   <th className="min-w-[130px] px-3 py-3 text-center">Status</th>
                   <th className="min-w-[130px] px-3 py-3 text-center">Review</th>
