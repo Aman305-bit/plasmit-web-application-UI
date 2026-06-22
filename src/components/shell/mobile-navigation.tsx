@@ -24,7 +24,6 @@ function childIsActive(child: NavigationChildItem, pathname: string): boolean {
 
 export function MobileNavigation() {
   const [open, setOpen] = useState(false);
-  const [openItems, setOpenItems] = useState<Record<string, boolean>>({});
   const pathname = usePathname();
   const { role } = useRole();
   const visibleItems = navigationItems.filter((item) => item.allowedRoles.includes(role));
@@ -32,29 +31,24 @@ export function MobileNavigation() {
   function renderChild(child: NavigationChildItem, depth = 0) {
     const hasNestedChildren = Boolean(child.children?.length);
     const active = childIsActive(child, pathname);
-    const expanded = openItems[child.id] ?? active;
 
     if (hasNestedChildren) {
       return (
-        <div key={child.id}>
-          <button
+        <details open={active || undefined} key={child.id}>
+          <summary
             className={cn(
-              "flex min-h-9 w-full items-center rounded-lg px-3 py-2 text-xs font-bold text-slate-700 transition",
+              "group flex min-h-9 w-full cursor-pointer list-none items-center rounded-lg px-3 py-2 text-xs font-bold text-slate-700 transition [&::-webkit-details-marker]:hidden",
               depth > 0 && "text-[11px]",
               active ? "bg-sky-100 text-sky-800" : "hover:bg-sky-50 hover:text-sky-700",
             )}
-            onClick={() => setOpenItems((current) => ({ ...current, [child.id]: !expanded }))}
-            type="button"
           >
             <span className="min-w-0 flex-1 text-left">{child.label}</span>
-            <ChevronDown className={cn("h-3.5 w-3.5 transition", expanded && "rotate-180")} />
-          </button>
-          {expanded ? (
-            <div className="ml-4 mt-1 space-y-1 border-l border-slate-200 pl-2">
-              {child.children?.map((nested) => renderChild(nested, depth + 1))}
-            </div>
-          ) : null}
-        </div>
+            <ChevronDown className="h-3.5 w-3.5 transition group-open:rotate-180" />
+          </summary>
+          <div className="ml-4 mt-1 space-y-1 border-l border-slate-200 pl-2">
+            {child.children?.map((nested) => renderChild(nested, depth + 1))}
+          </div>
+        </details>
       );
     }
 
@@ -111,29 +105,24 @@ export function MobileNavigation() {
               const hasChildren = Boolean(item.children?.length);
               const childActive = item.children?.some((child) => childIsActive(child, pathname)) ?? false;
               const active = pathname === item.route || childActive || (item.route !== "/dashboard" && pathname.startsWith(`${item.route}/`));
-              const expanded = openItems[item.id] ?? active;
 
               if (hasChildren) {
                 return (
-                  <div key={item.id}>
-                    <button
+                  <details open={active || undefined} key={item.id}>
+                    <summary
                       className={cn(
-                        "flex min-h-10 w-full items-center gap-3 rounded-xl px-3 text-sm font-bold text-slate-700 transition",
+                        "group flex min-h-10 w-full cursor-pointer list-none items-center gap-3 rounded-xl px-3 text-sm font-bold text-slate-700 transition [&::-webkit-details-marker]:hidden",
                         active ? "bg-sky-600 text-white shadow-[0_10px_18px_rgba(37,99,235,0.18)]" : "hover:bg-sky-50 hover:text-sky-700",
                       )}
-                      onClick={() => setOpenItems((current) => ({ ...current, [item.id]: !expanded }))}
-                      type="button"
                     >
                       <Icon className="h-4 w-4" />
                       <span className="min-w-0 flex-1 text-left">{item.label}</span>
-                      <ChevronDown className={cn("h-4 w-4 transition", expanded && "rotate-180")} />
-                    </button>
-                    {expanded ? (
-                      <div className="ml-6 mt-1 space-y-1 border-l border-slate-200 pl-2">
-                        {item.children?.map((child) => renderChild(child))}
-                      </div>
-                    ) : null}
-                  </div>
+                      <ChevronDown className="h-4 w-4 transition group-open:rotate-180" />
+                    </summary>
+                    <div className="ml-6 mt-1 space-y-1 border-l border-slate-200 pl-2">
+                      {item.children?.map((child) => renderChild(child))}
+                    </div>
+                  </details>
                 );
               }
 

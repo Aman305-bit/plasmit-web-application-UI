@@ -13,8 +13,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const sidebarCollapsed = preference.sidebar === "collapsed" || (preference.sidebar === "auto" && collapsed);
   const handleCollapsedChange = React.useCallback(
     (nextCollapsed: boolean) => {
+      setCollapsed(nextCollapsed);
       if (preference.sidebar === "auto") {
-        setCollapsed(nextCollapsed);
         return;
       }
       setPreference({ ...preference, sidebar: nextCollapsed ? "collapsed" : "expanded" });

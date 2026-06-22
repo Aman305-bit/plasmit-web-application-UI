@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ChevronDown, ChevronLeft, ChevronRight, Hospital } from "lucide-react";
@@ -30,36 +29,30 @@ export function AppSidebar({
 }) {
   const pathname = usePathname();
   const { role } = useRole();
-  const [openItems, setOpenItems] = useState<Record<string, boolean>>({});
   const visibleItems = navigationItems.filter((item) => item.allowedRoles.includes(role));
   const groups = Array.from(new Set(visibleItems.map((item) => item.group)));
 
   function renderChild(child: NavigationChildItem, depth = 0) {
     const hasNestedChildren = Boolean(child.children?.length);
     const active = childIsActive(child, pathname);
-    const expanded = openItems[child.id] ?? active;
 
     if (hasNestedChildren) {
       return (
-        <div key={child.id}>
-          <button
+        <details open={active || undefined} key={child.id}>
+          <summary
             className={cn(
-              "flex min-h-8 w-full items-center rounded-lg px-2 py-1.5 text-xs font-semibold outline-none transition hover:bg-sky-50 hover:text-sky-700 focus-visible:ring-2 focus-visible:ring-ring",
+              "group flex min-h-8 w-full cursor-pointer list-none items-center rounded-lg px-2 py-1.5 text-xs font-semibold outline-none transition hover:bg-sky-50 hover:text-sky-700 focus-visible:ring-2 focus-visible:ring-ring [&::-webkit-details-marker]:hidden",
               depth > 0 && "text-[11px]",
               active && "bg-sky-100 text-sky-800",
             )}
-            onClick={() => setOpenItems((current) => ({ ...current, [child.id]: !expanded }))}
-            type="button"
           >
             <span className="min-w-0 flex-1 truncate text-left">{child.label}</span>
-            <ChevronDown className={cn("h-3.5 w-3.5 shrink-0 transition", expanded && "rotate-180")} />
-          </button>
-          {expanded ? (
-            <div className="ml-3 mt-1 space-y-1 border-l border-slate-200 pl-2">
-              {child.children?.map((nested) => renderChild(nested, depth + 1))}
-            </div>
-          ) : null}
-        </div>
+            <ChevronDown className="h-3.5 w-3.5 shrink-0 transition group-open:rotate-180" />
+          </summary>
+          <div className="ml-3 mt-1 space-y-1 border-l border-slate-200 pl-2">
+            {child.children?.map((nested) => renderChild(nested, depth + 1))}
+          </div>
+        </details>
       );
     }
 
@@ -111,29 +104,24 @@ export function AppSidebar({
                   const hasChildren = Boolean(item.children?.length);
                   const childActive = item.children?.some((child) => childIsActive(child, pathname)) ?? false;
                   const active = pathname === item.route || childActive || (item.route !== "/dashboard" && pathname.startsWith(`${item.route}/`));
-                  const expanded = openItems[item.id] ?? active;
 
                   if (hasChildren && !collapsed) {
                     return (
-                      <div key={item.id}>
-                        <button
+                      <details open={active || undefined} key={item.id}>
+                        <summary
                           className={cn(
-                            "group flex min-h-10 w-full items-center gap-3 rounded-xl px-3 text-sm font-bold text-slate-700 outline-none transition hover:bg-sky-50 hover:text-sky-700 focus-visible:ring-2 focus-visible:ring-ring",
+                            "group flex min-h-10 w-full cursor-pointer list-none items-center gap-3 rounded-xl px-3 text-sm font-bold text-slate-700 outline-none transition hover:bg-sky-50 hover:text-sky-700 focus-visible:ring-2 focus-visible:ring-ring [&::-webkit-details-marker]:hidden",
                             active && "bg-sky-600 text-white shadow-[0_10px_18px_rgba(37,99,235,0.18)] hover:bg-sky-600 hover:text-white",
                           )}
-                          onClick={() => setOpenItems((current) => ({ ...current, [item.id]: !expanded }))}
-                          type="button"
                         >
                           <Icon className="h-4 w-4 shrink-0" />
                           <span className="min-w-0 flex-1 truncate text-left">{item.label}</span>
-                          <ChevronDown className={cn("h-4 w-4 shrink-0 transition", expanded && "rotate-180")} />
-                        </button>
-                        {expanded ? (
-                          <div className="ml-5 mt-1 space-y-1 border-l border-slate-200 pl-2">
-                            {item.children?.map((child) => renderChild(child))}
-                          </div>
-                        ) : null}
-                      </div>
+                          <ChevronDown className="h-4 w-4 shrink-0 transition group-open:rotate-180" />
+                        </summary>
+                        <div className="ml-5 mt-1 space-y-1 border-l border-slate-200 pl-2">
+                          {item.children?.map((child) => renderChild(child))}
+                        </div>
+                      </details>
                     );
                   }
 
