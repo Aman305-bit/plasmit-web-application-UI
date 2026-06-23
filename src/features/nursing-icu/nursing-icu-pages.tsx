@@ -7810,6 +7810,7 @@ function OrdersCarePlansCommand() {
           order: `${row.medication} ${row.dose} ${row.route}`,
           frequency: row.frequency,
           owner: row.administeredBy || patient.assignedWardNurse,
+          orderedBy: patient.admittingDoctor,
           status: orderStatusOverrides[row.id] ?? mapOrderStatus(row.status),
           safety: row.doubleVerification,
           priority: row.status === "Late" ? "High" as IcuPriority : "Medium" as IcuPriority,
@@ -7823,6 +7824,7 @@ function OrdersCarePlansCommand() {
           order: row.instruction,
           frequency: row.dueTime,
           owner: row.assignedNurse,
+          orderedBy: row.doctor,
           status: orderStatusOverrides[row.id] ?? mapOrderStatus(row.status),
           safety: row.priority,
           priority: row.priority,
@@ -7964,33 +7966,34 @@ function OrdersCarePlansCommand() {
     ...medicationRows.filter((row) => row.patientId === patientId).map(() => "Medication"),
     ...doctorInstructions.filter((row) => row.patientId === patientId).map((row) => row.instructionType),
   ]))];
-  const carePlanTabs: Array<{ id: CarePlanWorkspaceTab; label: string; icon: typeof UserRound; badge: string; tone: StatusTone }> = [
-    { id: "context", label: "Patient Context", icon: UserRound, badge: String(patient.alerts.length), tone: patient.alerts.length ? "warning" : "success" },
-    { id: "orders", label: "Order", icon: ClipboardCheck, badge: String(openOrders), tone: openOrders ? "warning" : "success" },
-    { id: "care-plan", label: "Care Plan", icon: FileText, badge: planStatus, tone: planStatus === "Active" ? "success" : "info" },
-    { id: "tasks", label: "Tasks", icon: ListChecks, badge: String(pendingTasks), tone: pendingTasks ? "warning" : "success" },
-    { id: "review", label: "Review", icon: CheckCircle2, badge: String(generatedTaskCount + patientClinicalActions.length), tone: generatedTaskCount || patientClinicalActions.length ? "success" : "muted" },
+  const carePlanTabs: Array<{ id: CarePlanWorkspaceTab; label: string; icon: typeof UserRound }> = [
+    { id: "context", label: "Patient Context", icon: UserRound },
+    { id: "orders", label: "Doctor Orders", icon: ClipboardCheck },
+    { id: "care-plan", label: "Care Plan", icon: FileText },
+    { id: "tasks", label: "Nursing Tasks", icon: ListChecks },
+    { id: "review", label: "Review & Sign-off", icon: CheckCircle2 },
   ];
 
   return (
     <div className="space-y-4">
+      <div className="rounded-md border border-border bg-white px-4 py-3">
+        <p className="text-sm font-semibold text-foreground">
+          {patient.patientName} | {patient.mrn} | {patient.ageGender} | {patient.unit}
+        </p>
+        <p className="mt-1 text-xs text-muted-foreground">
+          {patient.bedNo} | {patient.admittingDoctor} | {patient.assignedWardNurse}
+        </p>
+      </div>
+
       <CollapsibleCommandPanel
         summary={`${patient.bedNo} - ${patient.patientName} | ${planStatus} | ${openOrders} order(s) | ${pendingTasks} task(s)`}
-        title="Patient details & filters"
+        title="Search & filters"
       >
         <div className="space-y-3 p-3">
-          <div className="grid gap-3 lg:grid-cols-[minmax(260px,1.4fr)_minmax(220px,1fr)_220px] lg:items-end">
+          <div className="grid gap-3 md:grid-cols-3 md:items-end">
             <PatientSelect label="Patient" value={patientId} onChange={selectPatient} patients={icuPatients} />
             <NativeSelect label="Care plan scenario" value={templateLabel} onChange={selectTemplate} options={carePlanTemplates.map((template) => template.label)} />
             <NativeSelect label="Order type" value={orderFilter} onChange={setOrderFilter} options={orderTypes} />
-          </div>
-
-          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
-            <MiniMetric label="Patient" value={`${patient.bedNo} - ${patient.patientName}`} tone="info" />
-            <MiniMetric label="Diagnosis" value={patient.diagnosis} tone={toneForStatus(patient.currentStatus)} />
-            <MiniMetric label="Open orders" value={openOrders} tone={openOrders ? "warning" : "success"} />
-            <MiniMetric label="Open tasks" value={pendingTasks} tone={pendingTasks ? "warning" : "success"} />
-            <MiniMetric label="Assigned nurse" value={draft.assignedNurse} tone="success" />
           </div>
         </div>
       </CollapsibleCommandPanel>
@@ -8002,7 +8005,7 @@ function OrdersCarePlansCommand() {
             return (
               <button
                 className={cn(
-                  "flex h-10 min-w-36 items-center justify-center gap-2 rounded px-3 text-sm font-semibold transition",
+                  "flex h-10 min-w-40 items-center justify-center gap-2 rounded px-3 text-sm font-semibold transition",
                   activeTab === tab.id ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:bg-surface-muted hover:text-foreground",
                 )}
                 key={tab.id}
@@ -8011,7 +8014,6 @@ function OrdersCarePlansCommand() {
               >
                 <Icon className="h-4 w-4 shrink-0" />
                 <span>{tab.label}</span>
-                <Badge tone={tab.tone}>{tab.badge}</Badge>
               </button>
             );
           })}
@@ -8022,66 +8024,102 @@ function OrdersCarePlansCommand() {
 
         {activeTab === "context" ? (
           <CommandSection title="Patient Context">
-            <PatientMiniCard patient={patient} />
-            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-              <MiniMetric label="Status" value={patient.currentStatus} tone={toneForStatus(patient.currentStatus)} />
-              <MiniMetric label="Ventilator" value={patient.ventilatorStatus} tone={patient.ventilatorStatus === "Room air" ? "success" : "warning"} />
-              <MiniMetric label="Doctor" value={patient.admittingDoctor} tone="info" />
-              <MiniMetric label="Nurse" value={patient.assignedWardNurse} tone="success" />
+            <div className="overflow-x-auto rounded-md border border-border">
+              <table className="min-w-full text-sm">
+                <tbody className="divide-y divide-border bg-white">
+                  {[
+                    ["Diagnosis", patient.diagnosis],
+                    ["Current status", patient.currentStatus],
+                    ["Ventilation", patient.ventilatorStatus],
+                    ["Admission source", patient.admissionSource],
+                    ["Admitting doctor", patient.admittingDoctor],
+                    ["Duty doctor", patient.dutyDoctor],
+                    ["Ward nurse", patient.assignedWardNurse],
+                    ["Unit nurse", patient.assignedUnitNurse],
+                  ].map(([label, value]) => (
+                    <tr key={label}>
+                      <th className="w-56 bg-white px-4 py-3 text-left text-xs font-semibold uppercase text-muted-foreground">{label}</th>
+                      <td className="px-4 py-3 font-medium text-foreground">{value}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
-            <div className="grid gap-3 lg:grid-cols-2">
-              <InfoPanel title="Clinical context" rows={[
-                ["Diagnosis", patient.diagnosis],
-                ["MRN", patient.mrn],
-                ["Unit", patient.unit],
-                ["Admission source", patient.admissionSource],
-              ]} />
-              <MiniList title="Patient alerts" rows={patient.alerts} empty="No active alerts" />
+            <div className="overflow-x-auto rounded-md border border-border">
+              <table className="min-w-full text-sm">
+                <thead className="bg-white">
+                  <tr className="border-b border-border text-left text-xs font-semibold uppercase text-muted-foreground">
+                    <th className="px-4 py-3">Active alert</th>
+                    <th className="px-4 py-3">Action</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border bg-white">
+                  {patient.alerts.length ? patient.alerts.map((alert) => (
+                    <tr key={alert}>
+                      <td className="px-4 py-3 font-medium text-foreground">{alert}</td>
+                      <td className="px-4 py-3 text-muted-foreground">Review during order execution</td>
+                    </tr>
+                  )) : (
+                    <tr><td className="px-4 py-4 text-muted-foreground" colSpan={2}>No active alerts.</td></tr>
+                  )}
+                </tbody>
+              </table>
             </div>
           </CommandSection>
         ) : null}
 
         {activeTab === "orders" ? (
-          <CommandSection title="Clinical Order Queue">
-            <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_220px] md:items-end">
-              <div className="relative">
-                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input className="pl-9" value={`${patient.bedNo} - ${patient.patientName}`} readOnly />
-              </div>
-              <NativeSelect label="Order type" value={orderFilter} onChange={setOrderFilter} options={orderTypes} />
-            </div>
-            <div className="space-y-2">
+          <CommandSection title="Doctor Orders">
+            <div className="overflow-x-auto rounded-md border border-border">
+              <table className="min-w-[1060px] text-sm">
+                <thead className="bg-white">
+                  <tr className="border-b border-border text-left text-xs font-semibold uppercase text-muted-foreground">
+                    <th className="px-4 py-3">Order time</th>
+                    <th className="px-4 py-3">Type</th>
+                    <th className="px-4 py-3">Order details</th>
+                    <th className="px-4 py-3">Ordered by</th>
+                    <th className="px-4 py-3">Assigned to</th>
+                    <th className="px-4 py-3">Status</th>
+                    <th className="px-4 py-3 text-right">Action</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border bg-white">
               {patientOrderRows.map((row) => (
-                <OrderCarePlanCard
-                  key={row.id}
-                  owner={row.owner}
-                  priority={row.priority}
-                  status={row.status}
-                  subtitle={`${row.orderType} | ${row.frequency} | Safety: ${row.safety}`}
-                  title={row.order}
-                  actionNotes={carePlanActionNotes[`order:${row.id}`]}
-                  onAccept={() => openCarePlanAction({ kind: "order", id: row.id, title: row.order, subtitle: `${row.orderType} | ${row.frequency}`, owner: row.owner, priority: row.priority, currentStatus: row.status, nextStatus: "Accepted" })}
-                  onComplete={() => openCarePlanAction({ kind: "order", id: row.id, title: row.order, subtitle: `${row.orderType} | ${row.frequency}`, owner: row.owner, priority: row.priority, currentStatus: row.status, nextStatus: "Completed" })}
-                  onEscalate={() => openCarePlanAction({ kind: "order", id: row.id, title: row.order, subtitle: `${row.orderType} | ${row.frequency}`, owner: row.owner, priority: row.priority, currentStatus: row.status, nextStatus: "Escalated" })}
-                  onStart={() => openCarePlanAction({ kind: "order", id: row.id, title: row.order, subtitle: `${row.orderType} | ${row.frequency}`, owner: row.owner, priority: row.priority, currentStatus: row.status, nextStatus: "In progress" })}
-                />
+                <tr key={row.id}>
+                  <td className="px-4 py-3 font-medium text-foreground">{row.frequency}</td>
+                  <td className="px-4 py-3 text-muted-foreground">{row.orderType}</td>
+                  <td className="px-4 py-3">
+                    <p className="font-semibold text-foreground">{row.order}</p>
+                    <p className="mt-1 text-xs text-muted-foreground">Safety check: {row.safety}</p>
+                    {carePlanActionNotes[`order:${row.id}`]?.[0] ? <p className="mt-1 text-xs text-muted-foreground">{carePlanActionNotes[`order:${row.id}`][0]}</p> : null}
+                  </td>
+                  <td className="px-4 py-3 text-muted-foreground">{row.orderedBy}</td>
+                  <td className="px-4 py-3 text-muted-foreground">{row.owner}</td>
+                  <td className="px-4 py-3"><StatusPill tone={carePlanTaskTone(row.status)}>{row.status}</StatusPill></td>
+                  <td className="px-4 py-3">
+                    <div className="flex justify-end gap-2">
+                      <Button size="sm" variant="outline" onClick={() => openCarePlanAction({ kind: "order", id: row.id, title: row.order, subtitle: `${row.orderType} | ${row.frequency}`, owner: row.owner, priority: row.priority, currentStatus: row.status, nextStatus: "Accepted" })} disabled={row.status !== "Pending acknowledgement"}>Ack</Button>
+                      <Button size="sm" variant="outline" onClick={() => openCarePlanAction({ kind: "order", id: row.id, title: row.order, subtitle: `${row.orderType} | ${row.frequency}`, owner: row.owner, priority: row.priority, currentStatus: row.status, nextStatus: "In progress" })} disabled={row.status === "Completed"}>Start</Button>
+                      <Button size="sm" onClick={() => openCarePlanAction({ kind: "order", id: row.id, title: row.order, subtitle: `${row.orderType} | ${row.frequency}`, owner: row.owner, priority: row.priority, currentStatus: row.status, nextStatus: "Completed" })}>Done</Button>
+                    </div>
+                  </td>
+                </tr>
               ))}
-              {!patientOrderRows.length ? <EmptyCarePlanPanel title="No orders for selected filter" /> : null}
+              {!patientOrderRows.length ? <tr><td className="px-4 py-4 text-muted-foreground" colSpan={7}>No orders for selected filter.</td></tr> : null}
+                </tbody>
+              </table>
             </div>
           </CommandSection>
         ) : null}
 
         {activeTab === "care-plan" ? (
-          <CommandSection title="Nursing Care Plan Sheet">
-            <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_220px] lg:items-end">
+          <CommandSection title="Care Plan">
+            <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_180px] md:items-end">
               <NativeSelect label="Scenario template" value={templateLabel} onChange={selectTemplate} options={carePlanTemplates.map((template) => template.label)} />
-              <StatusPill tone={planStatus === "Active" ? "success" : "warning"}>{planStatus}</StatusPill>
-            </div>
-            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-              <MiniMetric label="Priority" value={selectedTemplate.priority} tone={toneForPriority(selectedTemplate.priority)} />
-              <MiniMetric label="Due time" value={selectedTemplate.dueTime} tone="info" />
-              <MiniMetric label="Assigned nurse" value={draft.assignedNurse} tone="success" />
-              <MiniMetric label="Patient risk" value={`Score ${patient.criticalityScore}`} tone={patient.criticalityScore >= 8 ? "critical" : "warning"} />
+              <div className="rounded-md border border-border bg-white px-3 py-2 text-sm">
+                <span className="text-muted-foreground">Status</span>
+                <p className="font-semibold text-foreground">{planStatus}</p>
+              </div>
             </div>
 
             <CarePlanSheetMatrix
@@ -8105,7 +8143,7 @@ function OrdersCarePlansCommand() {
               <CarePlanTextArea label="Patient / family education" value={draft.patientFamilyEducation} onChange={(value) => setDraft((current) => ({ ...current, patientFamilyEducation: value }))} />
             </div>
 
-            <div className="rounded-md border border-border bg-background p-3">
+            <div className="rounded-md border border-border bg-white p-3">
               <div className="mb-3">
                 <p className="text-sm font-semibold text-foreground">Nurse confirmation</p>
               </div>
@@ -8143,50 +8181,76 @@ function OrdersCarePlansCommand() {
         ) : null}
 
         {activeTab === "tasks" ? (
-          <CommandSection title="Nursing Task Queue">
-            <div className="space-y-2">
+          <CommandSection title="Nursing Tasks">
+            <div className="overflow-x-auto rounded-md border border-border">
+              <table className="min-w-[1060px] text-sm">
+                <thead className="bg-white">
+                  <tr className="border-b border-border text-left text-xs font-semibold uppercase text-muted-foreground">
+                    <th className="px-4 py-3">Task</th>
+                    <th className="px-4 py-3">Linked order</th>
+                    <th className="px-4 py-3">Due time</th>
+                    <th className="px-4 py-3">Assigned to</th>
+                    <th className="px-4 py-3">Status</th>
+                    <th className="px-4 py-3">Remarks</th>
+                    <th className="px-4 py-3 text-right">Action</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border bg-white">
               {patientTaskRows.map((row) => (
-                <OrderCarePlanCard
-                  key={row.id}
-                  owner={row.owner}
-                  priority={row.priority}
-                  status={row.status}
-                  subtitle={`${row.source} | Due ${row.dueTime}`}
-                  title={row.task}
-                  detail={row.escalation}
-                  actionNotes={carePlanActionNotes[`task:${row.id}`]}
-                  onAccept={() => openCarePlanAction({ kind: "task", id: row.id, title: row.task, subtitle: `${row.source} | Due ${row.dueTime}`, owner: row.owner, priority: row.priority, currentStatus: row.status, nextStatus: "Accepted", detail: row.escalation })}
-                  onComplete={() => openCarePlanAction({ kind: "task", id: row.id, title: row.task, subtitle: `${row.source} | Due ${row.dueTime}`, owner: row.owner, priority: row.priority, currentStatus: row.status, nextStatus: "Completed", detail: row.escalation })}
-                  onEscalate={() => openCarePlanAction({ kind: "task", id: row.id, title: row.task, subtitle: `${row.source} | Due ${row.dueTime}`, owner: row.owner, priority: row.priority, currentStatus: row.status, nextStatus: "Escalated", detail: row.escalation })}
-                  onStart={() => openCarePlanAction({ kind: "task", id: row.id, title: row.task, subtitle: `${row.source} | Due ${row.dueTime}`, owner: row.owner, priority: row.priority, currentStatus: row.status, nextStatus: "In progress", detail: row.escalation })}
-                />
+                <tr key={row.id}>
+                  <td className="px-4 py-3 font-semibold text-foreground">{row.task}</td>
+                  <td className="px-4 py-3 text-muted-foreground">{row.source}</td>
+                  <td className="px-4 py-3 font-medium text-foreground">{row.dueTime}</td>
+                  <td className="px-4 py-3 text-muted-foreground">{row.owner}</td>
+                  <td className="px-4 py-3"><StatusPill tone={carePlanTaskTone(row.status)}>{row.status}</StatusPill></td>
+                  <td className="px-4 py-3 text-muted-foreground">
+                    {carePlanActionNotes[`task:${row.id}`]?.[0] ?? row.escalation}
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex justify-end gap-2">
+                      <Button size="sm" variant="outline" onClick={() => openCarePlanAction({ kind: "task", id: row.id, title: row.task, subtitle: `${row.source} | Due ${row.dueTime}`, owner: row.owner, priority: row.priority, currentStatus: row.status, nextStatus: "Accepted", detail: row.escalation })} disabled={row.status !== "Pending acknowledgement"}>Ack</Button>
+                      <Button size="sm" variant="outline" onClick={() => openCarePlanAction({ kind: "task", id: row.id, title: row.task, subtitle: `${row.source} | Due ${row.dueTime}`, owner: row.owner, priority: row.priority, currentStatus: row.status, nextStatus: "In progress", detail: row.escalation })} disabled={row.status === "Completed"}>Start</Button>
+                      <Button size="sm" onClick={() => openCarePlanAction({ kind: "task", id: row.id, title: row.task, subtitle: `${row.source} | Due ${row.dueTime}`, owner: row.owner, priority: row.priority, currentStatus: row.status, nextStatus: "Completed", detail: row.escalation })}>Done</Button>
+                    </div>
+                  </td>
+                </tr>
               ))}
-              {!patientTaskRows.length ? <EmptyCarePlanPanel title="No nursing tasks" /> : null}
+              {!patientTaskRows.length ? <tr><td className="px-4 py-4 text-muted-foreground" colSpan={7}>No nursing tasks.</td></tr> : null}
+                </tbody>
+              </table>
             </div>
           </CommandSection>
         ) : null}
 
         {activeTab === "review" ? (
-          <CommandSection title="Review Care Plan">
-            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-              <MiniMetric label="Open orders" value={openOrders} tone={openOrders ? "warning" : "success"} />
-              <MiniMetric label="Open tasks" value={pendingTasks} tone={pendingTasks ? "warning" : "success"} />
-              <MiniMetric label="Care plan" value={generatedTaskCount} tone={generatedTaskCount ? "success" : "muted"} />
-              <MiniMetric label="Priority" value={selectedTemplate.priority} tone={toneForPriority(selectedTemplate.priority)} />
+          <CommandSection title="Review & Sign-off">
+            <div className="overflow-x-auto rounded-md border border-border">
+              <table className="min-w-full text-sm">
+                <tbody className="divide-y divide-border bg-white">
+                  {[
+                    ["Open orders", String(openOrders)],
+                    ["Open tasks", String(pendingTasks)],
+                    ["Generated care-plan tasks", String(generatedTaskCount)],
+                    ["Scenario", selectedTemplate.label],
+                    ["Plan status", planStatus],
+                    ["Due time", selectedTemplate.dueTime],
+                    ["Assigned nurse", draft.assignedNurse],
+                    ["Handed over to", draft.handedOverTo],
+                    ["Clock / sign", `${draft.clockNo} / ${draft.nurseSign}`],
+                    ["Date / time", draft.signedAt],
+                  ].map(([label, value]) => (
+                    <tr key={label}>
+                      <th className="w-64 bg-white px-4 py-3 text-left text-xs font-semibold uppercase text-muted-foreground">{label}</th>
+                      <td className="px-4 py-3 font-medium text-foreground">{value}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
             <div className="grid gap-3 lg:grid-cols-2">
               <MiniList title="Care plan summary" rows={[draft.goal, draft.actionPlan, draft.intervention, draft.outcome]} />
-              <InfoPanel title="Current plan" rows={[
-                ["Scenario", selectedTemplate.label],
-                ["Plan status", planStatus],
-                ["Due time", selectedTemplate.dueTime],
-                ["Assigned nurse", draft.assignedNurse],
-                ["Handed over to", draft.handedOverTo],
-                ["Clock / sign", `${draft.clockNo} / ${draft.nurseSign}`],
-                ["Date / time", draft.signedAt],
-              ]} />
+              <ClinicalActionLog actions={patientClinicalActions} compact />
             </div>
-            <ClinicalActionLog actions={patientClinicalActions} />
             <div className="grid gap-2 sm:grid-cols-3">
               <Button variant="outline" onClick={() => setActiveTab("orders")}>Review orders</Button>
               <Button variant="outline" onClick={() => setActiveTab("care-plan")}>Edit plan</Button>
@@ -8233,11 +8297,11 @@ function CarePlanSheetMatrix({
   onChange: (key: "goal" | "actionPlan" | "intervention" | "outcome", value: string) => void;
 }) {
   return (
-    <div className="overflow-hidden rounded-md border border-border bg-background">
-      <div className="grid bg-slate-900 text-xs font-bold uppercase tracking-wide text-white md:grid-cols-4">
-        <div className="border-b border-white/10 px-3 py-3 md:border-b-0 md:border-r md:border-white/10">Goal</div>
-        <div className="border-b border-white/10 px-3 py-3 md:border-b-0 md:border-r md:border-white/10">Action Plan</div>
-        <div className="border-b border-white/10 px-3 py-3 md:border-b-0 md:border-r md:border-white/10">Intervention</div>
+    <div className="overflow-hidden rounded-md border border-border bg-white">
+      <div className="grid border-b border-border bg-white text-xs font-bold uppercase tracking-wide text-muted-foreground md:grid-cols-4">
+        <div className="border-b border-border px-3 py-3 md:border-b-0 md:border-r">Goal</div>
+        <div className="border-b border-border px-3 py-3 md:border-b-0 md:border-r">Action Plan</div>
+        <div className="border-b border-border px-3 py-3 md:border-b-0 md:border-r">Intervention</div>
         <div className="px-3 py-3">Outcome</div>
       </div>
       <div className="grid md:grid-cols-4">
@@ -8271,7 +8335,7 @@ function CarePlanSheetCell({ help, value, onChange }: { help: string; value: str
     <label className="min-h-[260px] border-b border-border p-3 text-sm md:border-b-0 md:border-r md:last:border-r-0">
       <span className="mb-2 block text-xs leading-5 text-muted-foreground">{help}</span>
       <textarea
-        className="min-h-52 w-full resize-y rounded-md border border-input bg-surface p-3 text-sm leading-6 outline-none focus:ring-2 focus:ring-ring/20"
+        className="min-h-52 w-full resize-y rounded-md border border-input bg-white p-3 text-sm leading-6 outline-none focus:ring-2 focus:ring-ring/20"
         value={value}
         onChange={(event) => onChange(event.target.value)}
       />
