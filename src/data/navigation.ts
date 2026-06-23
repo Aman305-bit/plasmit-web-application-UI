@@ -216,6 +216,7 @@ export const navigationItems: NavigationItem[] = [
           { id: "icu-command-nurse-entry", label: "Nurse Entry", route: "/icu-command-center/nursing/nurse-entry", status: "ready" },
           { id: "icu-command-medication", label: "Medication Administration", route: "/icu-command-center/nursing/medication-administration", status: "ready" },
           { id: "icu-command-patient-medication-chart", label: "Patient Medication Chart", route: "/icu-command-center/nursing/patient-medication", status: "ready" },
+          { id: "icu-command-nursing-ews", label: "Early Warning Score", route: "/icu-command-center/nursing/early-warning-score", status: "ready" },
           { id: "icu-command-handover", label: "Shift Handover", route: "/icu-command-center/nursing/shift-handover", status: "ready" },
           { id: "icu-command-tasks", label: "Tasks & Assessments", route: "/icu-command-center/nursing/tasks-assessments", status: "ready" },
         ],

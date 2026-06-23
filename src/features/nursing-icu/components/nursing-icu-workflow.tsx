@@ -4170,7 +4170,6 @@ export function MedicationTimelineWorkspace() {
               <CardHeader>
                 <div>
                   <CardTitle>Priority Dose Queue</CardTitle>
-                  <CardDescription>Due, late, STAT, running infusion, and pharmacy-blocked medicines.</CardDescription>
                 </div>
                 <Badge tone={dueCount ? "danger" : "success"}>{dueCount} due</Badge>
               </CardHeader>
@@ -4195,7 +4194,6 @@ export function MedicationTimelineWorkspace() {
               <CardHeader>
                 <div>
                   <CardTitle>Medication Chart</CardTitle>
-                  <CardDescription>Table view for scheduled, PRN, STAT, continuous infusion, high-alert, and completed doses.</CardDescription>
                 </div>
                 <Badge tone="info">{visibleDoses.length} of {activeDoseCount} doses</Badge>
               </CardHeader>
@@ -4422,17 +4420,16 @@ function MedicationOrderComposer({
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div>
               <p className="text-sm font-semibold text-foreground">Medicine catalog</p>
-              <p className="mt-1 text-xs text-muted-foreground">{draft.department} formulary with live pharmacy status.</p>
             </div>
             <Badge tone="info">{formularyResults.length}</Badge>
           </div>
           <div className="mt-4 flex flex-col gap-3">
             <div className="relative">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input className="pl-9" placeholder="Search medicine, generic, flag..." value={formularyQuery} onChange={(event) => setFormularyQuery(event.target.value)} />
+              <Input className="pl-9" placeholder="Search medicine, indication, safety flag..." value={formularyQuery} onChange={(event) => setFormularyQuery(event.target.value)} />
             </div>
-            <label className="flex items-center justify-between gap-3 rounded-md border border-border bg-surface p-3 text-xs text-muted-foreground">
-              <span>Show stocked medicines first</span>
+            <label className="flex items-center justify-between gap-3 rounded-md border border-sky-100 bg-sky-50/60 p-3 text-xs font-semibold text-slate-700">
+              <span>Stocked medicines first</span>
               <input checked={availableOnly} className="h-4 w-4" type="checkbox" onChange={(event) => setAvailableOnly(event.target.checked)} />
             </label>
           </div>
@@ -4440,8 +4437,8 @@ function MedicationOrderComposer({
             {formularyResults.map((medicine) => (
               <button
                 className={cn(
-                  "w-full rounded-md border border-border bg-surface p-3 text-left transition hover:border-primary hover:bg-primary/5",
-                  draft.formularyId === medicine.id ? "border-primary bg-primary/5" : "",
+                  "w-full rounded-md border border-slate-200 bg-white p-3 text-left transition hover:border-sky-300 hover:bg-sky-50/70",
+                  draft.formularyId === medicine.id ? "border-sky-400 bg-sky-50" : "",
                 )}
                 key={medicine.id}
                 type="button"
