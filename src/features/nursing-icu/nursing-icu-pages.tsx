@@ -537,29 +537,34 @@ export function IcuCommandCenterPatientPage({
   const activeInitialMonitoringTab = normalizeIcuMonitoringSubTab(initialMonitoringTab);
   const activeInitialOrdersSubTab = normalizeMedicationOrdersSubTab(initialOrdersSubTab);
   const activeInitialShiftFocus = normalizeIcuShiftFocus(initialShiftFocus);
-  const title = patient ? `${patient.bedNo} - ${patient.patientName}` : "ICU patient detail";
-  const description = patient
-    ? `${patient.mrn} | ${patient.ageGender} | ${patient.unit}`
-    : "Selected ICU patient was not found.";
-
   return (
-    <div className="min-w-0 max-w-full space-y-4 pb-8">
-      <section className="flex min-w-0 flex-col gap-2 rounded-md border border-slate-200 bg-white px-3 py-2 shadow-sm md:flex-row md:items-center md:justify-between">
-        <div className="min-w-0">
-          <h1 className="truncate text-sm font-black text-slate-950">{title}</h1>
-          <p className="mt-0.5 truncate text-xs font-semibold text-slate-500">{description}</p>
-        </div>
-        <div className="flex shrink-0 flex-wrap gap-2">
-          <Link className="inline-flex h-8 items-center justify-center rounded-md border border-slate-300 bg-white px-3 text-xs font-semibold text-slate-700 hover:bg-slate-50" href="/icu-command-center">
-            Back
-          </Link>
-          {patient ? (
-            <Link className="inline-flex h-8 items-center justify-center rounded-md border border-sky-300 bg-sky-50 px-3 text-xs font-semibold text-sky-700 hover:bg-sky-100" href={icuPatientDailyChartHref(patient.id)}>
+    <div className="min-w-0 max-w-full space-y-2 pb-8">
+      {patient ? (
+        <section className="overflow-x-auto rounded-xl border border-indigo-100 bg-gradient-to-r from-indigo-500 via-violet-500 to-blue-500 px-4 py-3 text-white shadow-sm">
+          <div className="flex min-w-max items-center gap-8 text-sm font-bold">
+            <span className="text-base">{patient.patientName}</span>
+            <span className="rounded-full border border-white/30 bg-red-500 px-3 py-1 text-xs uppercase tracking-wide text-white shadow-sm">
+              {patient.criticalityScore >= 8 ? "Urgent" : patient.currentStatus}
+            </span>
+            <span>MR: {patient.mrn}</span>
+            <span>Age/Sex: {patient.ageGender}</span>
+            <span>Bed: {patient.bedNo}</span>
+            <span>Unit: {patient.unit}</span>
+            <span>Doctor: {patient.admittingDoctor}</span>
+            <span>Nurse: {patient.assignedWardNurse}</span>
+            <Link className="inline-flex h-9 items-center justify-center rounded-full border border-white/40 bg-white/15 px-4 text-xs font-bold text-white hover:bg-white/25" href="/icu-command-center">
+              Back
+            </Link>
+            <Link className="inline-flex h-9 items-center justify-center rounded-full border border-white/40 bg-white px-4 text-xs font-bold text-violet-600 hover:bg-white/90" href={icuPatientDailyChartHref(patient.id)}>
               ICU Daily Chart
             </Link>
-          ) : null}
-        </div>
-      </section>
+          </div>
+        </section>
+      ) : (
+        <section className="rounded-md border border-dashed border-border bg-white p-4 text-sm text-muted-foreground">
+          Selected ICU patient was not found.
+        </section>
+      )}
 
       <IcuPatientCommandProfile initialEventFocus={activeInitialEventFocus} initialMonitoringTab={activeInitialMonitoringTab} initialOrdersSubTab={activeInitialOrdersSubTab} initialResultType={initialResultType} initialShiftFocus={activeInitialShiftFocus} initialTab={activeInitialTab} patient={patient} />
     </div>
@@ -7976,13 +7981,19 @@ function OrdersCarePlansCommand() {
 
   return (
     <div className="space-y-4">
-      <div className="rounded-md border border-border bg-white px-4 py-3">
-        <p className="text-sm font-semibold text-foreground">
-          {patient.patientName} | {patient.mrn} | {patient.ageGender} | {patient.unit}
-        </p>
-        <p className="mt-1 text-xs text-muted-foreground">
-          {patient.bedNo} | {patient.admittingDoctor} | {patient.assignedWardNurse}
-        </p>
+      <div className="overflow-x-auto rounded-xl border border-indigo-100 bg-gradient-to-r from-indigo-500 via-violet-500 to-blue-500 px-4 py-4 text-white shadow-sm">
+        <div className="flex min-w-max items-center gap-8 text-sm font-bold">
+          <span className="text-base">{patient.patientName}</span>
+          <span className="rounded-full border border-white/30 bg-red-500 px-3 py-1 text-xs uppercase tracking-wide text-white shadow-sm">
+            {patient.criticalityScore >= 8 ? "Urgent" : patient.currentStatus}
+          </span>
+          <span>MR: {patient.mrn}</span>
+          <span>Age/Sex: {patient.ageGender}</span>
+          <span>Bed: {patient.bedNo}</span>
+          <span>Unit: {patient.unit}</span>
+          <span>Doctor: {patient.admittingDoctor}</span>
+          <span>Nurse: {patient.assignedWardNurse}</span>
+        </div>
       </div>
 
       <CollapsibleCommandPanel
@@ -7998,15 +8009,15 @@ function OrdersCarePlansCommand() {
         </div>
       </CollapsibleCommandPanel>
 
-      <div className="overflow-x-auto rounded-md border border-border bg-white p-1">
-        <div className="flex min-w-max gap-1">
+      <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-slate-100 p-2 shadow-sm">
+        <div className="flex min-w-max items-center gap-3">
           {carePlanTabs.map((tab) => {
             const Icon = tab.icon;
             return (
               <button
                 className={cn(
-                  "flex h-10 min-w-40 items-center justify-center gap-2 rounded px-3 text-sm font-semibold transition",
-                  activeTab === tab.id ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:bg-surface-muted hover:text-foreground",
+                  "flex h-12 min-w-44 items-center justify-center gap-2 rounded-2xl px-4 text-base font-bold transition",
+                  activeTab === tab.id ? "bg-white text-violet-600 shadow-sm" : "text-slate-600 hover:bg-white/70 hover:text-slate-900",
                 )}
                 key={tab.id}
                 type="button"
@@ -15347,7 +15358,7 @@ function DashboardMatrix({ patients }: { patients: IcuPatient[] }) {
                   </td>
                   <td className="px-4 py-2 align-middle">
                     <div className="min-h-12">
-                      <p className="text-sm font-semibold text-slate-900">{patient.diagnosis}</p>
+                      <p className="text-sm font-medium leading-5 text-slate-500">{patient.diagnosis}</p>
                     </div>
                   </td>
                   {columns.map((column) => {
@@ -15400,8 +15411,8 @@ function IcuPatientTabLink({ active, children, href }: { active: boolean; childr
   return (
     <Link
       className={cn(
-        "inline-flex min-h-10 shrink-0 items-center justify-center rounded px-3 text-xs font-medium outline-none transition hover:text-slate-950 focus-visible:ring-2 focus-visible:ring-sky-300",
-        active ? "bg-white text-slate-950 shadow-sm" : "text-slate-600 hover:bg-white/70",
+        "inline-flex min-h-12 shrink-0 items-center justify-center rounded-2xl px-4 text-sm font-bold outline-none transition focus-visible:ring-2 focus-visible:ring-violet-300",
+        active ? "bg-white text-violet-600 shadow-sm" : "text-slate-600 hover:bg-white/70 hover:text-slate-950",
       )}
       href={href}
     >
@@ -15483,9 +15494,9 @@ function IcuPatientCommandProfile({
   ].slice(0, 8);
 
   return (
-    <div className="overflow-hidden rounded-sm border border-sky-200 bg-white shadow-sm">
-      <Tabs className="p-4" value={initialTab}>
-        <TabsList className="grid h-auto w-full gap-1 rounded-md bg-slate-100 p-1 md:grid-cols-4 xl:grid-cols-8">
+    <div className="overflow-hidden rounded-xl border border-sky-200 bg-white shadow-sm">
+      <Tabs className="p-0" value={initialTab}>
+        <TabsList className="flex h-auto w-full min-w-max gap-2 overflow-x-auto rounded-none border-b border-slate-200 bg-slate-100 px-4 py-2">
           <IcuPatientTabLink active={initialTab === "overview"} href={icuPatientDetailHref(patient.id, "overview")}>Patient Overview</IcuPatientTabLink>
           <IcuPatientTabLink active={initialTab === "monitoring"} href={icuPatientDetailHref(patient.id, "monitoring")}>Monitoring</IcuPatientTabLink>
           <IcuPatientTabLink active={initialTab === "results"} href={icuPatientDetailHref(patient.id, "results")}>Results</IcuPatientTabLink>
@@ -15496,7 +15507,7 @@ function IcuPatientCommandProfile({
           <IcuPatientTabLink active={initialTab === "collaborate"} href={icuPatientDetailHref(patient.id, "collaborate")}>Collaborate</IcuPatientTabLink>
         </TabsList>
 
-        <TabsContent className="mt-4 space-y-4" value="overview">
+        <TabsContent className="space-y-4 px-4 pb-4 pt-4" value="overview">
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
             <IcuPatientDetailMetric icon={ShieldAlert} label="Risk score" value={patient.criticalityScore} detail={patient.currentStatus} tone={riskTone} />
             <IcuPatientDetailMetric icon={HeartPulse} label="Latest vitals" value={latestVital ? `SpO2 ${latestVital.spo2}%` : "-"} detail={latestVital ? `${latestVital.bp} | P ${latestVital.pulse}` : "Chart pending"} tone={vitalTone} />
@@ -15511,9 +15522,9 @@ function IcuPatientCommandProfile({
           <IcuPatientTimeline rows={timeline} />
         </TabsContent>
 
-        <TabsContent className="mt-4 space-y-4" value="monitoring">
+        <TabsContent className="space-y-4 px-4 pb-4 pt-4" value="monitoring">
           <Tabs value={initialMonitoringTab}>
-            <TabsList className="grid h-auto w-full gap-1 rounded-md bg-slate-100 p-1 md:grid-cols-4">
+            <TabsList className="flex h-auto w-full min-w-max gap-2 overflow-x-auto rounded-xl bg-slate-100 p-2">
               <IcuPatientTabLink active={initialMonitoringTab === "monitoring-overview"} href={icuPatientDetailHref(patient.id, "monitoring", "monitoring-overview")}>Monitoring Overview</IcuPatientTabLink>
               <IcuPatientTabLink active={initialMonitoringTab === "24h-chart"} href={icuPatientDetailHref(patient.id, "monitoring", "24h-chart")}>24h Chart</IcuPatientTabLink>
               <IcuPatientTabLink active={initialMonitoringTab === "intake-output"} href={icuPatientDetailHref(patient.id, "monitoring", "intake-output")}>Intake Output</IcuPatientTabLink>
@@ -15578,7 +15589,7 @@ function IcuPatientCommandProfile({
           </Tabs>
         </TabsContent>
 
-        <TabsContent className="mt-4 space-y-4" value="results">
+        <TabsContent className="space-y-4 px-4 pb-4 pt-4" value="results">
           <IcuPatientResultsWorkspace
             initialType={initialResultType}
             patient={patient}
@@ -15588,17 +15599,17 @@ function IcuPatientCommandProfile({
           />
         </TabsContent>
 
-        <TabsContent className="mt-4 space-y-4" value="graph">
+        <TabsContent className="space-y-4 px-4 pb-4 pt-4" value="graph">
           <IcuPatientVitalGraph patient={patient} intakeOutput={patientIoRows} vitals={vitals} />
         </TabsContent>
 
-        <TabsContent className="mt-4 space-y-4" value="orders">
+        <TabsContent className="space-y-4 px-4 pb-4 pt-4" value="orders">
           <Tabs value={ordersSubTab} onValueChange={(value) => setOrdersSubTab(value as MedicationOrdersSubTab)}>
-            <TabsList className="grid h-auto w-full gap-1 rounded-md bg-slate-100 p-1 md:grid-cols-4">
-              <TabsTrigger className="min-h-10" value="pending-work">Pending Work</TabsTrigger>
-              <TabsTrigger className="min-h-10" value="medication-overview">Medication Overview</TabsTrigger>
-              <TabsTrigger className="min-h-10" value="medicine-chart">Medicine Chart</TabsTrigger>
-              <TabsTrigger className="min-h-10" value="medicine-reference">Medicine Reference</TabsTrigger>
+            <TabsList className="flex h-auto w-full min-w-max gap-2 overflow-x-auto rounded-xl bg-slate-100 p-2">
+              <TabsTrigger className="min-h-12 rounded-2xl px-4 text-sm font-bold data-[state=active]:bg-white data-[state=active]:text-violet-600 data-[state=active]:shadow-sm" value="pending-work">Pending Work</TabsTrigger>
+              <TabsTrigger className="min-h-12 rounded-2xl px-4 text-sm font-bold data-[state=active]:bg-white data-[state=active]:text-violet-600 data-[state=active]:shadow-sm" value="medication-overview">Medication Overview</TabsTrigger>
+              <TabsTrigger className="min-h-12 rounded-2xl px-4 text-sm font-bold data-[state=active]:bg-white data-[state=active]:text-violet-600 data-[state=active]:shadow-sm" value="medicine-chart">Medicine Chart</TabsTrigger>
+              <TabsTrigger className="min-h-12 rounded-2xl px-4 text-sm font-bold data-[state=active]:bg-white data-[state=active]:text-violet-600 data-[state=active]:shadow-sm" value="medicine-reference">Medicine Reference</TabsTrigger>
             </TabsList>
 
             <TabsContent className="mt-4" value="pending-work">
@@ -15677,15 +15688,15 @@ function IcuPatientCommandProfile({
           </Tabs>
         </TabsContent>
 
-        <TabsContent className="mt-4 space-y-4" value="events">
+        <TabsContent className="space-y-4 px-4 pb-4 pt-4" value="events">
           <IcuPatientEventsWorkspace initialFocus={initialEventFocus} patient={patient} results={resultRows} />
         </TabsContent>
 
-        <TabsContent className="mt-4 space-y-4" value="shift-summary">
+        <TabsContent className="space-y-4 px-4 pb-4 pt-4" value="shift-summary">
           <IcuPatientShiftSummaryWorkspace initialFocus={initialShiftFocus} patient={patient} />
         </TabsContent>
 
-        <TabsContent className="mt-4 space-y-4" value="collaborate">
+        <TabsContent className="space-y-4 px-4 pb-4 pt-4" value="collaborate">
           <IcuPatientCollaborateWorkspace patient={patient} />
         </TabsContent>
       </Tabs>
@@ -15876,145 +15887,84 @@ function IcuPatientDeviceSnapshot({ device, patient }: { device?: ReturnType<typ
         <InfoLine label="Owner" value={device.owner} />
         <InfoLine label="Data confidence" value={dataTone === "success" ? "Live feed usable" : dataTone === "warning" ? "Needs review" : "Manual fallback needed"} />
       </div>
-      <div className="grid gap-3 border-t border-slate-100 p-3 md:grid-cols-3">
-        <MiniList
-          title="Normal monitoring"
-          rows={[
-            "Live feed usable for vitals review",
-            "Monitor, pump, and gateway mapped to selected bed",
-            "Nurse can continue routine observation",
-          ]}
-        />
-        <MiniList
-          title="Issue scenario"
-          rows={device.issue === "No issue" ? [
-            "No active device issue",
-            "Continue shift device check",
-            "Revalidate mapping if patient/bed changes",
-          ] : [
-            device.issue,
-            device.signal === "Weak" ? "Repeat bedside probe/cable check" : "Check gateway and network path",
-            "Notify BioMed owner if trend continues",
-          ]}
-        />
-        <MiniList
-          title="Fallback action"
-          rows={[
-            dataTone === "danger" ? "Use manual charting until feed returns" : "Live feed can support patient monitoring",
-            "Document device issue in monitoring note",
-            "Escalate if ventilator/monitor data is unavailable",
-          ]}
-        />
-      </div>
-      <IcuPatientDeviceStatusRules device={device} />
+      <IcuPatientDeviceStatusTable device={device} />
     </div>
   );
 }
 
-function IcuPatientDeviceStatusRules({ device }: { device: ReturnType<typeof getCommandDeviceRows>[number] }) {
+function IcuPatientDeviceStatusTable({ device }: { device: ReturnType<typeof getCommandDeviceRows>[number] }) {
   const lastDataMinutes = deviceLastDataMinutes(device.lastData);
-  const overallTone = deviceOverallStatusTone(device);
-  const overallLabel = deviceStatusRuleLabel(overallTone);
-  const overallAction = deviceOverallAction(device, overallTone);
-  const rules = [
+  const issue = device.issue.toLowerCase();
+  const rows: Array<{ action: string; check: string; current: string; status: string; tone: DashboardCellTone }> = [
     {
-      metric: "Connectivity",
+      action: device.connectivity === "Online" ? "Continue live monitoring" : "Use manual charting and inform BioMed",
+      check: "Connectivity",
       current: device.connectivity,
-      green: "Online",
-      warning: "Degraded/manual review",
-      critical: "Offline",
-      tone: device.connectivity === "Online" ? "success" as DashboardCellTone : "danger" as DashboardCellTone,
-      action: device.connectivity === "Online" ? "Continue routine device observation" : "Escalate to BioMed/IT and use manual charting fallback",
+      status: device.connectivity === "Online" ? "Online" : "Offline",
+      tone: device.connectivity === "Online" ? "success" : "danger",
     },
     {
-      metric: "Signal",
+      action: device.signal === "Good" ? "No action required" : device.signal === "Weak" ? "Check probe, lead, and cable placement" : "Treat feed as unavailable",
+      check: "Signal quality",
       current: device.signal,
-      green: "Good",
-      warning: "Weak",
-      critical: "No signal",
-      tone: device.signal === "Good" ? "success" as DashboardCellTone : device.signal === "Weak" ? "warning" as DashboardCellTone : "danger" as DashboardCellTone,
-      action: device.signal === "Good" ? "No immediate action" : device.signal === "Weak" ? "Check probe, cable, lead placement, and repeat validation" : "Treat live feed as unavailable and escalate",
+      status: device.signal === "Good" ? "Normal" : device.signal === "Weak" ? "Review" : "Critical",
+      tone: device.signal === "Good" ? "success" : device.signal === "Weak" ? "warning" : "danger",
     },
     {
-      metric: "Last data",
+      action: lastDataMinutes < 10 ? "Live trend can be used" : lastDataMinutes < 30 ? "Validate bedside reading" : "Switch to manual entry until feed returns",
+      check: "Last data",
       current: device.lastData,
-      green: "< 10 min",
-      warning: "10-29 min",
-      critical: ">= 30 min",
-      tone: lastDataMinutes < 10 ? "success" as DashboardCellTone : lastDataMinutes < 30 ? "warning" as DashboardCellTone : "danger" as DashboardCellTone,
-      action: lastDataMinutes < 10 ? "Live feed is fresh" : lastDataMinutes < 30 ? "Validate bedside reading and watch feed delay" : "Start manual documentation and troubleshoot gateway/device",
+      status: lastDataMinutes < 10 ? "Fresh" : lastDataMinutes < 30 ? "Delayed" : "Stale",
+      tone: lastDataMinutes < 10 ? "success" : lastDataMinutes < 30 ? "warning" : "danger",
     },
     {
-      metric: "Uptime ratio",
+      action: device.uptime >= 95 ? "Acceptable for shift review" : device.uptime >= 85 ? "Review device stability" : "BioMed review required",
+      check: "Uptime",
       current: `${device.uptime}%`,
-      green: ">= 95%",
-      warning: "85-94%",
-      critical: "< 85%",
-      tone: device.uptime >= 95 ? "success" as DashboardCellTone : device.uptime >= 85 ? "warning" as DashboardCellTone : "danger" as DashboardCellTone,
-      action: device.uptime >= 95 ? "Acceptable uptime" : device.uptime >= 85 ? "Review device stability during shift" : "BioMed review required before relying on trend",
+      status: device.uptime >= 95 ? "Stable" : device.uptime >= 85 ? "Watch" : "Unstable",
+      tone: device.uptime >= 95 ? "success" : device.uptime >= 85 ? "warning" : "danger",
     },
     {
-      metric: "Issue",
+      action: device.issue === "No issue" ? "No device issue open" : issue.includes("offline") || issue.includes("lost") ? "Escalate now and document fallback" : "Assign owner and recheck after correction",
+      check: "Open issue",
       current: device.issue,
-      green: "No issue",
-      warning: "Intermittent signal / weak probe",
-      critical: "Gateway offline / communication lost",
-      tone: device.issue === "No issue" ? "success" as DashboardCellTone : device.issue.toLowerCase().includes("offline") || device.issue.toLowerCase().includes("lost") ? "danger" as DashboardCellTone : "warning" as DashboardCellTone,
-      action: device.issue === "No issue" ? "No issue action needed" : device.issue.toLowerCase().includes("offline") || device.issue.toLowerCase().includes("lost") ? "Immediate BioMed escalation and manual fallback" : "Assign owner and recheck after correction",
+      status: device.issue === "No issue" ? "Clear" : issue.includes("offline") || issue.includes("lost") ? "Escalate" : "Open",
+      tone: device.issue === "No issue" ? "success" : issue.includes("offline") || issue.includes("lost") ? "danger" : "warning",
     },
     {
-      metric: "Ventilator mapping",
+      action: device.ventilator === "Room air" ? "No ventilator device action" : "Confirm respiratory device readings",
+      check: "Ventilator mapping",
       current: device.ventilator,
-      green: "Room air / oxygen only",
-      warning: "NIV / oxygen support",
-      critical: "Ventilator communication lost",
-      tone: device.issue.toLowerCase().includes("ventilator") && device.issue.toLowerCase().includes("lost") ? "danger" as DashboardCellTone : device.ventilator === "Room air" ? "success" as DashboardCellTone : "purple" as DashboardCellTone,
-      action: device.issue.toLowerCase().includes("ventilator") && device.issue.toLowerCase().includes("lost") ? "Respiratory/BioMed escalation now" : device.ventilator === "Room air" ? "No ventilator action" : "Confirm respiratory device mapping and live readings",
+      status: device.ventilator === "Room air" ? "Not required" : "Mapped",
+      tone: device.ventilator === "Room air" ? "success" : "purple",
     },
   ];
 
   return (
     <div className="border-t border-slate-100 p-3">
-      <div className="rounded-md border border-slate-200 bg-slate-50">
-        <div className="flex flex-col gap-1 border-b border-slate-200 px-3 py-3 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <p className="text-sm font-bold text-slate-950">Color & status rules</p>
-            <p className="mt-0.5 text-xs text-slate-500">Current device color changes from these thresholds and ratios.</p>
-          </div>
-          <span className={cn("rounded-full border px-2.5 py-1 text-xs font-bold", dashboardTonePillClass(overallTone))}>Overall: {overallLabel}</span>
-        </div>
+      <div className="overflow-hidden rounded-md border border-slate-200">
         <div className="border-b border-slate-200 bg-white px-3 py-3">
-          <div className="grid gap-3 md:grid-cols-3">
-            <InfoLine label="Overall status" value={overallLabel} />
-            <InfoLine label="Current action" value={overallAction} />
-            <InfoLine label="Rule priority" value="Critical overrides warning, warning overrides normal" />
-          </div>
+          <p className="text-sm font-bold text-slate-950">Device status review</p>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[960px] border-collapse text-sm">
-            <thead>
-              <tr className="border-b border-slate-200 bg-white text-[11px] uppercase text-slate-500">
-                <th className="px-3 py-2 text-left">Metric</th>
-                <th className="px-3 py-2 text-left">Current</th>
-                <th className="px-3 py-2 text-left">Green</th>
-                <th className="px-3 py-2 text-left">Warning</th>
-                <th className="px-3 py-2 text-left">Critical</th>
-                <th className="px-3 py-2 text-left">Action suggestion</th>
-                <th className="px-3 py-2 text-center">Status</th>
+          <table className="w-full min-w-[760px] text-left text-sm">
+            <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase text-slate-500">
+              <tr>
+                <th className="px-3 py-3">Check</th>
+                <th className="px-3 py-3">Current</th>
+                <th className="px-3 py-3">Status</th>
+                <th className="px-3 py-3">Action</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200 bg-white">
-              {rules.map((rule) => (
-                <tr key={rule.metric}>
-                  <td className="px-3 py-2 font-bold text-slate-900">{rule.metric}</td>
-                  <td className="px-3 py-2 text-slate-700">{rule.current}</td>
-                  <td className="px-3 py-2 text-emerald-700">{rule.green}</td>
-                  <td className="px-3 py-2 text-amber-700">{rule.warning}</td>
-                  <td className="px-3 py-2 text-rose-700">{rule.critical}</td>
-                  <td className="px-3 py-2 text-slate-700">{rule.action}</td>
-                  <td className="px-3 py-2 text-center">
-                    <span className={cn("inline-flex rounded-full border px-2.5 py-1 text-xs font-bold", dashboardTonePillClass(rule.tone))}>{deviceStatusRuleLabel(rule.tone)}</span>
+              {rows.map((row) => (
+                <tr key={row.check}>
+                  <td className="px-3 py-3 font-bold text-slate-900">{row.check}</td>
+                  <td className="px-3 py-3 text-slate-700">{row.current}</td>
+                  <td className="px-3 py-3">
+                    <span className={cn("inline-flex rounded-full border px-2.5 py-1 text-xs font-bold", dashboardTonePillClass(row.tone))}>{row.status}</span>
                   </td>
+                  <td className="px-3 py-3 text-slate-700">{row.action}</td>
                 </tr>
               ))}
             </tbody>
@@ -16023,38 +15973,6 @@ function IcuPatientDeviceStatusRules({ device }: { device: ReturnType<typeof get
       </div>
     </div>
   );
-}
-
-function deviceOverallStatusTone(device: ReturnType<typeof getCommandDeviceRows>[number]): DashboardCellTone {
-  const issue = device.issue.toLowerCase();
-  const lastDataMinutes = deviceLastDataMinutes(device.lastData);
-  if (device.connectivity === "Offline") return "danger";
-  if (device.signal === "No signal") return "danger";
-  if (lastDataMinutes >= 30) return "danger";
-  if (device.uptime < 85) return "danger";
-  if (issue.includes("offline") || issue.includes("lost") || issue.includes("communication")) return "danger";
-  if (device.signal === "Weak") return "warning";
-  if (lastDataMinutes >= 10) return "warning";
-  if (device.uptime < 95) return "warning";
-  if (device.issue !== "No issue") return "warning";
-  return "success";
-}
-
-function deviceOverallAction(device: ReturnType<typeof getCommandDeviceRows>[number], tone: DashboardCellTone) {
-  if (tone === "danger" || tone === "critical") {
-    if (device.ventilator !== "Room air") return "BioMed + respiratory escalation, manual charting fallback";
-    return "BioMed/IT escalation, manual charting fallback";
-  }
-  if (tone === "warning") return "Bedside recheck, assign owner, review again within 30 min";
-  return "Continue routine monitoring";
-}
-
-function deviceStatusRuleLabel(tone: DashboardCellTone) {
-  if (tone === "success") return "Green";
-  if (tone === "warning") return "Warning";
-  if (tone === "danger" || tone === "critical") return "Critical";
-  if (tone === "purple") return "Ventilator";
-  return "Mapped";
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -16411,63 +16329,75 @@ function IcuPatientResultsWorkspace({
 
   return (
     <div className="space-y-4">
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <IcuPatientDetailMetric icon={TestTube2} label="Available reports" value={available} detail="Pathology, ABG, radiology" tone={available ? "info" : "muted"} />
-        <IcuPatientDetailMetric icon={AlertTriangle} label="Critical results" value={critical} detail="Doctor review required" tone={critical ? "critical" : "success"} />
-        <IcuPatientDetailMetric icon={Clock3} label="Pending reports" value={pending} detail="Sample/report awaited" tone={pending ? "warning" : "success"} />
-        <IcuPatientDetailMetric icon={ClipboardCheck} label="Review pending" value={unreviewed} detail="Clinical sign-off queue" tone={unreviewed ? "warning" : "success"} />
-      </div>
+      <CollapsibleCommandPanel
+        summary={`${filteredRows.length} result(s) | ${critical} critical | ${pending} pending | ${unreviewed} review pending`}
+        title="Result filters"
+      >
+        <div className="space-y-3 p-3">
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <IcuPatientDetailMetric icon={TestTube2} label="Available reports" value={available} detail="Ready for review" tone={available ? "info" : "muted"} />
+            <IcuPatientDetailMetric icon={AlertTriangle} label="Critical results" value={critical} detail="Needs attention" tone={critical ? "critical" : "success"} />
+            <IcuPatientDetailMetric icon={Clock3} label="Pending reports" value={pending} detail="Awaiting result" tone={pending ? "warning" : "success"} />
+            <IcuPatientDetailMetric icon={ClipboardCheck} label="Review pending" value={unreviewed} detail="Sign-off queue" tone={unreviewed ? "warning" : "success"} />
+          </div>
 
-      <div className="rounded-md border border-slate-200 bg-white">
-        <div className="grid gap-3 border-b border-slate-200 bg-slate-50 px-3 py-3 lg:grid-cols-[minmax(220px,1fr)_220px_180px_auto] lg:items-end">
-          <label className="space-y-1 text-sm">
-            <span className="font-semibold text-slate-800">Search report</span>
-            <Input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search report, source, summary..." />
-          </label>
-          <NativeSelect label="Category" value={categoryFilter} onChange={setCategoryFilter} options={categoryOptions} />
-          <NativeSelect label="Status" value={statusFilter} onChange={setStatusFilter} options={statusOptions} />
-          <Button variant="outline" onClick={() => {
-            setQuery("");
-            setCategoryFilter("All categories");
-            setStatusFilter("All status");
-          }}>Reset</Button>
+          <div className="grid gap-3 lg:grid-cols-[minmax(220px,1fr)_220px_180px_auto] lg:items-end">
+            <label className="space-y-1 text-sm">
+              <span className="font-semibold text-slate-800">Search report</span>
+              <Input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search report, source, summary..." />
+            </label>
+            <NativeSelect label="Category" value={categoryFilter} onChange={setCategoryFilter} options={categoryOptions} />
+            <NativeSelect label="Status" value={statusFilter} onChange={setStatusFilter} options={statusOptions} />
+            <Button variant="outline" onClick={() => {
+              setQuery("");
+              setCategoryFilter("All categories");
+              setStatusFilter("All status");
+            }}>Reset</Button>
+          </div>
         </div>
+      </CollapsibleCommandPanel>
+
+      <div className="overflow-hidden rounded-md border border-slate-200 bg-white shadow-sm">
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[960px] text-left text-sm">
-            <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase text-slate-500">
+          <table className="w-full min-w-[900px] text-left text-sm">
+            <thead className="border-b border-slate-200 bg-white text-xs uppercase text-slate-500">
               <tr>
-                <th className="px-3 py-3">Report</th>
-                <th className="px-3 py-3">Type</th>
-                <th className="px-3 py-3">Status</th>
-                <th className="px-3 py-3">Time</th>
-                <th className="px-3 py-3">Summary</th>
-                <th className="px-3 py-3 text-right">Action</th>
+                <th className="px-4 py-3">Report</th>
+                <th className="px-4 py-3">Type</th>
+                <th className="px-4 py-3">Status</th>
+                <th className="px-4 py-3">Time</th>
+                <th className="px-4 py-3">Summary</th>
+                <th className="px-4 py-3 text-right">Action</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200">
               {pagination.pageRows.map((row) => {
-                const disabled = row.status === "Pending";
+                const downloadDisabled = row.status === "Pending";
                 return (
-                  <tr className={cn(disabled ? "bg-slate-50/70" : "bg-white")} key={row.id}>
-                    <td className="px-3 py-3">
+                  <tr className="bg-white transition hover:bg-slate-50" key={row.id}>
+                    <td className="px-4 py-3">
                       <p className="font-bold text-slate-950">{row.reportName}</p>
                       <p className="mt-1 text-xs text-slate-500">{row.source}</p>
                     </td>
-                    <td className="px-3 py-3">
+                    <td className="px-4 py-3">
                       <span className="rounded-full border border-slate-300 bg-white px-2.5 py-1 text-xs font-bold text-slate-700">{row.category}</span>
                     </td>
-                    <td className="px-3 py-3">
+                    <td className="px-4 py-3">
                       <span className={cn("rounded-full border px-2.5 py-1 text-xs font-bold", dashboardTonePillClass(toneForPatientResult(row.status)))}>{row.status}</span>
                     </td>
-                    <td className="px-3 py-3 text-xs text-slate-600">
+                    <td className="px-4 py-3 text-xs text-slate-600">
                       <p><span className="font-bold">Ordered:</span> {row.orderedAt}</p>
                       <p className="mt-1"><span className="font-bold">Reported:</span> {row.reportedAt}</p>
                     </td>
-                    <td className="max-w-[300px] px-3 py-3 text-xs text-slate-600">{row.summary}</td>
-                    <td className="px-3 py-3">
+                    <td className="max-w-[340px] px-4 py-3 text-xs leading-relaxed text-slate-600">{row.summary}</td>
+                    <td className="px-4 py-3">
                       <div className="flex justify-end gap-2">
-                        <Button disabled={disabled} size="sm" variant="outline" onClick={() => onPreview(row.id)}>Preview</Button>
-                        <Button disabled={disabled} size="sm" onClick={() => onDownload(row)}>Download</Button>
+                        <Button className="h-9 rounded-md px-3 text-xs" size="sm" variant="outline" onClick={() => onPreview(row.id)}>
+                          <FileText className="h-4 w-4" />Preview
+                        </Button>
+                        <Button className="h-9 rounded-md px-3 text-xs" disabled={downloadDisabled} size="sm" title={downloadDisabled ? "Report is pending" : "Download report"} onClick={() => onDownload(row)}>
+                          <Download className="h-4 w-4" />Download
+                        </Button>
                       </div>
                     </td>
                   </tr>
@@ -17154,10 +17084,12 @@ function IcuPatientCollaborateWorkspace({ patient }: { patient: IcuPatient }) {
     [patient, results],
   );
   const logRows = React.useMemo(() => buildIcuCollaborateLogRows(patient, currentIssue, actionRows), [actionRows, currentIssue, patient]);
-  const [message, setMessage] = React.useState(() => buildIcuCollaborateMessage(patient, currentIssue));
+  const [selectedDirectAction, setSelectedDirectAction] = React.useState("Notify Duty Doctor");
+  const [message, setMessage] = React.useState(() => buildIcuCollaborateMessage(patient, currentIssue, "Notify Duty Doctor"));
 
   React.useEffect(() => {
-    setMessage(buildIcuCollaborateMessage(patient, currentIssue));
+    setSelectedDirectAction("Notify Duty Doctor");
+    setMessage(buildIcuCollaborateMessage(patient, currentIssue, "Notify Duty Doctor"));
   }, [currentIssue, patient]);
 
   const directActions = [
@@ -17166,6 +17098,7 @@ function IcuPatientCollaborateWorkspace({ patient }: { patient: IcuPatient }) {
     { label: "Add Team Note", icon: FileText, target: "Team note", variant: "outline" as const },
     { label: "Escalate", icon: ArrowRightLeft, target: "Escalation center", variant: "outline" as const },
   ];
+  const selectedDirectActionRow = directActions.find((item) => item.label === selectedDirectAction) ?? directActions[0];
 
   return (
     <div className="space-y-4">
@@ -17180,22 +17113,32 @@ function IcuPatientCollaborateWorkspace({ patient }: { patient: IcuPatient }) {
             <p className="mt-1 text-sm font-semibold text-slate-600">{currentIssue.detail}</p>
           </div>
           <div className="grid gap-2 sm:grid-cols-3 lg:min-w-[520px]">
-            <InfoLine label="Notify" value={currentIssue.recipient} />
+            <InfoLine label="Notify" value={selectedDirectActionRow.target} />
             <InfoLine label="Source" value={currentIssue.source} />
-            <InfoLine label="Action" value={currentIssue.action} />
+            <InfoLine label="Action" value={selectedDirectAction} />
           </div>
         </div>
 
         <div className="grid gap-4 p-3 xl:grid-cols-[minmax(0,1fr)_340px]">
           <div className="space-y-3">
-            <div className="flex flex-wrap gap-2">
+            <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-slate-100 p-2 shadow-sm">
+              <div className="flex min-w-max items-center gap-3">
               {directActions.map((item) => {
                 const Icon = item.icon;
+                const active = selectedDirectAction === item.label;
                 return (
-                  <Button
+                  <button
+                    className={cn(
+                      "inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl px-4 text-sm font-bold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-300",
+                      active
+                        ? "bg-white text-violet-600 shadow-sm"
+                        : "text-slate-600 hover:bg-white/70 hover:text-slate-950",
+                    )}
                     key={item.label}
-                    variant={item.variant}
+                    type="button"
                     onClick={() => {
+                      setSelectedDirectAction(item.label);
+                      setMessage(buildIcuCollaborateMessage(patient, currentIssue, item.label));
                       if (item.label === "Add Team Note") toast.success(`Team note added for ${patient.bedNo}`);
                       else if (item.label === "Escalate") toast.info(`Escalation draft opened for ${patient.bedNo}`);
                       else toast.success(`${item.target} notified for ${patient.bedNo}`);
@@ -17203,9 +17146,10 @@ function IcuPatientCollaborateWorkspace({ patient }: { patient: IcuPatient }) {
                   >
                     <Icon className="h-4 w-4" />
                     {item.label}
-                  </Button>
+                  </button>
                 );
               })}
+              </div>
             </div>
 
             <label className="block space-y-1 text-sm">
@@ -17233,33 +17177,34 @@ function IcuPatientCollaborateWorkspace({ patient }: { patient: IcuPatient }) {
       <div className="space-y-4">
         <div className="overflow-hidden rounded-md border border-slate-200 bg-white shadow-sm">
           <div className="flex items-center justify-between gap-3 border-b border-slate-200 bg-slate-50 px-3 py-3">
-            <p className="text-sm font-black text-slate-950">Communication log</p>
+            <p className="text-sm font-black text-slate-950">Team Communication History</p>
             <span className="rounded-full border border-sky-300 bg-sky-50 px-2.5 py-1 text-xs font-bold text-sky-700">{logRows.length} entries</span>
           </div>
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[980px] text-left text-sm">
+            <table className="w-full min-w-[820px] text-left text-sm">
               <thead className="border-b border-slate-200 bg-white text-xs uppercase text-sky-700">
                 <tr>
                   <th className="px-3 py-3">Time</th>
-                  <th className="px-3 py-3">Topic</th>
-                  <th className="px-3 py-3">Target</th>
+                  <th className="px-3 py-3">Communication / Issue</th>
+                  <th className="px-3 py-3">Sent To</th>
                   <th className="px-3 py-3">Status</th>
-                  <th className="px-3 py-3">Action</th>
-                  <th className="px-3 py-3">By</th>
+                  <th className="px-3 py-3">Recorded By</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200">
                 {logRows.map((row) => (
                   <tr className="hover:bg-sky-50/40" key={row.id}>
                     <td className="px-3 py-3 font-bold text-slate-800">{row.time}</td>
-                    <td className="px-3 py-3 font-black text-slate-950">{row.topic}</td>
+                    <td className="px-3 py-3">
+                      <p className="font-black text-slate-950">{row.topic}</p>
+                      <p className="mt-1 text-xs font-semibold text-slate-500">{row.action}</p>
+                    </td>
                     <td className="px-3 py-3 font-semibold text-slate-700">{row.target}</td>
                     <td className="px-3 py-3">
                       <span className={cn("inline-flex max-w-40 items-center rounded-full border px-2.5 py-1 text-xs font-bold leading-none", collaborateStatusBadgeClass(row.tone))}>
                         <span className="truncate">{row.status}</span>
                       </span>
                     </td>
-                    <td className="px-3 py-3 text-xs font-bold text-slate-700">{row.action}</td>
                     <td className="px-3 py-3 text-xs font-semibold text-slate-600">{row.by}</td>
                   </tr>
                 ))}
@@ -17351,8 +17296,18 @@ function buildIcuCollaborateIssue(patient: IcuPatient, results: IcuPatientResult
   };
 }
 
-function buildIcuCollaborateMessage(patient: IcuPatient, issue: IcuCollaborateIssue) {
-  return `${patient.bedNo} ${patient.patientName}: ${issue.reason}. ${issue.title} - ${issue.detail}. Action: ${issue.action}.`;
+function buildIcuCollaborateMessage(patient: IcuPatient, issue: IcuCollaborateIssue, action = "Notify Duty Doctor") {
+  const context = `${patient.bedNo} ${patient.patientName}: ${issue.reason}. ${issue.title} - ${issue.detail}.`;
+  if (action === "Notify Ward Nurse") {
+    return `${context} Ward nurse to review bedside status, document response, and update pending care actions.`;
+  }
+  if (action === "Add Team Note") {
+    return `Team note for ${patient.bedNo} ${patient.patientName}: ${issue.title} reviewed. ${issue.detail}. Next action: ${issue.action}.`;
+  }
+  if (action === "Escalate") {
+    return `Escalation request for ${patient.bedNo} ${patient.patientName}: ${issue.title}. ${issue.detail}. Escalate to command team for immediate follow-up.`;
+  }
+  return `${context} Action: ${issue.action}.`;
 }
 
 function buildIcuCollaborateLogRows(patient: IcuPatient, issue: IcuCollaborateIssue, actionRows: IcuPatientEventRow[]): IcuCollaborateLogRow[] {
@@ -18616,7 +18571,6 @@ function IcuPatientTimeline({ rows }: { rows: Array<{ id: string; label: string;
       <div className="flex items-center justify-between gap-3">
         <div>
           <p className="text-sm font-bold text-slate-950">Patient timeline</p>
-          <p className="mt-1 text-xs text-slate-500">Recent vitals, medication, and alert context for this patient only.</p>
         </div>
         <span className="rounded-full border border-slate-300 px-2 py-0.5 text-xs font-bold text-slate-600">{rows.length}</span>
       </div>
@@ -19066,171 +19020,84 @@ function IcuPatientMedicineChartTab({ patient }: { patient: IcuPatient }) {
 
   return (
     <div className="space-y-3">
-      <div className="overflow-hidden rounded-md border border-slate-300 bg-white shadow-sm">
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[980px] border-collapse text-sm">
-            <tbody>
-              <tr>
-                <th className="w-36 border border-slate-300 bg-slate-100 px-3 py-2 text-left text-xs uppercase text-slate-600">Patient</th>
-                <td className="border border-slate-300 px-3 py-2 font-bold text-slate-950">{patient.patientName}</td>
-                <th className="w-28 border border-slate-300 bg-slate-100 px-3 py-2 text-left text-xs uppercase text-slate-600">Bed</th>
-                <td className="border border-slate-300 px-3 py-2 font-semibold text-slate-800">{patient.bedNo}</td>
-                <th className="w-28 border border-slate-300 bg-slate-100 px-3 py-2 text-left text-xs uppercase text-slate-600">MRN</th>
-                <td className="border border-slate-300 px-3 py-2 text-slate-700">{patient.mrn}</td>
-                <th className="w-32 border border-slate-300 bg-slate-100 px-3 py-2 text-left text-xs uppercase text-slate-600">Mode</th>
-                <td className="border border-slate-300 px-3 py-2">
-                  <span className="rounded-full border border-slate-400 bg-slate-50 px-2.5 py-1 text-xs font-bold text-slate-700">Read only</span>
-                </td>
-              </tr>
-              <tr>
-                <th className="border border-slate-300 bg-slate-100 px-3 py-2 text-left text-xs uppercase text-slate-600">Doctor</th>
-                <td className="border border-slate-300 px-3 py-2 text-slate-700">{patient.dutyDoctor}</td>
-                <th className="border border-slate-300 bg-slate-100 px-3 py-2 text-left text-xs uppercase text-slate-600">Nurse</th>
-                <td className="border border-slate-300 px-3 py-2 text-slate-700">{patient.assignedWardNurse}</td>
-                <th className="border border-slate-300 bg-slate-100 px-3 py-2 text-left text-xs uppercase text-slate-600">Window</th>
-                <td className="border border-slate-300 px-3 py-2 text-slate-700">{timeWindow}</td>
-                <th className="border border-slate-300 bg-slate-100 px-3 py-2 text-left text-xs uppercase text-slate-600">Rows</th>
-                <td className="border border-slate-300 px-3 py-2 font-bold text-slate-950">{filteredRows.length}</td>
-              </tr>
-            </tbody>
-          </table>
+      <CollapsibleCommandPanel
+        summary={`${timeWindow} | ${scenarioFilter} | ${statusFilter} | ${filteredRows.length} row(s)`}
+        title="Medicine chart filters"
+      >
+        <div className="grid gap-3 p-3 md:grid-cols-2 xl:grid-cols-6 xl:items-end">
+          <NativeSelect label="Period" value={timeWindow} onChange={setTimeWindow} options={["Last 24 hours", "Last 7 days", "All history"]} />
+          <NativeSelect label="Activity" value={scenarioFilter} onChange={setScenarioFilter} options={scenarioOptions} />
+          <NativeSelect label="Status" value={statusFilter} onChange={setStatusFilter} options={statusOptions} />
+          <NativeSelect label="Route" value={routeFilter} onChange={setRouteFilter} options={routeOptions} />
+          <label className="space-y-1 text-sm">
+            <span className="font-semibold text-slate-800">Search</span>
+            <div className="relative">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              <Input className="h-9 pl-9" placeholder="Medicine, nurse, remarks" value={query} onChange={(event) => setQuery(event.target.value)} />
+            </div>
+          </label>
+          <div className="space-y-2">
+            <label className="flex h-9 items-center gap-2 rounded-md border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-800">
+              <input checked={highAlertOnly} className="h-4 w-4 accent-violet-600" type="checkbox" onChange={(event) => setHighAlertOnly(event.target.checked)} />
+              High-alert only
+            </label>
+            <Button className="w-full" variant="outline" onClick={() => {
+              setQuery("");
+              setTimeWindow("Last 24 hours");
+              setScenarioFilter("All scenarios");
+              setStatusFilter("All status");
+              setRouteFilter("All routes");
+              setHighAlertOnly(false);
+            }}>Reset</Button>
+          </div>
         </div>
-      </div>
+      </CollapsibleCommandPanel>
 
-      <div className="overflow-hidden rounded-md border border-slate-300 bg-white">
+      <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[1120px] border-collapse text-sm">
-            <thead>
+          <table className="w-full min-w-[1080px] border-collapse text-left text-sm">
+            <thead className="bg-white text-xs uppercase text-slate-500">
               <tr>
-                <th className="border border-slate-300 bg-slate-900 px-3 py-2 text-left text-xs uppercase text-white" colSpan={6}>Medicine chart filters</th>
+                <th className="border border-slate-200 px-3 py-2">Date</th>
+                <th className="border border-slate-200 px-3 py-2">Time</th>
+                <th className="border border-slate-200 px-3 py-2">Medication</th>
+                <th className="border border-slate-200 px-3 py-2">Dose</th>
+                <th className="border border-slate-200 px-3 py-2">Route</th>
+                <th className="border border-slate-200 px-3 py-2">Frequency</th>
+                <th className="border border-slate-200 px-3 py-2">Scheduled / given</th>
+                <th className="border border-slate-200 px-3 py-2">Status</th>
+                <th className="border border-slate-200 px-3 py-2">By / verifier</th>
+                <th className="border border-slate-200 px-3 py-2">Remarks</th>
               </tr>
             </thead>
             <tbody>
-              <tr>
-                <td className="border border-slate-300 bg-slate-50 p-2 align-bottom">
-                  <NativeSelect label="Period" value={timeWindow} onChange={setTimeWindow} options={["Last 24 hours", "Last 7 days", "All history"]} />
-                </td>
-                <td className="border border-slate-300 bg-slate-50 p-2 align-bottom">
-                  <NativeSelect label="Activity" value={scenarioFilter} onChange={setScenarioFilter} options={scenarioOptions} />
-                </td>
-                <td className="border border-slate-300 bg-slate-50 p-2 align-bottom">
-                  <NativeSelect label="Status" value={statusFilter} onChange={setStatusFilter} options={statusOptions} />
-                </td>
-                <td className="border border-slate-300 bg-slate-50 p-2 align-bottom">
-                  <NativeSelect label="Route" value={routeFilter} onChange={setRouteFilter} options={routeOptions} />
-                </td>
-                <td className="border border-slate-300 bg-slate-50 p-2 align-bottom">
-                  <label className="space-y-1 text-sm">
-                    <span className="font-semibold text-slate-800">Search</span>
-                    <div className="relative">
-                      <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                      <Input className="h-9 pl-9" placeholder="Medicine, nurse, remarks" value={query} onChange={(event) => setQuery(event.target.value)} />
-                    </div>
-                  </label>
-                </td>
-                <td className="w-44 border border-slate-300 bg-slate-50 p-2 align-bottom">
-                  <label className="flex h-9 items-center gap-2 rounded-md border border-slate-300 bg-white px-3 text-sm font-semibold text-slate-800">
-                    <input checked={highAlertOnly} className="h-4 w-4 accent-red-600" type="checkbox" onChange={(event) => setHighAlertOnly(event.target.checked)} />
-                    High-alert only
-                  </label>
-                  <Button className="mt-2 w-full" variant="outline" onClick={() => {
-                    setQuery("");
-                    setTimeWindow("Last 24 hours");
-                    setScenarioFilter("All scenarios");
-                    setStatusFilter("All status");
-                    setRouteFilter("All routes");
-                    setHighAlertOnly(false);
-                  }}>Reset</Button>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <div className="overflow-hidden rounded-md border border-slate-300 bg-white">
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[900px] border-collapse text-center text-sm">
-            <thead className="bg-slate-100 text-xs uppercase text-slate-600">
-              <tr>
-                <th className="border border-slate-300 px-3 py-2">Visible entries</th>
-                <th className="border border-slate-300 px-3 py-2">Given</th>
-                <th className="border border-slate-300 px-3 py-2">Added</th>
-                <th className="border border-slate-300 px-3 py-2">Changed</th>
-                <th className="border border-slate-300 px-3 py-2">Held / missed</th>
-                <th className="border border-slate-300 px-3 py-2">High-alert</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr className="text-lg font-black text-slate-950">
-                <td className="border border-slate-300 px-3 py-2">{filteredRows.length}</td>
-                <td className="border border-slate-300 px-3 py-2 text-green-700">{givenRows.length}</td>
-                <td className="border border-slate-300 px-3 py-2 text-sky-700">{addedRows.length}</td>
-                <td className="border border-slate-300 px-3 py-2 text-orange-700">{changedRows.length}</td>
-                <td className="border border-slate-300 px-3 py-2 text-red-700">{issueRows.length}</td>
-                <td className="border border-slate-300 px-3 py-2 text-red-700">{highAlertRows.length}</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <div className="overflow-hidden rounded-md border border-slate-300 bg-white shadow-sm">
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[1320px] border-collapse text-left text-sm">
-            <thead className="bg-slate-900 text-xs uppercase text-white">
-              <tr>
-                <th className="border border-slate-500 px-3 py-2">Date</th>
-                <th className="border border-slate-500 px-3 py-2">Slot</th>
-                <th className="border border-slate-500 px-3 py-2">Time</th>
-                <th className="border border-slate-500 px-3 py-2">Medication</th>
-                <th className="border border-slate-500 px-3 py-2">Dose</th>
-                <th className="border border-slate-500 px-3 py-2">Route</th>
-                <th className="border border-slate-500 px-3 py-2">Frequency</th>
-                <th className="border border-slate-500 px-3 py-2">Scheduled / given</th>
-                <th className="border border-slate-500 px-3 py-2">Status</th>
-                <th className="border border-slate-500 px-3 py-2">Activity</th>
-                <th className="border border-slate-500 px-3 py-2">By / verifier</th>
-                <th className="border border-slate-500 px-3 py-2">Remarks</th>
-              </tr>
-            </thead>
-            <tbody>
-              {tableLines.map(({ dateRowSpan, row, slotRowSpan }) => (
-                <tr className="align-top odd:bg-white even:bg-slate-50/60 hover:bg-sky-50/50" key={row.id}>
+              {tableLines.map(({ dateRowSpan, row }) => (
+                <tr className="align-top odd:bg-white even:bg-slate-50/40 hover:bg-violet-50/40" key={row.id}>
                   {dateRowSpan ? (
-                    <td className="border border-slate-300 bg-slate-100 px-3 py-2 text-center font-black text-slate-950" rowSpan={dateRowSpan}>
+                    <td className="border border-slate-200 bg-slate-50 px-3 py-2 text-center font-black text-slate-950" rowSpan={dateRowSpan}>
                       {formatMedicineChartDate(row.date)}
                     </td>
                   ) : null}
-                  {slotRowSpan ? (
-                    <td className="border border-slate-300 px-3 py-2 text-center font-bold text-slate-800" rowSpan={slotRowSpan}>
-                      {row.slot}
-                    </td>
-                  ) : null}
-                  <td className="border border-slate-300 px-3 py-2 font-semibold text-slate-800">{row.eventTime}</td>
-                  <td className="border border-slate-300 px-3 py-2">
+                  <td className="border border-slate-200 px-3 py-2 font-semibold text-slate-800">{row.eventTime}</td>
+                  <td className="border border-slate-200 px-3 py-2">
                     <p className="font-bold text-slate-950">{row.medication}</p>
                     <p className="mt-1 text-xs text-slate-500">{row.highAlert ? "High-alert medicine" : "Routine medicine"}</p>
                   </td>
-                  <td className="border border-slate-300 px-3 py-2 text-slate-700">{row.dose}</td>
-                  <td className="border border-slate-300 px-3 py-2 text-slate-700">{row.route}</td>
-                  <td className="border border-slate-300 px-3 py-2 text-slate-700">{row.frequency}</td>
-                  <td className="border border-slate-300 px-3 py-2 text-xs text-slate-700">
+                  <td className="border border-slate-200 px-3 py-2 text-slate-600">{row.dose}</td>
+                  <td className="border border-slate-200 px-3 py-2 text-slate-600">{row.route}</td>
+                  <td className="border border-slate-200 px-3 py-2 text-slate-600">{row.frequency}</td>
+                  <td className="border border-slate-200 px-3 py-2 text-xs text-slate-600">
                     <p>Scheduled: {row.scheduledTime || "-"}</p>
                     <p className="mt-1">Given: {row.givenTime || "-"}</p>
                   </td>
-                  <td className="border border-slate-300 px-3 py-2">
+                  <td className="border border-slate-200 px-3 py-2">
                     <span className={cn("inline-flex rounded-full border px-2.5 py-1 text-xs font-bold", dashboardTonePillClass(patientMedicationStatusTone(row.status)))}>{row.status}</span>
                   </td>
-                  <td className="border border-slate-300 px-3 py-2">
-                    <span className={cn("inline-flex rounded-full border px-2.5 py-1 text-xs font-bold", dashboardTonePillClass(medicineChartScenarioTone(row.scenario)))}>{row.scenario}</span>
-                    <p className="mt-1 text-xs text-slate-500">{row.source}</p>
-                  </td>
-                  <td className="border border-slate-300 px-3 py-2 text-xs text-slate-700">
+                  <td className="border border-slate-200 px-3 py-2 text-xs text-slate-600">
                     <p className="font-semibold text-slate-900">{row.changedBy}</p>
                     <p className="mt-1">Verifier: {row.verifier || "Not required"}</p>
                   </td>
-                  <td className="border border-slate-300 px-3 py-2 text-xs text-slate-700">
+                  <td className="border border-slate-200 px-3 py-2 text-xs text-slate-600">
                     <p className="font-semibold text-slate-800">{row.changeSummary}</p>
                     <p className="mt-1 text-slate-500">{row.remarks || "-"}</p>
                   </td>
@@ -19238,7 +19105,7 @@ function IcuPatientMedicineChartTab({ patient }: { patient: IcuPatient }) {
               ))}
               {!tableLines.length ? (
                 <tr>
-                  <td className="border border-slate-300 px-4 py-10 text-center text-sm font-semibold text-slate-500" colSpan={12}>No medication history matched selected filters.</td>
+                  <td className="border border-slate-200 px-4 py-10 text-center text-sm font-semibold text-slate-500" colSpan={10}>No medication history matched selected filters.</td>
                 </tr>
               ) : null}
             </tbody>
@@ -19579,49 +19446,42 @@ function IcuPatientMedicineReferenceWorkspace({
 
   return (
     <div className="space-y-4">
-      <div className="rounded-md border border-slate-200 bg-white">
-        <div className="flex flex-col gap-2 border-b border-slate-200 bg-slate-50 px-3 py-3 lg:flex-row lg:items-start lg:justify-between">
-          <div>
-            <p className="text-sm font-black text-slate-950">Medicine reference library</p>
-            <p className="mt-1 text-xs text-slate-500">{patient.bedNo} - {patient.patientName}. Reference-ready catalog with global identifiers, ICU safety classification, and local formulary status.</p>
+      <div className="space-y-3">
+        <CollapsibleCommandPanel
+          summary={`${filteredCatalog.length} visible | ${highAlertCount} high-alert | ${patientReferenceMatches.length} patient match(es)`}
+          title="Filters"
+        >
+          <div className="grid gap-3 px-3 py-3 xl:grid-cols-[minmax(240px,1fr)_220px_170px_180px_auto] xl:items-end">
+            <label className="space-y-1 text-sm">
+              <span className="font-semibold text-slate-800">Search medicine</span>
+              <div className="relative">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                <Input className="pl-9" placeholder="Generic, brand, ATC, RxNorm, ICU use..." value={query} onChange={(event) => setQuery(event.target.value)} />
+              </div>
+            </label>
+            <NativeSelect label="Drug class" value={classFilter} onChange={setClassFilter} options={classOptions} />
+            <NativeSelect label="Safety" value={safetyFilter} onChange={setSafetyFilter} options={["All safety", "High-alert only", "Routine only"]} />
+            <NativeSelect label="Formulary" value={formularyFilter} onChange={setFormularyFilter} options={formularyOptions} />
+            <Button variant="outline" onClick={() => {
+              setQuery("");
+              setClassFilter("All classes");
+              setSafetyFilter("All safety");
+              setFormularyFilter("All formulary");
+              onSelectReference(null);
+            }}>Reset</Button>
           </div>
-          <div className="flex flex-wrap gap-2">
-            <span className="rounded-full border border-sky-300 bg-sky-50 px-2.5 py-1 text-xs font-bold text-sky-700">{filteredCatalog.length} visible</span>
-            <span className={cn("rounded-full border px-2.5 py-1 text-xs font-bold", dashboardTonePillClass(highAlertCount ? "warning" : "success"))}>{highAlertCount} high-alert</span>
-            <span className="rounded-full border border-slate-300 bg-white px-2.5 py-1 text-xs font-bold text-slate-700">{patientReferenceMatches.length} patient matches</span>
-          </div>
-        </div>
+        </CollapsibleCommandPanel>
 
-        <div className="grid gap-3 border-b border-slate-200 px-3 py-3 xl:grid-cols-[minmax(240px,1fr)_220px_170px_180px_auto] xl:items-end">
-          <label className="space-y-1 text-sm">
-            <span className="font-semibold text-slate-800">Search medicine</span>
-            <div className="relative">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-              <Input className="pl-9" placeholder="Generic, brand, ATC, RxNorm, ICU use..." value={query} onChange={(event) => setQuery(event.target.value)} />
-            </div>
-          </label>
-          <NativeSelect label="Drug class" value={classFilter} onChange={setClassFilter} options={classOptions} />
-          <NativeSelect label="Safety" value={safetyFilter} onChange={setSafetyFilter} options={["All safety", "High-alert only", "Routine only"]} />
-          <NativeSelect label="Formulary" value={formularyFilter} onChange={setFormularyFilter} options={formularyOptions} />
-          <Button variant="outline" onClick={() => {
-            setQuery("");
-            setClassFilter("All classes");
-            setSafetyFilter("All safety");
-            setFormularyFilter("All formulary");
-            onSelectReference(null);
-          }}>Reset</Button>
-        </div>
-
-        <div className="grid gap-4 p-3 xl:grid-cols-[minmax(0,1.2fr)_420px]">
+        <div className="rounded-md border border-slate-200 bg-white">
+        <div className="grid items-start gap-4 p-3 xl:grid-cols-[minmax(0,1.2fr)_420px]">
           <div className="overflow-hidden rounded-md border border-slate-200">
             <div className="overflow-auto">
-              <table className="w-full min-w-[920px] text-left text-sm">
-                <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase text-slate-500">
+              <table className="w-full min-w-[760px] text-left text-sm">
+                <thead className="border-b border-slate-200 bg-white text-xs uppercase text-slate-500">
                   <tr>
                     <th className="px-3 py-3">Medicine</th>
                     <th className="px-3 py-3">Reference IDs</th>
                     <th className="px-3 py-3">Safety</th>
-                    <th className="px-3 py-3">ICU monitoring</th>
                     <th className="px-3 py-3">Formulary</th>
                   </tr>
                 </thead>
@@ -19630,12 +19490,12 @@ function IcuPatientMedicineReferenceWorkspace({
                     const isSelected = selected?.id === item.id;
                     const hasPatientMatch = patientMeds.some((med) => medicineReferenceMatchesMedication(item, med));
                     return (
-                      <tr className={cn("cursor-pointer bg-white align-top hover:bg-sky-50/70", isSelected ? "bg-sky-50" : "")} key={item.id} onClick={() => onSelectReference(item.id)}>
+                      <tr className={cn("cursor-pointer bg-white align-top hover:bg-slate-50", isSelected ? "bg-slate-50" : "")} key={item.id} onClick={() => onSelectReference(item.id)}>
                         <td className="px-3 py-3">
                           <p className="font-bold text-slate-950">{item.medicine}</p>
                           <p className="mt-1 text-xs text-slate-500">{item.generic}</p>
                           <p className="mt-1 text-xs text-slate-500">{item.aliases.join(", ")}</p>
-                          {hasPatientMatch ? <span className="mt-2 inline-flex rounded-full border border-sky-300 bg-sky-50 px-2 py-0.5 text-[11px] font-bold text-sky-700">In current MAR</span> : null}
+                          {hasPatientMatch ? <span className="mt-2 inline-flex rounded-full border border-slate-300 bg-white px-2 py-0.5 text-[11px] font-bold text-slate-700">In current MAR</span> : null}
                         </td>
                         <td className="px-3 py-3 text-xs text-slate-600">
                           <p>{item.rxNorm}</p>
@@ -19643,19 +19503,14 @@ function IcuPatientMedicineReferenceWorkspace({
                           <p className="mt-1">{item.nlem}</p>
                         </td>
                         <td className="px-3 py-3">
-                          <span className={cn("rounded-full border px-2.5 py-1 text-xs font-bold", dashboardTonePillClass(item.highAlert ? "danger" : "success"))}>
+                          <span className="rounded-full border border-slate-300 bg-white px-2.5 py-1 text-xs font-bold text-slate-700">
                             {item.highAlert ? "High-alert" : "Routine"}
                           </span>
                           <p className="mt-2 text-xs text-slate-500">{item.highAlertCategory}</p>
                           <p className="mt-1 text-xs text-slate-500">{item.doubleVerification}</p>
                         </td>
                         <td className="px-3 py-3">
-                          <div className="space-y-1">
-                            {item.monitoring.slice(0, 3).map((row) => <p className="text-xs text-slate-600" key={row}>- {row}</p>)}
-                          </div>
-                        </td>
-                        <td className="px-3 py-3">
-                          <span className={cn("rounded-full border px-2.5 py-1 text-xs font-bold", dashboardTonePillClass(medicineFormularyTone(item.formularyStatus)))}>{item.formularyStatus}</span>
+                          <span className="rounded-full border border-slate-300 bg-white px-2.5 py-1 text-xs font-bold text-slate-700">{item.formularyStatus}</span>
                           <p className="mt-2 text-xs text-slate-500">{item.pharmacyLocation}</p>
                         </td>
                       </tr>
@@ -19663,7 +19518,7 @@ function IcuPatientMedicineReferenceWorkspace({
                   })}
                   {!filteredCatalog.length ? (
                     <tr>
-                      <td className="px-3 py-8 text-center text-sm font-semibold text-slate-500" colSpan={5}>No medicine reference matched.</td>
+                      <td className="px-3 py-8 text-center text-sm font-semibold text-slate-500" colSpan={4}>No medicine reference matched.</td>
                     </tr>
                   ) : null}
                 </tbody>
@@ -19677,19 +19532,6 @@ function IcuPatientMedicineReferenceWorkspace({
           />
         </div>
       </div>
-
-      <div className="grid gap-3 lg:grid-cols-4">
-        {[
-          ["RxNorm/RxNav", "Normalized generic/brand identity and drug code mapping"],
-          ["WHO ATC/DDD", "Therapeutic classification and ATC category"],
-          ["SNOMED CT", "Clinical medicinal product interoperability"],
-          ["India NLEM/Formulary", "Essential medicine and local hospital availability"],
-        ].map(([title, detail]) => (
-          <div className="rounded-md border border-slate-200 bg-white p-3" key={title}>
-            <p className="text-sm font-bold text-slate-950">{title}</p>
-            <p className="mt-1 text-xs text-slate-500">{detail}</p>
-          </div>
-        ))}
       </div>
     </div>
   );
@@ -19708,13 +19550,13 @@ function MedicineReferenceDetailPanel({
 
   return (
     <div className="space-y-3">
-      <div className={cn("rounded-md border p-3", dashboardToneSurfaceClass(reference.highAlert ? "danger" : "success"))}>
+      <div className="rounded-md border border-slate-200 bg-white p-3">
         <div className="flex items-start justify-between gap-3">
           <div>
             <p className="text-base font-black">{reference.medicine}</p>
             <p className="mt-1 text-xs">{reference.drugClass}</p>
           </div>
-          <span className={cn("rounded-full border px-2.5 py-1 text-xs font-bold", dashboardTonePillClass(reference.highAlert ? "danger" : "success"))}>{reference.highAlert ? "High-alert" : "Routine"}</span>
+          <span className="rounded-full border border-slate-300 bg-white px-2.5 py-1 text-xs font-bold text-slate-700">{reference.highAlert ? "High-alert" : "Routine"}</span>
         </div>
         <div className="mt-3 grid gap-2 text-xs sm:grid-cols-2">
           <InfoLine label="Generic" value={reference.generic} />
@@ -19728,9 +19570,9 @@ function MedicineReferenceDetailPanel({
 
       <IcuPatientDetailPanel title="Patient MAR match">
         {matches.map((row) => (
-          <div className={cn("rounded-md border p-2", dashboardToneSurfaceClass(row.status === "Late" ? "danger" : row.status === "Due" ? "warning" : "success"))} key={row.id}>
-            <p className="text-sm font-bold">{row.medication} {row.dose}</p>
-            <p className="mt-1 text-xs">{row.scheduledTime} | {row.route} | {row.status} | {row.doubleVerification}</p>
+          <div className="rounded-md border border-slate-200 bg-white p-2" key={row.id}>
+            <p className="text-sm font-bold text-slate-950">{row.medication} {row.dose}</p>
+            <p className="mt-1 text-xs text-slate-500">{row.scheduledTime} | {row.route} | {row.status} | {row.doubleVerification}</p>
           </div>
         ))}
         {!matches.length ? <div className="rounded-md border border-dashed border-slate-300 bg-white p-3 text-xs font-semibold text-slate-500">Not currently present in this patient MAR.</div> : null}
@@ -19750,10 +19592,6 @@ function MedicineReferenceDetailPanel({
         {reference.contraindications.map((row) => <InfoLine key={row} label="Contraindication" value={row} />)}
         {reference.interactions.map((row) => <InfoLine key={row} label="Interaction" value={row} />)}
       </IcuPatientDetailPanel>
-
-      <IcuPatientDetailPanel title="Reference basis">
-        {reference.sourceBasis.map((row) => <InfoLine key={row} label="Source" value={row} />)}
-      </IcuPatientDetailPanel>
     </div>
   );
 }
@@ -19766,12 +19604,6 @@ function medicineReferenceMatchesMedication(reference: MedicineReferenceRecord, 
 
 function medicineReferenceIdForMedication(row: IcuMedication) {
   return medicineReferenceCatalog.find((item) => medicineReferenceMatchesMedication(item, row))?.id ?? null;
-}
-
-function medicineFormularyTone(status: MedicineReferenceRecord["formularyStatus"]): DashboardCellTone {
-  if (status === "Restricted" || status === "Protocol only") return "warning";
-  if (status === "Low stock") return "danger";
-  return "success";
 }
 
 function DashboardMatrixCell({
