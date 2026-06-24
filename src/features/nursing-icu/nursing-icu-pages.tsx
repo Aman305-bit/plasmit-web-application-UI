@@ -16695,7 +16695,7 @@ function IcuPatientShiftSummaryWorkspace({ initialFocus, patient }: { initialFoc
       </div>
 
       <div className="overflow-hidden rounded-md border border-slate-200 bg-white shadow-sm">
-        <div className="flex flex-col gap-2 border-b border-slate-200 bg-slate-50 px-3 py-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-2 border-b border-slate-200 bg-white px-3 py-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p className="text-sm font-black text-slate-950">Handover queue</p>
             <p className="mt-0.5 text-xs font-semibold text-slate-500">{patient.bedNo} | {patient.patientName} | {activeShift?.time ?? shift}</p>
@@ -16705,7 +16705,7 @@ function IcuPatientShiftSummaryWorkspace({ initialFocus, patient }: { initialFoc
               <button
                 className={cn(
                   "rounded-full border px-3 py-1 text-xs font-bold transition",
-                  focus === option ? "border-sky-500 bg-sky-600 text-white shadow-sm" : "border-slate-200 bg-white text-slate-700 hover:border-sky-300 hover:bg-sky-50",
+                  focus === option ? "border-sky-400 bg-sky-50 text-sky-900 shadow-sm" : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50",
                 )}
                 key={option}
                 type="button"
@@ -16717,8 +16717,8 @@ function IcuPatientShiftSummaryWorkspace({ initialFocus, patient }: { initialFoc
           </div>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[1120px] text-left text-sm">
-            <thead className="border-b border-slate-200 bg-white text-xs uppercase text-sky-700">
+          <table className="w-full min-w-[1120px] border-collapse text-left text-sm">
+            <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase text-slate-500">
               <tr>
                 <th className="px-3 py-3">Type</th>
                 <th className="px-3 py-3">Handover Item</th>
@@ -16731,12 +16731,12 @@ function IcuPatientShiftSummaryWorkspace({ initialFocus, patient }: { initialFoc
             </thead>
             <tbody className="divide-y divide-slate-200">
               {visibleRows.map((row) => (
-                <tr className="align-middle hover:bg-sky-50/40" key={row.id}>
+                <tr className="align-middle hover:bg-slate-50" key={row.id}>
                   <td className="px-3 py-3">
                     <span className="inline-flex rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-bold text-slate-700">{row.type}</span>
                   </td>
                   <td className="px-3 py-3">
-                    <p className={cn("font-black", dashboardToneTextClass(row.tone))}>{row.item}</p>
+                    <p className="font-semibold leading-5 text-slate-700">{row.item}</p>
                   </td>
                   <td className="px-3 py-3 font-bold text-slate-800">{row.time}</td>
                   <td className="px-3 py-3 font-semibold text-slate-700">{row.assignedTo}</td>
