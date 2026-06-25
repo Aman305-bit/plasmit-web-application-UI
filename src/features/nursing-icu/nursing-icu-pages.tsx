@@ -361,15 +361,7 @@ const nursingIcuTabGroups: Array<{
   },
 ];
 
-export function NursingIcuModulePage({
-  initialEscalatedCaseId,
-  initialExecutiveFocus,
-  initialExecutiveUnitId,
-  initialRiskFocus,
-  initialRiskPatientId,
-  initialTeleIcuPatientId,
-  page,
-}: {
+type NursingIcuModulePageProps = {
   page: NursingIcuPageId;
   initialEscalatedCaseId?: string;
   initialExecutiveFocus?: string;
@@ -377,7 +369,34 @@ export function NursingIcuModulePage({
   initialRiskFocus?: string;
   initialRiskPatientId?: string;
   initialTeleIcuPatientId?: string;
-}) {
+};
+
+export function NursingIcuModulePage(props: NursingIcuModulePageProps) {
+  return (
+    <React.Suspense fallback={<NursingIcuModulePageLoading />}>
+      <NursingIcuModulePageInner {...props} />
+    </React.Suspense>
+  );
+}
+
+function NursingIcuModulePageLoading() {
+  return (
+    <div className="space-y-4 p-4">
+      <div className="h-12 rounded-md border border-slate-200 bg-white" />
+      <div className="h-64 rounded-md border border-slate-200 bg-white" />
+    </div>
+  );
+}
+
+function NursingIcuModulePageInner({
+  initialEscalatedCaseId,
+  initialExecutiveFocus,
+  initialExecutiveUnitId,
+  initialRiskFocus,
+  initialRiskPatientId,
+  initialTeleIcuPatientId,
+  page,
+}: NursingIcuModulePageProps) {
   const meta = pageMeta[page];
   const chromeLessPage = page === "transfer-discharge";
   const cleanCommandPages: NursingIcuPageId[] = ["operational-analytics", "clinical-analytics", "device-analytics", "pilot-outcome", "adoption-analytics", "users-roles", "configuration", "audit-logs"];
