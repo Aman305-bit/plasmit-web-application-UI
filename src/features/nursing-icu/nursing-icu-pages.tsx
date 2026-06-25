@@ -15532,46 +15532,13 @@ function IcuPatientCommandProfile({
             </TabsList>
 
             <TabsContent className="mt-4 space-y-4" value="monitoring-overview">
-              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                <IcuPatientDetailMetric icon={HeartPulse} label="Current SpO2" value={latestVital ? `${latestVital.spo2}%` : "-"} detail={latestVital ? `${latestVital.time} | ${latestVital.oxygenFlow}` : "No live entry"} tone={vitalTone} />
-                <IcuPatientDetailMetric icon={Activity} label="Respiration" value={latestVital ? `${latestVital.respiratoryRate}/min` : "-"} detail={patient.ventilatorStatus} tone={patient.ventilatorStatus === "Room air" ? "success" : "purple"} />
-                <IcuPatientDetailMetric icon={Droplets} label="Urine output" value={latestVital ? `${latestVital.urineOutput} ml/hr` : "-"} detail={`Net ${balance} ml`} tone={balanceTone} />
-                <IcuPatientDetailMetric icon={AlertTriangle} label="Live alerts" value={openAlerts.length} detail={openAlerts[0]?.message ?? "No active alert"} tone={openAlerts.length ? "warning" : "success"} />
-              </div>
-              <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
-                <IcuPatientLatestObservation latestVital={latestVital} patient={patient} />
-                <IcuPatientQueuePanel
-                  title="Live device / infusion"
-                  icon={Activity}
-                  count={patientInfusions.length}
-                  rows={patientInfusions.map((row) => ({
-                    id: row.id,
-                    title: `${row.pumpNo} - ${row.fluidName}`,
-                    detail: `${row.rate} | ${row.status} | ${row.remainingVolumeMl} ml left`,
-                    tone: row.status === "Running" ? "warning" : "success",
-                  }))}
-                  empty="No active infusion for this patient."
-                />
-              </div>
-              <IcuPatientEntryTable
-                title="Alerts and monitoring follow-up"
-                rows={[
-                  ...openAlerts.map((row) => ({
-                    id: row.id,
-                    time: row.createdAt,
-                    title: `${row.type} - ${row.severity}`,
-                    detail: `${row.message} | ${row.source} | ${row.owner}`,
-                    tone: row.severity === "Critical" ? "critical" as DashboardCellTone : "warning" as DashboardCellTone,
-                  })),
-                  ...activeTasks.map((row) => ({
-                    id: row.id,
-                    time: row.dueTime,
-                    title: `${row.taskType} - ${row.status}`,
-                    detail: `${row.title} | ${row.assignedTo} | ${row.remarks}`,
-                    tone: row.status === "Overdue" ? "danger" as DashboardCellTone : "info" as DashboardCellTone,
-                  })),
-                ]}
-                empty="No result or follow-up item for this patient."
+              <IcuPatientMonitoringOverview
+                activeTasks={activeTasks}
+                balance={balance}
+                latestVital={latestVital}
+                openAlerts={openAlerts}
+                patient={patient}
+                patientInfusions={patientInfusions}
               />
             </TabsContent>
 
@@ -15809,6 +15776,150 @@ function IcuPatientPendingWorkTable({
   );
 }
 
+function IcuPatientMonitoringOverview({
+  activeTasks,
+  balance,
+  latestVital,
+  openAlerts,
+  patient,
+  patientInfusions,
+}: {
+  activeTasks: typeof icuTasks;
+  balance: number;
+  latestVital?: (typeof icuVitals)[number];
+  openAlerts: typeof icuAlerts;
+  patient: IcuPatient;
+  patientInfusions: typeof infusionRows;
+}) {
+  const observationRows = [
+    ["SpO2 / BP", latestVital ? `${latestVital.spo2}% / ${latestVital.bp}` : "-", latestVital?.time ?? "-", latestVital?.nurse ?? "-"],
+    ["Respiration", latestVital ? `${latestVital.respiratoryRate}/min` : "-", patient.ventilatorStatus, "Respiratory support"],
+    ["Urine output", latestVital ? `${latestVital.urineOutput} ml/hr` : "-", `Net ${balance} ml`, "Fluid balance"],
+    ["Temperature", latestVital ? `${latestVital.temperature} C` : "-", latestVital?.note ?? "No recent note", "Observation"],
+    ["GCS / Pain", latestVital ? `${latestVital.gcs} / ${latestVital.painScore}` : "-", latestVital?.oxygenFlow ?? patient.ventilatorStatus, "Neuro / pain"],
+  ];
+  const infusionRowsForTable = patientInfusions.map((row) => ({
+    action: row.alert || "Continue monitoring",
+    current: `${row.rate} | ${row.remainingVolumeMl} ml left`,
+    item: `${row.pumpNo} - ${row.fluidName}`,
+    status: row.status,
+  }));
+  const followUpRows = [
+    ...openAlerts.map((row) => ({
+      action: row.owner,
+      current: row.message,
+      item: `${row.type} - ${row.severity}`,
+      status: row.status,
+      time: row.createdAt,
+    })),
+    ...activeTasks.map((row) => ({
+      action: row.assignedTo,
+      current: row.title,
+      item: row.taskType,
+      status: row.status,
+      time: row.dueTime,
+    })),
+  ];
+
+  return (
+    <div className="space-y-4">
+      <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_390px]">
+        <div className="overflow-hidden rounded-md border border-slate-200 bg-white shadow-sm">
+          <div className="border-b border-slate-200 bg-white px-3 py-3">
+            <p className="text-sm font-bold text-slate-950">Observation summary</p>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[720px] text-left text-sm">
+              <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase text-slate-500">
+                <tr>
+                  <th className="px-3 py-3">Parameter</th>
+                  <th className="px-3 py-3">Current</th>
+                  <th className="px-3 py-3">Context</th>
+                  <th className="px-3 py-3">Recorded by</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-200 bg-white">
+                {observationRows.map(([parameter, current, context, recordedBy]) => (
+                  <tr className="hover:bg-slate-50" key={parameter}>
+                    <td className="px-3 py-3 font-bold text-slate-900">{parameter}</td>
+                    <td className="px-3 py-3 font-semibold text-slate-800">{current}</td>
+                    <td className="px-3 py-3 text-slate-600">{context}</td>
+                    <td className="px-3 py-3 text-slate-600">{recordedBy}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div className="overflow-hidden rounded-md border border-slate-200 bg-white shadow-sm">
+          <div className="flex items-center justify-between gap-3 border-b border-slate-200 bg-white px-3 py-3">
+            <p className="text-sm font-bold text-slate-950">Live infusion</p>
+            <IcuNeutralBadge>{infusionRowsForTable.length}</IcuNeutralBadge>
+          </div>
+          <div className="divide-y divide-slate-200">
+            {infusionRowsForTable.map((row) => (
+              <div className="p-3" key={row.item}>
+                <div className="flex items-start justify-between gap-3">
+                  <p className="text-sm font-bold text-slate-950">{row.item}</p>
+                  <IcuNeutralBadge>{row.status}</IcuNeutralBadge>
+                </div>
+                <p className="mt-1 text-xs font-semibold text-slate-600">{row.current}</p>
+                <p className="mt-1 text-xs text-slate-500">{row.action}</p>
+              </div>
+            ))}
+            {!infusionRowsForTable.length ? <div className="p-5 text-center text-sm font-semibold text-slate-500">No active infusion for this patient.</div> : null}
+          </div>
+        </div>
+      </div>
+
+      <div className="overflow-hidden rounded-md border border-slate-200 bg-white shadow-sm">
+        <div className="flex items-center justify-between gap-3 border-b border-slate-200 bg-white px-3 py-3">
+          <p className="text-sm font-bold text-slate-950">Alerts and monitoring follow-up</p>
+          <IcuNeutralBadge>{followUpRows.length}</IcuNeutralBadge>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[860px] text-left text-sm">
+            <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase text-slate-500">
+              <tr>
+                <th className="px-3 py-3">Time</th>
+                <th className="px-3 py-3">Item</th>
+                <th className="px-3 py-3">Current detail</th>
+                <th className="px-3 py-3">Assigned to</th>
+                <th className="px-3 py-3">Status</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-200 bg-white">
+              {followUpRows.map((row) => (
+                <tr className="hover:bg-slate-50" key={`${row.time}-${row.item}`}>
+                  <td className="px-3 py-3 font-bold text-slate-700">{row.time}</td>
+                  <td className="px-3 py-3 font-bold text-slate-950">{row.item}</td>
+                  <td className="px-3 py-3 text-slate-600">{row.current}</td>
+                  <td className="px-3 py-3 text-slate-700">{row.action}</td>
+                  <td className="px-3 py-3"><IcuNeutralBadge>{row.status}</IcuNeutralBadge></td>
+                </tr>
+              ))}
+              {!followUpRows.length ? (
+                <tr>
+                  <td className="px-3 py-8 text-center text-sm font-semibold text-slate-500" colSpan={5}>No monitoring follow-up item for this patient.</td>
+                </tr>
+              ) : null}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function IcuNeutralBadge({ children }: { children: React.ReactNode }) {
+  return (
+    <span className="inline-flex rounded-full border border-slate-300 bg-white px-2.5 py-1 text-xs font-bold text-slate-700">
+      {children}
+    </span>
+  );
+}
+
 function IcuPatientMonitoring24HourChart({ patient }: { patient: IcuPatient }) {
   const [observationDate, setObservationDate] = React.useState(TODAY_DATE);
   const [dateTimeFilter, setDateTimeFilter] = React.useState<DateTimeFilterState>(defaultDateTimeFilter);
@@ -15861,8 +15972,6 @@ function IcuPatientMonitoringIntakeOutput({ patient }: { patient: IcuPatient }) 
 }
 
 function IcuPatientDeviceSnapshot({ device, patient }: { device?: ReturnType<typeof getCommandDeviceRows>[number]; patient: IcuPatient }) {
-  const signalTone: DashboardCellTone = !device ? "muted" : device.signal === "Good" ? "success" : device.signal === "Weak" ? "warning" : "danger";
-  const connectivityTone: DashboardCellTone = !device ? "muted" : device.connectivity === "Online" ? "success" : "danger";
   const dataTone: DashboardCellTone = !device ? "muted" : deviceLastDataMinutes(device.lastData) < 10 ? "success" : deviceLastDataMinutes(device.lastData) < 30 ? "warning" : "danger";
 
   if (!device) {
@@ -15875,17 +15984,40 @@ function IcuPatientDeviceSnapshot({ device, patient }: { device?: ReturnType<typ
 
   return (
     <div className="rounded-md border border-slate-200 bg-white shadow-sm">
-      <div className="grid gap-3 p-3 md:grid-cols-2 xl:grid-cols-4">
-        <IcuPatientDetailMetric icon={Activity} label="Monitor" value={device.monitor} detail={device.connectivity} tone={connectivityTone} />
-        <IcuPatientDetailMetric icon={Activity} label="Ventilator" value={device.ventilator} detail={device.ventilator === "Room air" ? "No ventilator support" : "Respiratory device mapped"} tone={device.ventilator === "Room air" ? "success" : "purple"} />
-        <IcuPatientDetailMetric icon={Syringe} label="Pump" value={device.infusionPump} detail="Infusion pump mapping" tone={device.infusionPump === "-" ? "muted" : "info"} />
-        <IcuPatientDetailMetric icon={ShieldAlert} label="Signal" value={device.signal} detail={`Last data ${device.lastData}`} tone={signalTone} />
-      </div>
-      <div className="grid gap-3 border-t border-slate-100 p-3 md:grid-cols-2 xl:grid-cols-4">
-        <InfoLine label="Gateway" value={device.gateway} />
-        <InfoLine label="Last data status" value={`${device.lastData} | ${device.uptime}% uptime`} />
-        <InfoLine label="Owner" value={device.owner} />
-        <InfoLine label="Data confidence" value={dataTone === "success" ? "Live feed usable" : dataTone === "warning" ? "Needs review" : "Manual fallback needed"} />
+      <div className="p-3">
+        <div className="overflow-hidden rounded-md border border-slate-200">
+          <div className="border-b border-slate-200 bg-white px-3 py-3">
+            <p className="text-sm font-bold text-slate-950">Device assignment</p>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[860px] text-left text-sm">
+              <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase text-slate-500">
+                <tr>
+                  <th className="px-3 py-3">Device</th>
+                  <th className="px-3 py-3">Current</th>
+                  <th className="px-3 py-3">Status</th>
+                  <th className="px-3 py-3">Owner / context</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-200 bg-white">
+                {[
+                  ["Monitor", device.monitor, device.connectivity, device.owner],
+                  ["Ventilator", device.ventilator, device.ventilator === "Room air" ? "Not required" : "Mapped", "Respiratory support"],
+                  ["Pump", device.infusionPump, device.infusionPump === "-" ? "Not mapped" : "Mapped", "Infusion pump"],
+                  ["Gateway", device.gateway, device.signal, `${device.lastData} | ${device.uptime}% uptime`],
+                  ["Data confidence", dataTone === "success" ? "Live feed usable" : dataTone === "warning" ? "Needs review" : "Manual fallback needed", device.issue === "No issue" ? "Clear" : "Open", device.issue],
+                ].map(([label, current, status, context]) => (
+                  <tr className="hover:bg-slate-50" key={label}>
+                    <td className="px-3 py-3 font-bold text-slate-900">{label}</td>
+                    <td className="px-3 py-3 text-slate-700">{current}</td>
+                    <td className="px-3 py-3"><IcuNeutralBadge>{status}</IcuNeutralBadge></td>
+                    <td className="px-3 py-3 text-slate-600">{context}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
       <IcuPatientDeviceStatusTable device={device} />
     </div>
@@ -15961,9 +16093,7 @@ function IcuPatientDeviceStatusTable({ device }: { device: ReturnType<typeof get
                 <tr key={row.check}>
                   <td className="px-3 py-3 font-bold text-slate-900">{row.check}</td>
                   <td className="px-3 py-3 text-slate-700">{row.current}</td>
-                  <td className="px-3 py-3">
-                    <span className={cn("inline-flex rounded-full border px-2.5 py-1 text-xs font-bold", dashboardTonePillClass(row.tone))}>{row.status}</span>
-                  </td>
+                  <td className="px-3 py-3"><IcuNeutralBadge>{row.status}</IcuNeutralBadge></td>
                   <td className="px-3 py-3 text-slate-700">{row.action}</td>
                 </tr>
               ))}
