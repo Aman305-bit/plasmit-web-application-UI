@@ -32,6 +32,7 @@ import {
   Syringe,
   TestTube2,
   UserRound,
+  Wrench,
   X,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -52,6 +53,7 @@ import type { StatusTone } from "@/types";
 import {
   AdmissionWizardWorkspace,
   buildWholeShiftSummary,
+  DoctorOrderEntryWorkspace,
   MedicationTimelineWorkspace,
   NursingTaskBoardWorkspace,
   PatientBoardWorkspace,
@@ -100,6 +102,7 @@ type NursingIcuPageId =
   | "escalation-center"
   | "patient-overview"
   | "progress-notes"
+  | "doctor-order-entry"
   | "orders-care-plans"
   | "family-communication"
   | "remote-command-center"
@@ -176,6 +179,7 @@ const pageMeta: Record<NursingIcuPageId, { title: string; description: string; i
   "escalation-center": { title: "Escalation Center", description: "Central escalation queue for critical alerts, overdue tasks, delayed orders, device failures, and owner handoff.", icon: ShieldAlert },
   "patient-overview": { title: "Patient Overview", description: "Single-patient ICU snapshot covering demographics, diagnosis, latest vitals, active devices, medication, alerts, and tasks.", icon: UserRound },
   "progress-notes": { title: "Progress Notes", description: "Structured ICU progress notes for doctor, nursing, pharmacy, allied health, events, and procedure follow-up.", icon: FileText },
+  "doctor-order-entry": { title: "Doctor Order Entry", description: "Doctor medication order entry with patient context, formulary selection, safety checks, draft, sign, hold, amend, and discontinue workflow.", icon: ClipboardCheck },
   "orders-care-plans": { title: "Orders & Care Plans", description: "Medication orders, nursing care plans, monitoring instructions, procedure orders, and acknowledgement tracking.", icon: ClipboardCheck },
   "family-communication": { title: "Family Communication", description: "Family updates, consent status, counseling notes, visitor coordination, and communication history.", icon: UserRound },
   "remote-command-center": { title: "Remote Command Center", description: "Remote intensivist overview for ICU patients, escalations, consult readiness, and video/rounding queues.", icon: Stethoscope },
@@ -255,6 +259,7 @@ const nursingIcuTabGroups: Array<{
     tabs: [
       { id: "patient-overview", label: "Patient Overview", route: "/nursing-icu/patient-overview" },
       { id: "progress-notes", label: "Progress Notes", route: "/nursing-icu/progress-notes" },
+      { id: "doctor-order-entry", label: "Doctor Order Entry", route: "/nursing-icu/doctor-order-entry" },
       { id: "orders-care-plans", label: "Orders & Care", route: "/nursing-icu/orders-care-plans" },
       { id: "family-communication", label: "Family Communication", route: "/nursing-icu/family-communication" },
     ],
@@ -401,7 +406,7 @@ function NursingIcuModulePageInner({
   const chromeLessPage = page === "transfer-discharge";
   const cleanCommandPages: NursingIcuPageId[] = ["operational-analytics", "clinical-analytics", "device-analytics", "pilot-outcome", "adoption-analytics", "users-roles", "configuration", "audit-logs"];
   const isCleanCommandPage = cleanCommandPages.includes(page);
-  const hiddenModuleTabPages: NursingIcuPageId[] = ["dashboard", "executive-dashboard", "executive-drilldown", "executive-documentation", "executive-owner", "executive-action", "notifications-tasks", "patient-search", "patient-overview", "progress-notes", "orders-care-plans", "family-communication", "arrival-bed-allocation", "smart-bed-view", "icu-operations", "device-monitoring", "edge-device-management", "device-mapping", "connectivity-dashboard", "signal-health", "patient-risk-center", "patient-risk-drilldown", "early-warning-scores", "alerts", "doctor-rounds", "escalation-center", "remote-command-center", "remote-consultations", "escalated-cases", "tele-icu-readiness", "tele-icu-local-team", "tele-icu-remote-md", "tele-icu-sla", "escalated-trigger", "escalated-severity", "escalated-source", "escalated-owner-chain", "escalated-sla", "escalated-action", "escalated-outcome", "head-nurse-console", "ward-nurse-activities", "shift-handover", "tasks", "medication-administration", "patient-medication"];
+  const hiddenModuleTabPages: NursingIcuPageId[] = ["dashboard", "executive-dashboard", "executive-drilldown", "executive-documentation", "executive-owner", "executive-action", "notifications-tasks", "patient-search", "patient-overview", "progress-notes", "doctor-order-entry", "orders-care-plans", "family-communication", "arrival-bed-allocation", "smart-bed-view", "icu-operations", "device-monitoring", "edge-device-management", "device-mapping", "connectivity-dashboard", "signal-health", "patient-risk-center", "patient-risk-drilldown", "early-warning-scores", "alerts", "doctor-rounds", "escalation-center", "remote-command-center", "remote-consultations", "escalated-cases", "tele-icu-readiness", "tele-icu-local-team", "tele-icu-remote-md", "tele-icu-sla", "escalated-trigger", "escalated-severity", "escalated-source", "escalated-owner-chain", "escalated-sla", "escalated-action", "escalated-outcome", "head-nurse-console", "ward-nurse-activities", "shift-handover", "tasks", "medication-administration", "patient-medication"];
   const useNurseEntryReviewTabs = page === "vitals" || page === "nurse-review";
   const hideModuleTabs = chromeLessPage || hiddenModuleTabPages.includes(page) || useNurseEntryReviewTabs || isCleanCommandPage;
   const streamlinedPage = (hideModuleTabs && !isCleanCommandPage) || page === "intake-output" || page === "head-nurse-console" || page === "ward-nurse-activities";
@@ -472,6 +477,7 @@ function NursingIcuModulePageInner({
       {page === "escalation-center" ? <EscalationCenterCommand /> : null}
       {page === "patient-overview" ? <PatientOverviewCommand patients={filteredPatients} /> : null}
       {page === "progress-notes" ? <ProgressNotesCommand /> : null}
+      {page === "doctor-order-entry" ? <DoctorOrderEntryWorkspace /> : null}
       {page === "orders-care-plans" ? <OrdersCarePlansCommand /> : null}
       {page === "family-communication" ? <FamilyCommunicationCommand /> : null}
       {page === "remote-command-center" ? <RemoteCommandCenterCommand /> : null}
@@ -2013,13 +2019,6 @@ function Dashboard({ patients }: { patients: IcuPatient[] }) {
       </CollapsibleCommandPanel>
 
       <DashboardMatrix patients={visiblePatients} />
-
-      <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
-        <DashboardFocusStrip patients={visiblePatients} />
-        <DashboardShiftPanel />
-      </div>
-
-      <DashboardOvernightEvents />
     </div>
   );
 }
@@ -2129,10 +2128,7 @@ function ExecutiveDashboard() {
         </div>
       </CollapsibleCommandPanel>
 
-      <div className="grid gap-4 2xl:grid-cols-[minmax(0,1fr)_360px]">
-        <ExecutiveDashboardMatrix rows={visibleRows} onAction={setActiveAction} />
-        <ExecutiveLeadershipPanel rows={visibleRows} />
-      </div>
+      <ExecutiveDashboardMatrix rows={visibleRows} onAction={setActiveAction} />
 
       <ExecutiveDashboardActionDialog action={activeAction} onComplete={completeAction} onOpenChange={(open) => !open && setActiveAction(null)} />
     </div>
@@ -2191,40 +2187,6 @@ function ExecutiveDashboardMatrix({ rows, onAction }: { rows: ExecutiveDashboard
         </table>
       </div>
       <IcuCommandPaginationControls {...pagination} />
-    </div>
-  );
-}
-
-function ExecutiveLeadershipPanel({ rows }: { rows: ExecutiveDashboardRow[] }) {
-  const focusRows = rows
-    .filter((row) => row.critical || row.openAlerts || row.deviceUptime < 92 || executiveOccupancyPercent(row) >= 85 || row.medCompliance < 80)
-    .slice(0, 5);
-  return (
-    <div className="space-y-4">
-      <div className="rounded-md border border-slate-200 bg-white p-4 shadow-sm">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <p className="text-sm font-bold text-slate-950">Leadership focus queue</p>
-            <p className="mt-1 text-xs text-slate-500">Open executive decisions by urgency.</p>
-          </div>
-          <span className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-bold text-slate-700">{focusRows.length}</span>
-        </div>
-        <div className="mt-4 space-y-2">
-          {focusRows.map((row) => (
-            <Link className="block w-full rounded-md border border-slate-200 bg-white p-3 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-sky-200 hover:shadow-md" href={executiveDashboardHref(row, row.openAlerts ? "alerts" : row.deviceUptime < 92 ? "device" : "unit")} key={row.id}>
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="text-sm font-bold text-slate-950">{row.unit}</p>
-                  <p className="mt-1 text-xs text-slate-600">{row.bottleneck}</p>
-                </div>
-              </div>
-              <p className="mt-2 text-[11px] font-semibold text-slate-500">{row.owner} | {row.occupied}/{row.capacity} occupied | {row.openAlerts} alert(s)</p>
-            </Link>
-          ))}
-          {!focusRows.length ? <div className="rounded-md border border-dashed border-slate-300 bg-white p-5 text-center text-sm font-semibold text-slate-600">All executive focus items are clear.</div> : null}
-        </div>
-      </div>
-
     </div>
   );
 }
@@ -2414,10 +2376,7 @@ function NotificationsTasks() {
         </div>
       </CollapsibleCommandPanel>
 
-      <div className="grid gap-4 2xl:grid-cols-[minmax(0,1fr)_350px]">
-        <NotificationsTasksMatrix rows={visibleRows} onAction={setActiveAction} />
-        <NotificationsTasksSidePanel rows={visibleRows} onAction={setActiveAction} />
-      </div>
+      <NotificationsTasksMatrix rows={visibleRows} onAction={setActiveAction} />
 
       <NotificationWorkflowActionDialog action={activeAction} onComplete={completeAction} onOpenChange={(open) => !open && setActiveAction(null)} />
     </div>
@@ -2471,37 +2430,6 @@ function NotificationsTasksMatrix({ rows, onAction }: { rows: NotificationComman
         </table>
       </div>
       <IcuCommandPaginationControls {...pagination} />
-    </div>
-  );
-}
-
-function NotificationsTasksSidePanel({ rows, onAction }: { rows: NotificationCommandRow[]; onAction: (action: NotificationWorkflowAction) => void }) {
-  const focusRows = rows.filter((row) => row.priority === "Critical" || notificationSlaBreached(row) || row.status === "Escalated").slice(0, 5);
-  return (
-    <div className="space-y-4">
-      <div className="rounded-md border border-slate-200 bg-white p-4 shadow-sm">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <p className="text-sm font-bold text-slate-950">Immediate queue</p>
-          </div>
-          <span className={cn("rounded-full border bg-white px-2.5 py-1 text-xs font-bold", patientDetailIconClass(focusRows.length ? "critical" : "success"))}>{focusRows.length}</span>
-        </div>
-        <div className="mt-4 space-y-2">
-          {focusRows.map((row) => (
-            <button className={cn("w-full rounded-md border border-slate-200 bg-white p-3 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-sky-200 hover:shadow-md", patientDetailAccentClass(row.tone))} key={row.id} type="button" onClick={() => onAction({ row, kind: "escalate" })}>
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="text-sm font-bold text-slate-950">{row.patient}</p>
-                  <p className="mt-1 text-xs text-slate-600">{row.title}</p>
-                </div>
-                <span className={cn("h-2.5 w-2.5 shrink-0 rounded-full", dashboardToneDotClass(row.tone))} />
-              </div>
-              <p className="mt-2 text-[11px] font-semibold text-slate-500">{row.owner} | {notificationSlaLabel(row)}</p>
-            </button>
-          ))}
-          {!focusRows.length ? <div className="rounded-md border border-dashed border-slate-300 bg-white p-5 text-center text-sm font-semibold text-slate-600">No critical queue item in selected view.</div> : null}
-        </div>
-      </div>
     </div>
   );
 }
@@ -9174,10 +9102,7 @@ function RemoteCommandCenterCommand() {
 
       <RemoteHospitalStrip rows={visibleRows} />
 
-      <div className="grid gap-4 2xl:grid-cols-[minmax(0,1fr)_340px]">
-        <RemoteCommandMatrix rows={visibleRows} onAction={setActiveAction} />
-        <RemoteCommandSidePanel rows={visibleRows} onAction={setActiveAction} />
-      </div>
+      <RemoteCommandMatrix rows={visibleRows} onAction={setActiveAction} />
 
       <RemoteCommandActionDialog action={activeAction} onConfirm={applyRemoteAction} onOpenChange={(open) => !open && setActiveAction(null)} />
     </div>
@@ -9234,7 +9159,6 @@ function RemoteHospitalStrip({ rows }: { rows: RemoteCommandRow[] }) {
             <div className="flex items-start justify-between gap-3">
               <div>
                 <p className="text-sm font-bold text-slate-950">{hospital}</p>
-                <p className="mt-1 text-xs text-slate-500">Remote intensivist network view</p>
               </div>
               <span className={cn("h-3 w-3 rounded-full", dashboardToneDotClass(critical ? "danger" : waiting ? "warning" : "success"))} />
             </div>
@@ -9386,37 +9310,6 @@ function RemoteActionButtons({ row, onAction }: { row: RemoteCommandRow; onActio
       <Button className="h-8 px-2 text-xs" disabled={row.status === "Closed"} size="sm" variant="outline" onClick={() => onAction({ row, kind: "request-data" })}>Data</Button>
       <Button className="h-8 px-2 text-xs" disabled={row.status === "Closed"} size="sm" onClick={() => onAction({ row, kind: "send-recommendation" })}>Advise</Button>
       <Button className="h-8 px-2 text-xs" disabled={row.status === "Closed" || row.status === "Escalated"} size="sm" variant="danger" onClick={() => onAction({ row, kind: "escalate" })}>Escalate</Button>
-    </div>
-  );
-}
-
-function RemoteCommandSidePanel({ rows, onAction }: { rows: RemoteCommandRow[]; onAction: (action: RemoteCommandActiveAction) => void }) {
-  const focusRows = rows.filter((row) => row.priority === "Critical" || row.status === "Waiting diagnostics" || remoteSlaBreached(row)).slice(0, 5);
-  return (
-    <div className="space-y-4">
-      <div className="rounded-md border border-slate-200 bg-white p-4 shadow-sm">
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <p className="text-sm font-bold text-slate-950">Remote focus queue</p>
-            <p className="mt-1 text-xs text-slate-500">Cases needing remote intensivist action first.</p>
-          </div>
-          <span className={cn("rounded-full border px-2.5 py-1 text-xs font-bold", dashboardTonePillClass(focusRows.length ? "warning" : "success"))}>{focusRows.length}</span>
-        </div>
-        <div className="mt-4 space-y-2">
-          {focusRows.map((row) => (
-            <button className={cn("w-full rounded-md border p-3 text-left transition hover:-translate-y-0.5 hover:shadow-sm", dashboardToneSurfaceClass(remotePriorityTone(row.priority)))} key={row.id} type="button" onClick={() => onAction({ row, kind: row.status === "Waiting diagnostics" ? "request-data" : "start-review" })}>
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="text-sm font-bold">{row.bedNo} - {row.reason}</p>
-                  <p className="mt-1 text-xs">{row.remoteIntensivist} | {remoteSlaLabel(row)}</p>
-                </div>
-                <span className={cn("h-2.5 w-2.5 shrink-0 rounded-full", dashboardToneDotClass(remotePriorityTone(row.priority)))} />
-              </div>
-            </button>
-          ))}
-          {!focusRows.length ? <div className="rounded-md border border-dashed border-slate-300 bg-white p-5 text-center text-sm font-semibold text-slate-600">No urgent remote action in selected view.</div> : null}
-        </div>
-      </div>
     </div>
   );
 }
@@ -10054,10 +9947,7 @@ function RemoteConsultationsCommand() {
         </div>
       </CollapsibleCommandPanel>
 
-      <div className="grid gap-4 2xl:grid-cols-[minmax(0,1fr)_340px]">
-        <RemoteConsultationMatrix rows={visibleRows} onAction={setActiveAction} onCell={setActiveCell} />
-        <RemoteConsultationSidePanel rows={visibleRows} onAction={setActiveAction} />
-      </div>
+      <RemoteConsultationMatrix rows={visibleRows} onAction={setActiveAction} onCell={setActiveCell} />
 
       <RemoteConsultationCellDialog cell={activeCell} onOpenChange={(open) => !open && setActiveCell(null)} />
       <RemoteConsultationActionDialog action={activeAction} onConfirm={applyConsultAction} onOpenChange={(open) => !open && setActiveAction(null)} />
@@ -10189,37 +10079,6 @@ function RemoteConsultActionButtons({ row, onAction }: { row: RemoteConsultation
       <Button className="h-8 px-2 text-xs" disabled={closed || row.status === "In review"} size="sm" variant="outline" onClick={() => onAction({ row, kind: row.missingDocuments.length ? "request-documents" : "start-review" })}>{row.missingDocuments.length ? "Docs" : "Start"}</Button>
       <Button className="h-8 px-2 text-xs" disabled={closed} size="sm" onClick={() => onAction({ row, kind: "send-advice" })}>Advice</Button>
       <Button className="h-8 px-2 text-xs" disabled={closed} size="sm" variant="outline" onClick={() => onAction({ row, kind: "assign-follow-up" })}>Follow-up</Button>
-    </div>
-  );
-}
-
-function RemoteConsultationSidePanel({ rows, onAction }: { rows: RemoteConsultationRow[]; onAction: (action: RemoteConsultationActiveAction) => void }) {
-  const focusRows = rows.filter((row) => row.priority === "Critical" || row.missingDocuments.length || remoteConsultSlaBreached(row)).slice(0, 5);
-  return (
-    <div className="space-y-4">
-      <div className="rounded-md border border-slate-200 bg-white p-4 shadow-sm">
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <p className="text-sm font-bold text-slate-950">Consult focus queue</p>
-            <p className="mt-1 text-xs text-slate-500">Urgent, document-pending, or SLA-risk consults first.</p>
-          </div>
-          <span className={cn("rounded-full border px-2.5 py-1 text-xs font-bold", dashboardTonePillClass(focusRows.length ? "warning" : "success"))}>{focusRows.length}</span>
-        </div>
-        <div className="mt-4 space-y-2">
-          {focusRows.map((row) => (
-            <button className={cn("w-full rounded-md border p-3 text-left transition hover:-translate-y-0.5 hover:shadow-sm", dashboardToneSurfaceClass(remotePriorityTone(row.priority)))} key={row.id} type="button" onClick={() => onAction({ row, kind: row.missingDocuments.length ? "request-documents" : "start-review" })}>
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="text-sm font-bold">{row.bedNo} - {row.specialty}</p>
-                  <p className="mt-1 text-xs">{row.reason} | {remoteConsultSlaLabel(row)}</p>
-                </div>
-                <span className={cn("h-2.5 w-2.5 shrink-0 rounded-full", dashboardToneDotClass(remotePriorityTone(row.priority)))} />
-              </div>
-            </button>
-          ))}
-          {!focusRows.length ? <div className="rounded-md border border-dashed border-slate-300 bg-white p-5 text-center text-sm font-semibold text-slate-600">No urgent consult in selected view.</div> : null}
-        </div>
-      </div>
     </div>
   );
 }
@@ -10753,10 +10612,7 @@ function EscalatedCasesCommand() {
         </div>
       </CollapsibleCommandPanel>
 
-      <div className="grid gap-4 2xl:grid-cols-[minmax(0,1fr)_340px]">
-        <EscalatedCasesMatrix rows={visibleRows} onAction={setActiveAction} onCell={setActiveCell} />
-        <EscalatedCasesSidePanel rows={visibleRows} onAction={setActiveAction} />
-      </div>
+      <EscalatedCasesMatrix rows={visibleRows} onAction={setActiveAction} onCell={setActiveCell} />
 
       <EscalatedCaseCellDialog cell={activeCell} onOpenChange={(open) => !open && setActiveCell(null)} />
       <EscalatedCaseActionDialog action={activeAction} onConfirm={applyAction} onOpenChange={(open) => !open && setActiveAction(null)} />
@@ -10887,38 +10743,6 @@ function EscalatedCaseActionButtons({ row, onAction }: { row: EscalatedCaseRow; 
       <Button className="h-8 px-2 text-xs" disabled={closed} size="sm" onClick={() => onAction({ row, kind: "update" })}>Update</Button>
       <Button className="h-8 px-2 text-xs" disabled={closed || row.status === "Escalated further"} size="sm" variant="danger" onClick={() => onAction({ row, kind: "escalate" })}>Esc</Button>
       <Button className="h-8 px-2 text-xs" disabled={closed} size="sm" variant="outline" onClick={() => onAction({ row, kind: "close" })}>Close</Button>
-    </div>
-  );
-}
-
-function EscalatedCasesSidePanel({ rows, onAction }: { rows: EscalatedCaseRow[]; onAction: (action: EscalatedCaseAction) => void }) {
-  const focusRows = rows.filter((row) => row.severity === "Critical" || escalatedCaseSlaBreached(row) || row.status === "Escalated further").slice(0, 5);
-  const sourceCounts = Array.from(new Set(rows.map((row) => row.source))).map((source) => ({ source, count: rows.filter((row) => row.source === source).length }));
-  return (
-    <div className="space-y-4">
-      <div className="rounded-md border border-slate-200 bg-white p-4 shadow-sm">
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <p className="text-sm font-bold text-slate-950">Escalation focus queue</p>
-            <p className="mt-1 text-xs text-slate-500">Critical, breached, or re-escalated cases first.</p>
-          </div>
-          <span className={cn("rounded-full border px-2.5 py-1 text-xs font-bold", dashboardTonePillClass(focusRows.length ? "warning" : "success"))}>{focusRows.length}</span>
-        </div>
-        <div className="mt-4 space-y-2">
-          {focusRows.map((row) => (
-            <button className={cn("w-full rounded-md border p-3 text-left transition hover:-translate-y-0.5 hover:shadow-sm", dashboardToneSurfaceClass(escalatedCaseSeverityTone(row.severity)))} key={row.id} type="button" onClick={() => onAction({ row, kind: row.status === "New" ? "acknowledge" : "update" })}>
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="text-sm font-bold">{row.bedNo} - {row.trigger}</p>
-                  <p className="mt-1 text-xs">{row.primaryOwner} | {escalatedCaseSlaLabel(row)}</p>
-                </div>
-                <span className={cn("h-2.5 w-2.5 shrink-0 rounded-full", dashboardToneDotClass(escalatedCaseSeverityTone(row.severity)))} />
-              </div>
-            </button>
-          ))}
-          {!focusRows.length ? <div className="rounded-md border border-dashed border-slate-300 bg-white p-5 text-center text-sm font-semibold text-slate-600">No urgent escalation in selected view.</div> : null}
-        </div>
-      </div>
     </div>
   );
 }
@@ -11773,7 +11597,7 @@ function DeviceMonitoringCommand() {
       </div>
 
       <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_420px]">
-        <CommandSection title="Gateway health" description="Gateway-level connectivity load, health, and biomedical ownership.">
+        <CommandSection title="Gateway health">
           <div className="grid gap-3 md:grid-cols-2">
             {gatewayRows.map((gateway) => (
               <button className={cn("rounded-md border p-3 text-left transition hover:-translate-y-0.5 hover:shadow-sm", dashboardToneSurfaceClass(gateway.status === "Offline" ? "danger" : gateway.status === "Degraded" ? "warning" : "success"))} key={gateway.id} type="button" onClick={() => toast.info(`${gateway.gateway}: ${gateway.status}, owner ${gateway.owner}`)}>
@@ -11794,7 +11618,7 @@ function DeviceMonitoringCommand() {
             ))}
           </div>
         </CommandSection>
-        <CommandSection title="Biomedical action queue" description="Device issues that need acknowledgement, troubleshooting, mapping, or escalation.">
+        <CommandSection title="Biomedical action queue">
           {rows.filter((row) => row.issue !== "No issue").map((row) => (
             <button className={cn("w-full rounded-md border p-3 text-left transition hover:-translate-y-0.5 hover:shadow-sm", dashboardToneSurfaceClass(row.tone))} key={row.id} type="button" onClick={() => setActiveAction({ row, kind: "queue" })}>
               <div className="flex items-start justify-between gap-3">
@@ -12290,6 +12114,7 @@ type DeviceOpsActiveAction = {
 };
 
 type DeviceOpsActionHandler = (kind: DeviceOpsActionKind, row: DeviceOpsRow, target?: DeviceOpsActionTarget) => void;
+type DeviceOpsAuxPanel = "service-queue" | "gateway-watch";
 
 function DeviceOperationsCommand({ mode }: { mode: DeviceOperationsMode }) {
   const [search, setSearch] = React.useState("");
@@ -12298,10 +12123,10 @@ function DeviceOperationsCommand({ mode }: { mode: DeviceOperationsMode }) {
   const [owner, setOwner] = React.useState("All owners");
   const [completedRows, setCompletedRows] = React.useState<Set<string>>(() => new Set());
   const [activeAction, setActiveAction] = React.useState<DeviceOpsActiveAction | null>(null);
+  const [activePanel, setActivePanel] = React.useState<DeviceOpsAuxPanel | null>(null);
 
   const rows = React.useMemo(() => buildDeviceOpsRows(completedRows), [completedRows]);
   const gatewayRows = buildGatewayHealthRows(rows);
-  const discoveryRows = buildAutoDiscoveryRows();
   const config = deviceOpsModeConfig(mode);
   const unitOptions = React.useMemo(() => ["All ICU units", ...Array.from(new Set(rows.map((row) => row.unit)))], [rows]);
   const ownerOptions = React.useMemo(() => ["All owners", ...Array.from(new Set(rows.map((row) => row.owner)))], [rows]);
@@ -12323,6 +12148,10 @@ function DeviceOperationsCommand({ mode }: { mode: DeviceOperationsMode }) {
         && statusMatch;
     });
   }, [owner, rows, search, status, unit]);
+
+  React.useEffect(() => {
+    setActivePanel(null);
+  }, [mode]);
 
   const completeAction = (action: DeviceOpsActiveAction, note: string) => {
     setCompletedRows((current) => {
@@ -12368,16 +12197,23 @@ function DeviceOperationsCommand({ mode }: { mode: DeviceOperationsMode }) {
         </div>
       </CollapsibleCommandPanel>
 
-      <div className="grid gap-4 2xl:grid-cols-[minmax(0,1fr)_350px]">
-        <DeviceOpsMatrix mode={mode} rows={filteredRows} onAction={(kind, row, target) => setActiveAction({ mode, row, kind, target })} />
-        <DeviceOpsSidePanel
-          discoveryRows={discoveryRows}
-          gatewayRows={gatewayRows}
-          mode={mode}
-          rows={filteredRows}
-          onAction={(kind, row, target) => setActiveAction({ mode, row, kind, target })}
-        />
-      </div>
+      <DeviceOpsMatrix
+        activePanel={activePanel}
+        mode={mode}
+        rows={filteredRows}
+        onAction={(kind, row, target) => setActiveAction({ mode, row, kind, target })}
+        onPanelChange={(panel) => setActivePanel((current) => current === panel ? null : panel)}
+      />
+      <DeviceOpsPanelDialog
+        activePanel={activePanel}
+        gatewayRows={gatewayRows}
+        mode={mode}
+        rows={filteredRows}
+        onAction={(kind, row, target) => {
+          setActiveAction({ mode, row, kind, target });
+        }}
+        onOpenChange={(open) => !open && setActivePanel(null)}
+      />
 
       <DeviceOpsActionDialog
         action={activeAction}
@@ -12385,6 +12221,52 @@ function DeviceOperationsCommand({ mode }: { mode: DeviceOperationsMode }) {
         onOpenChange={(open) => !open && setActiveAction(null)}
       />
     </div>
+  );
+}
+
+function DeviceOpsPanelDialog({
+  activePanel,
+  gatewayRows,
+  mode,
+  onAction,
+  onOpenChange,
+  rows,
+}: {
+  activePanel: DeviceOpsAuxPanel | null;
+  mode: DeviceOperationsMode;
+  rows: DeviceOpsRow[];
+  gatewayRows: ReturnType<typeof buildGatewayHealthRows>;
+  onAction: DeviceOpsActionHandler;
+  onOpenChange: (open: boolean) => void;
+}) {
+  return (
+    <Dialog.Root open={Boolean(activePanel)} onOpenChange={onOpenChange}>
+      <Dialog.Portal>
+        <Dialog.Overlay className="fixed inset-0 z-50 bg-black/45 backdrop-blur-[1px]" />
+        <Dialog.Content className="fixed left-1/2 top-1/2 z-50 flex max-h-[88dvh] w-[min(980px,calc(100vw-24px))] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-xl border border-slate-300 bg-white shadow-2xl outline-none">
+          <div className="flex items-start justify-between gap-3 border-b border-slate-200 bg-white px-4 py-3">
+            <div>
+              <Dialog.Title className="text-base font-bold text-slate-950">{activePanel === "gateway-watch" ? "Gateway watch" : "Device service queue"}</Dialog.Title>
+              <Dialog.Description className="mt-1 text-xs text-slate-500">{deviceOpsModeConfig(mode).title}</Dialog.Description>
+            </div>
+            <Dialog.Close asChild>
+              <Button size="sm" variant="outline"><X className="h-4 w-4" />Close</Button>
+            </Dialog.Close>
+          </div>
+          <div className="flex-1 overflow-y-auto p-4">
+            {activePanel ? (
+              <DeviceOpsSidePanel
+                activePanel={activePanel}
+                gatewayRows={gatewayRows}
+                mode={mode}
+                rows={rows}
+                onAction={onAction}
+              />
+            ) : null}
+          </div>
+        </Dialog.Content>
+      </Dialog.Portal>
+    </Dialog.Root>
   );
 }
 
@@ -12426,13 +12308,17 @@ function deviceOpsModeConfig(mode: DeviceOperationsMode) {
 }
 
 function DeviceOpsMatrix({
+  activePanel,
   mode,
   onAction,
+  onPanelChange,
   rows,
 }: {
+  activePanel: DeviceOpsAuxPanel | null;
   mode: DeviceOperationsMode;
   rows: DeviceOpsRow[];
   onAction: DeviceOpsActionHandler;
+  onPanelChange: (panel: DeviceOpsAuxPanel) => void;
 }) {
   const pagination = useIcuCommandPagination(rows);
   const config = deviceOpsModeConfig(mode);
@@ -12443,7 +12329,29 @@ function DeviceOpsMatrix({
         <div>
           <p className="text-sm font-bold text-slate-950">{config.title}</p>
         </div>
-        <IcuLegend />
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          <IcuLegend />
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              className="h-8 px-3 text-xs"
+              size="sm"
+              variant={activePanel === "service-queue" ? "default" : "outline"}
+              onClick={() => onPanelChange("service-queue")}
+            >
+              <Wrench className="h-3.5 w-3.5" />
+              Device service queue
+            </Button>
+            <Button
+              className="h-8 px-3 text-xs"
+              size="sm"
+              variant={activePanel === "gateway-watch" ? "default" : "outline"}
+              onClick={() => onPanelChange("gateway-watch")}
+            >
+              <Activity className="h-3.5 w-3.5" />
+              Gateway watch
+            </Button>
+          </div>
+        </div>
       </div>
       <div className="max-h-[670px] overflow-auto">
         <table className="w-full min-w-[1320px] border-collapse bg-white text-sm">
@@ -12552,81 +12460,32 @@ function DeviceOpsActionButtons({ mode, onAction, row }: { mode: DeviceOperation
 }
 
 function DeviceOpsSidePanel({
-  discoveryRows,
+  activePanel,
   gatewayRows,
   mode,
   onAction,
   rows,
 }: {
+  activePanel: DeviceOpsAuxPanel;
   mode: DeviceOperationsMode;
   rows: DeviceOpsRow[];
   gatewayRows: ReturnType<typeof buildGatewayHealthRows>;
-  discoveryRows: ReturnType<typeof buildAutoDiscoveryRows>;
   onAction: DeviceOpsActionHandler;
 }) {
   const focusRows = rows.filter((row) => row.issue !== "No issue" || row.connectivity !== "Online" || row.signal !== "Good" || row.patient === "Unassigned").slice(0, 5);
-  return (
-    <div className="space-y-4">
-      <div className="rounded-md border border-slate-200 bg-white p-4 shadow-sm">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <p className="text-sm font-bold text-slate-950">{mode === "mapping" ? "Mapping work queue" : mode === "connectivity" ? "Connectivity work queue" : mode === "signal" ? "Signal work queue" : "Device service queue"}</p>
-          </div>
-          <span className={cn("rounded-full border px-2.5 py-1 text-xs font-bold", dashboardTonePillClass(focusRows.length ? "warning" : "success"))}>{focusRows.length}</span>
-        </div>
-        <div className="mt-4 space-y-2">
-          {focusRows.map((row) => (
-            <button className={cn("w-full rounded-md border p-3 text-left transition hover:-translate-y-0.5 hover:shadow-sm", dashboardToneSurfaceClass(row.tone))} key={row.id} type="button" onClick={() => onAction(mode === "mapping" ? "map" : mode === "connectivity" ? "restart" : mode === "signal" ? "fix-signal" : "service", row, "queue")}>
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="text-sm font-bold text-slate-950">{row.bedNo} - {row.issue}</p>
-                  <p className="mt-1 text-xs text-slate-600">{row.gateway} | {row.owner} | {row.lastData}</p>
-                </div>
-                <span className={cn("h-2.5 w-2.5 shrink-0 rounded-full", dashboardToneDotClass(row.tone))} />
-              </div>
-            </button>
-          ))}
-          {!focusRows.length ? <div className="rounded-md border border-dashed border-slate-300 bg-white p-5 text-center text-sm font-semibold text-slate-600">No urgent device work in selected view.</div> : null}
-        </div>
-      </div>
-
-      {mode === "mapping" ? (
-        <div className="rounded-md border border-slate-200 bg-white p-4 shadow-sm">
-          <p className="text-sm font-bold text-slate-950">Auto discovery</p>
-          <div className="mt-3 space-y-2">
-            {discoveryRows.map((row) => (
-              <div className="rounded-md border border-slate-200 bg-slate-50 p-3" key={row.id}>
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <p className="text-xs font-bold text-slate-900">{row.deviceName}</p>
-                    <p className="mt-1 text-[11px] text-slate-500">{row.deviceType} | {row.detectedAt}</p>
-                  </div>
-                  <Badge tone={toneForStatus(row.status)}>{row.status}</Badge>
-                </div>
-                <Button
-                  className="mt-3 w-full"
-                  size="sm"
-                  variant="outline"
-                  onClick={() => {
-                    const targetRow = rows.find((deviceRow) => deviceRow.bedNo === row.assignTo) ?? rows[0];
-                    if (targetRow) onAction("map", targetRow, "discovery");
-                  }}
-                >
-                  Assign to {row.assignTo}
-                </Button>
-              </div>
-            ))}
-          </div>
-        </div>
-      ) : (
-        <div className="rounded-md border border-slate-200 bg-white p-4 shadow-sm">
+  if (activePanel === "gateway-watch") {
+    return (
+      <div className="rounded-sm border border-slate-300 bg-white p-4 shadow-sm">
+        <div className="mb-3 flex items-center justify-between gap-3">
           <p className="text-sm font-bold text-slate-950">Gateway watch</p>
-          <div className="mt-3 space-y-2">
-            {gatewayRows.slice(0, 5).map((gateway) => {
-              const gatewayDeviceRow = rows.find((row) => row.gateway === gateway.gateway);
-              return (
+          <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-xs font-bold text-slate-700">{gatewayRows.length} gateways</span>
+        </div>
+        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+          {gatewayRows.map((gateway) => {
+            const gatewayDeviceRow = rows.find((row) => row.gateway === gateway.gateway);
+            return (
               <button
-                className={cn("w-full rounded-md border p-3 text-left transition hover:-translate-y-0.5 hover:shadow-sm", dashboardToneSurfaceClass(gateway.status === "Offline" ? "danger" : gateway.status === "Degraded" ? "warning" : "success"))}
+                className={cn("rounded-md border p-3 text-left transition hover:-translate-y-0.5 hover:shadow-sm", dashboardToneSurfaceClass(gateway.status === "Offline" ? "danger" : gateway.status === "Degraded" ? "warning" : "success"))}
                 disabled={!gatewayDeviceRow}
                 key={gateway.id}
                 onClick={() => gatewayDeviceRow ? onAction("gateway", gatewayDeviceRow, "gateway") : undefined}
@@ -12636,18 +12495,40 @@ function DeviceOpsSidePanel({
                   <p className="text-xs font-bold text-slate-900">{gateway.gateway}</p>
                   <span className={cn("rounded-full border px-2 py-0.5 text-[11px] font-bold", dashboardTonePillClass(gateway.status === "Offline" ? "danger" : gateway.status === "Degraded" ? "warning" : "success"))}>{gateway.status}</span>
                 </div>
-                <div className="mt-2 grid grid-cols-2 gap-2 text-[11px] text-slate-600">
+                <div className="mt-3 grid grid-cols-2 gap-2 text-[11px] text-slate-600">
                   <span>CPU {gateway.cpu}%</span>
                   <span>Mem {gateway.memory}%</span>
                   <span>Temp {gateway.temperature} C</span>
                   <span>{gateway.lastHeartbeat}</span>
                 </div>
               </button>
-              );
-            })}
-          </div>
+            );
+          })}
         </div>
-      )}
+      </div>
+    );
+  }
+
+  return (
+    <div className="rounded-sm border border-slate-300 bg-white p-4 shadow-sm">
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <p className="text-sm font-bold text-slate-950">Device service queue</p>
+        <span className={cn("rounded-full border px-2.5 py-1 text-xs font-bold", dashboardTonePillClass(focusRows.length ? "warning" : "success"))}>{focusRows.length}</span>
+      </div>
+      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+        {focusRows.map((row) => (
+          <button className={cn("rounded-md border p-3 text-left transition hover:-translate-y-0.5 hover:shadow-sm", dashboardToneSurfaceClass(row.tone))} key={row.id} type="button" onClick={() => onAction(mode === "mapping" ? "map" : mode === "connectivity" ? "restart" : mode === "signal" ? "fix-signal" : "service", row, "queue")}>
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-sm font-bold text-slate-950">{row.bedNo} - {row.issue}</p>
+                <p className="mt-1 text-xs text-slate-600">{row.gateway} | {row.owner} | {row.lastData}</p>
+              </div>
+              <span className={cn("h-2.5 w-2.5 shrink-0 rounded-full", dashboardToneDotClass(row.tone))} />
+            </div>
+          </button>
+        ))}
+        {!focusRows.length ? <div className="rounded-md border border-dashed border-slate-300 bg-white p-5 text-center text-sm font-semibold text-slate-600 md:col-span-2 xl:col-span-3">No urgent device work in selected view.</div> : null}
+      </div>
     </div>
   );
 }
@@ -13309,10 +13190,7 @@ function RiskAndEwsCommand({ mode }: { mode: RiskCommandMode }) {
         </div>
       </CollapsibleCommandPanel>
 
-      <div className="grid gap-4 2xl:grid-cols-[minmax(0,1fr)_350px]">
-        <RiskCommandMatrix mode={mode} reviewed={reviewed} rows={visibleRows} onAction={(kind, row) => setActiveAction({ mode, kind, row })} />
-        <RiskCommandSidePanel mode={mode} rows={visibleRows} onAction={(kind, row) => setActiveAction({ mode, kind, row })} />
-      </div>
+      <RiskCommandMatrix mode={mode} reviewed={reviewed} rows={visibleRows} onAction={(kind, row) => setActiveAction({ mode, kind, row })} />
 
       <RiskWorkflowActionDialog action={activeAction} onComplete={completeAction} onOpenChange={(open) => !open && setActiveAction(null)} />
     </div>
@@ -13967,38 +13845,6 @@ function patientRiskTaskTone(status: (typeof icuTasks)[number]["status"]): Dashb
   if (status === "Pending" || status === "Assigned" || status === "In progress") return "warning";
   if (status === "Completed") return "success";
   return "info";
-}
-
-function RiskCommandSidePanel({ mode, onAction, rows }: { mode: RiskCommandMode; rows: PatientRiskRow[]; onAction: (kind: RiskActionKind, row: PatientRiskRow) => void }) {
-  const focusRows = rows.filter((row) => row.riskLevel === "Critical" || row.riskLevel === "High" || row.abnormalVital || row.alerts >= 2).slice(0, 5);
-  return (
-    <div className="space-y-4">
-      <div className="rounded-md border border-slate-200 bg-white p-4 shadow-sm">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <p className="text-sm font-bold text-slate-950">{mode === "ews" ? "EWS action queue" : "Risk focus queue"}</p>
-            <p className="mt-1 text-xs text-slate-500">{mode === "ews" ? "Immediate and 30 min watch patients first." : "Critical/high risk patients and abnormal signals first."}</p>
-          </div>
-          <span className={cn("rounded-full border px-2.5 py-1 text-xs font-bold", dashboardTonePillClass(focusRows.length ? "warning" : "success"))}>{focusRows.length}</span>
-        </div>
-        <div className="mt-4 space-y-2">
-          {focusRows.map((row) => (
-            <button className={cn("w-full rounded-md border p-3 text-left transition hover:-translate-y-0.5 hover:shadow-sm", dashboardToneSurfaceClass(riskLevelTone(row.riskLevel)))} key={row.id} type="button" onClick={() => onAction(mode === "ews" ? "observe" : "review", row)}>
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="text-sm font-bold text-slate-950">{row.bedNo} - {row.patient}</p>
-                  <p className="mt-1 text-xs text-slate-600">{row.trendReason}</p>
-                </div>
-                <span className={cn("h-2.5 w-2.5 shrink-0 rounded-full", dashboardToneDotClass(riskLevelTone(row.riskLevel)))} />
-              </div>
-              <p className="mt-2 text-[11px] font-semibold text-slate-500">{row.owner} | {mode === "ews" ? observationFrequency(row.score) : `Score ${row.score}`}</p>
-            </button>
-          ))}
-          {!focusRows.length ? <div className="rounded-md border border-dashed border-slate-300 bg-white p-5 text-center text-sm font-semibold text-slate-600">No urgent patient in selected view.</div> : null}
-        </div>
-      </div>
-    </div>
-  );
 }
 
 function RiskWorkflowActionDialog({
@@ -19881,122 +19727,6 @@ function IcuActionCircleButton({ cell, column, icon: Icon }: { cell: DashboardCe
   );
 }
 
-function DashboardFocusStrip({ patients }: { patients: IcuPatient[] }) {
-  const rows = patients
-    .flatMap((patient) => {
-      const alerts = icuAlerts.filter((alert) => alert.patientId === patient.id && alert.status !== "Resolved");
-      const meds = medicationRows.filter((row) => row.patientId === patient.id && ["Due", "Late"].includes(row.status));
-      const tasks = icuTasks.filter((task) => task.patientId === patient.id && task.status !== "Completed");
-      return [
-        alerts[0] ? { id: `alert-${alerts[0].id}`, patient, label: alerts[0].type, detail: alerts[0].message, tone: alerts[0].severity === "Critical" ? "critical" as DashboardCellTone : "warning" as DashboardCellTone } : null,
-        meds[0] ? { id: `med-${meds[0].id}`, patient, label: "Medication", detail: `${meds[0].medication} ${meds[0].status}`, tone: meds[0].status === "Late" ? "danger" as DashboardCellTone : "warning" as DashboardCellTone } : null,
-        tasks[0] ? { id: `task-${tasks[0].id}`, patient, label: "Task", detail: tasks[0].title, tone: tasks[0].status === "Overdue" ? "danger" as DashboardCellTone : "info" as DashboardCellTone } : null,
-      ];
-    })
-    .filter(Boolean)
-    .slice(0, 6) as Array<{ id: string; patient: IcuPatient; label: string; detail: string; tone: DashboardCellTone }>;
-
-  return (
-    <div className="rounded-md border border-slate-200 bg-white p-4 shadow-sm">
-      <div className="flex items-center justify-between gap-3">
-        <div>
-          <p className="text-sm font-bold text-slate-950">Live focus queue</p>
-        </div>
-        <span className={cn("rounded-full border px-2.5 py-1 text-xs font-bold", dashboardTonePillClass(rows.length ? "warning" : "success"))}>{rows.length}</span>
-      </div>
-      <div className="mt-4 grid gap-2 lg:grid-cols-2">
-        {rows.map((row) => (
-          <Link className={cn("rounded-md border border-slate-200 bg-white p-3 shadow-sm transition hover:-translate-y-0.5 hover:border-sky-200 hover:shadow-md", patientDetailAccentClass(row.tone))} href={`/nursing-icu/patient-board?patient=${row.patient.id}&view=smart-bed`} key={row.id}>
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <p className="text-sm font-bold text-slate-950">{row.patient.bedNo} - {row.label}</p>
-                <p className="mt-1 text-xs text-slate-600">{row.detail}</p>
-              </div>
-              <span className={cn("mt-0.5 h-2.5 w-2.5 shrink-0 rounded-full", dashboardToneDotClass(row.tone))} />
-            </div>
-          </Link>
-        ))}
-        {!rows.length ? <div className="rounded-md border border-dashed border-slate-300 bg-white p-5 text-center text-sm font-semibold text-slate-600">No urgent action in selected view.</div> : null}
-      </div>
-    </div>
-  );
-}
-
-function DashboardShiftPanel() {
-  const rows = [
-    { label: "Ward Nurse Kavita", detail: "2 patients | 5 open tasks", tone: "warning" as DashboardCellTone },
-    { label: "Ward Nurse Arjun", detail: "2 patients | 3 open tasks", tone: "success" as DashboardCellTone },
-    { label: "Unit Nurse Priya", detail: "Bed allocation and escalation supervision", tone: "info" as DashboardCellTone },
-  ];
-
-  return (
-    <div className="rounded-md border border-slate-200 bg-white p-4 shadow-sm">
-      <div>
-        <p className="text-sm font-bold text-slate-950">Shift control</p>
-      </div>
-      <div className="mt-4 space-y-2">
-        {rows.map((row) => (
-          <div className={cn("rounded-md border border-slate-200 bg-white p-3 shadow-sm", patientDetailAccentClass(row.tone))} key={row.label}>
-            <div className="flex items-center justify-between gap-3">
-              <p className="text-sm font-bold text-slate-950">{row.label}</p>
-              <span className={cn("h-2.5 w-2.5 rounded-full", dashboardToneDotClass(row.tone))} />
-            </div>
-            <p className="mt-1 text-xs text-slate-600">{row.detail}</p>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function DashboardOvernightEvents() {
-  const rows = [
-    { id: "night-001", time: "02:10", patient: "ICU-A01 - Aisha Khan", event: "SpO2 dropped to 90% with hypotension", source: "Vitals Chart", action: "Duty doctor informed, repeat vitals and sepsis review", tone: "critical" as DashboardCellTone },
-    { id: "night-002", time: "03:25", patient: "ICU-A02 - Rohan Das", event: "ABG requested after ventilator setting review", source: "ICU Monitor", action: "ABG pending in diagnostics queue", tone: "warning" as DashboardCellTone },
-    { id: "night-003", time: "04:40", patient: "ICU-B03 - Meera Sharma", event: "Neuro observation due with low GCS watch", source: "Nursing Station", action: "Hourly neuro checks continued", tone: "info" as DashboardCellTone },
-    { id: "night-004", time: "05:15", patient: "ICU-B04 - Kabir Ali", event: "Transfer readiness remained stable overnight", source: "Shift Handover", action: "Transfer checklist pending", tone: "success" as DashboardCellTone },
-  ];
-
-  return (
-    <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
-      <div className="rounded-md border border-slate-200 bg-white p-4 shadow-sm">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <p className="text-sm font-bold text-slate-950">Overnight deterioration & events</p>
-          </div>
-          <DashboardLegend />
-        </div>
-        <div className="mt-4 grid gap-2 lg:grid-cols-2">
-          {rows.map((row) => (
-            <div className={cn("rounded-md border border-slate-200 bg-white p-3 shadow-sm", patientDetailAccentClass(row.tone))} key={row.id}>
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="text-sm font-bold text-slate-950">{row.patient}</p>
-                  <p className="mt-1 text-xs text-slate-500">{row.time} | {row.source}</p>
-                </div>
-                <span className={cn("h-2.5 w-2.5 shrink-0 rounded-full", dashboardToneDotClass(row.tone))} />
-              </div>
-              <p className="mt-3 text-sm font-semibold text-slate-900">{row.event}</p>
-              <p className="mt-1 text-xs text-slate-600">{row.action}</p>
-            </div>
-          ))}
-        </div>
-      </div>
-      <div className="rounded-md border border-slate-200 bg-white p-4 shadow-sm">
-        <div>
-          <p className="text-sm font-bold text-slate-950">One-minute round prep</p>
-        </div>
-        <div className="mt-4 space-y-2">
-          <InfoLine label="Deteriorated overnight" value="2 patients" />
-          <InfoLine label="Critical lab watch" value="1 pending review" />
-          <InfoLine label="Escalated patients" value="2 active" />
-          <InfoLine label="Round priority" value="ICU-A01, ICU-A02, ICU-B03" />
-        </div>
-      </div>
-    </div>
-  );
-}
-
 function DashboardLegend() {
   return <IcuLegend />;
 }
@@ -20646,8 +20376,8 @@ function NurseReview() {
   const [dateTimeFilter, setDateTimeFilter] = React.useState<DateTimeFilterState>(defaultDateTimeFilter);
   const [activeAction, setActiveAction] = React.useState<{ mode: "View" | "Edit" | "Delete"; record: NurseReviewRecord } | null>(null);
   const selectedPatient = patientId === "All patients" ? icuPatients[0] : icuPatients.find((patient) => patient.id === patientId) ?? icuPatients[0];
-  const hourlyVitals = React.useMemo(() => applyDateTimeFilter(buildIcuHourlyVitals(selectedPatient), dateTimeFilter), [dateTimeFilter, selectedPatient]);
-  const filteredRecords = records.filter((record) => {
+  const nurseOptions = React.useMemo(() => ["All nurses", ...Array.from(new Set(records.map((record) => record.by))).sort()], [records]);
+  const filteredRecords = React.useMemo(() => records.filter((record) => {
     const patientMatches = patientId === "All patients" || record.patientId === patientId;
     const statusMatches = worklist === "All review status"
       || (worklist === "Needs doctor review" && ["Critical", "High Risk"].includes(record.status))
@@ -20655,8 +20385,19 @@ function NurseReview() {
       || (worklist === record.status);
     const nurseMatches = assignedNurse === "All nurses" || record.by === assignedNurse;
     return patientMatches && statusMatches && nurseMatches;
-  });
-  const dateTimeFilteredRecords = applyDateTimeFilter(filteredRecords, dateTimeFilter);
+  }), [assignedNurse, patientId, records, worklist]);
+  const dateTimeFilteredRecords = React.useMemo(() => applyDateTimeFilter(filteredRecords, dateTimeFilter), [dateTimeFilter, filteredRecords]);
+  const chartPatient = patientId === "All patients"
+    ? icuPatients.find((patient) => patient.id === dateTimeFilteredRecords[0]?.patientId) ?? selectedPatient
+    : selectedPatient;
+  const hourlyVitals = React.useMemo(() => applyDateTimeFilter(buildIcuHourlyVitals(chartPatient), dateTimeFilter), [chartPatient, dateTimeFilter]);
+  const filterSummary = [
+    patientId === "All patients" ? "All patients" : `${selectedPatient.bedNo} - ${selectedPatient.patientName}`,
+    worklist,
+    assignedNurse,
+    `${dateTimeFilter.dateFilter} / ${dateTimeFilter.timeFilter}`,
+    `${dateTimeFilteredRecords.length} record(s)`,
+  ].join(" | ");
 
   function updateRecord(nextRecord: NurseReviewRecord) {
     const nextStatus = getObservationRisk({
@@ -20682,28 +20423,26 @@ function NurseReview() {
 
   return (
     <div className="space-y-4">
-      <Card>
-        <CardHeader>
-          <div>
-            <CardTitle>Nurse Review Worklist</CardTitle>
-            <CardDescription>Review ICU observation entries with patient, status, date, and time filters before doctor review.</CardDescription>
+      <CollapsibleCommandPanel title="Nurse Review Worklist & Filters" summary={filterSummary}>
+        <div className="space-y-3 p-3">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <StatusPill tone="info">{dateTimeFilteredRecords.length} records</StatusPill>
+            <Button onClick={() => toast.success("Latest nurse observations loaded")}>Review latest</Button>
           </div>
-          <Button onClick={() => toast.success("Latest nurse observations loaded")}>Review latest</Button>
-        </CardHeader>
-        <CardContent className="grid gap-3 md:grid-cols-3">
-          <label className="space-y-1 text-sm">
-            <span className="font-medium text-foreground">Chart patient</span>
-            <select className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/20" value={patientId} onChange={(event) => setPatientId(event.target.value)}>
-              <option>All patients</option>
-              {icuPatients.map((patient) => <option key={patient.id} value={patient.id}>{patient.bedNo} - {patient.patientName}</option>)}
-            </select>
-          </label>
-          <NativeSelect label="Worklist status" value={worklist} onChange={setWorklist} options={["All review status", "Needs doctor review", "Normal observations", "Critical", "High Risk", "Warning", "Normal"]} />
-          <NativeSelect label="Assigned nurse" value={assignedNurse} onChange={setAssignedNurse} options={["All nurses", "Ward Nurse Kavita", "Ward Nurse Arjun", "Ward Nurse Neha", "Head Nurse Sana"]} />
-        </CardContent>
-      </Card>
-
-      <DateTimeFilterPanel title="Nurse Review Date & Time Filter" compact value={dateTimeFilter} onChange={setDateTimeFilter} resultCount={dateTimeFilteredRecords.length} />
+          <div className="grid gap-3 md:grid-cols-3">
+            <label className="space-y-1 text-sm">
+              <span className="font-medium text-foreground">Chart patient</span>
+              <select className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/20" value={patientId} onChange={(event) => setPatientId(event.target.value)}>
+                <option>All patients</option>
+                {icuPatients.map((patient) => <option key={patient.id} value={patient.id}>{patient.bedNo} - {patient.patientName}</option>)}
+              </select>
+            </label>
+            <NativeSelect label="Worklist status" value={worklist} onChange={setWorklist} options={["All review status", "Needs doctor review", "Normal observations", "Critical", "High Risk", "Warning", "Normal"]} />
+            <NativeSelect label="Assigned nurse" value={assignedNurse} onChange={setAssignedNurse} options={nurseOptions} />
+          </div>
+          <DateTimeFilterPanel compact embedded hideHeader value={dateTimeFilter} onChange={setDateTimeFilter} resultCount={dateTimeFilteredRecords.length} />
+        </div>
+      </CollapsibleCommandPanel>
 
       <SummaryGrid>
         <StatCard label="Review entries" value={dateTimeFilteredRecords.length} change="Filtered" context="Nurse observations" tone="info" icon={ClipboardCheck} />
@@ -20760,53 +20499,63 @@ function NurseVitalsEntryForm() {
 
   return (
     <div className="min-w-0 space-y-3">
-      <div className="flex min-h-10 min-w-0 flex-wrap items-center gap-x-4 gap-y-1 rounded-md border border-slate-200 bg-white px-3 py-2 text-xs text-slate-600 shadow-sm">
-        <span className="font-bold text-slate-950">{selectedPatient?.patientName ?? "Patient not selected"}</span>
-        <span>{selectedPatient?.mrn ?? "-"}</span>
-        <span>{selectedPatient?.bedNo ?? "-"}</span>
-        <span>{selectedPatient?.unit ?? "-"}</span>
-        <span>{selectedPatient?.ageGender ?? "-"}</span>
-        <span className="min-w-0 truncate">Consultant: {selectedPatient?.admittingDoctor ?? "-"}</span>
-        <span className={`ml-auto rounded-full border px-2.5 py-0.5 font-semibold ${riskBadgeClass(riskLevel)}`}>{riskLevel}</span>
+      <div className="max-w-full overflow-x-auto rounded-md border border-sky-200 bg-gradient-to-r from-blue-600 to-indigo-500 px-4 py-3 text-white shadow-sm">
+        <div className="flex min-w-max items-center gap-6 text-sm font-semibold">
+          <span className="text-base font-bold">{selectedPatient?.patientName ?? "Patient not selected"}</span>
+          <span className="rounded-full border border-white/35 bg-white/15 px-2.5 py-1 text-xs">{riskLevel}</span>
+          <span>MR: {selectedPatient?.mrn ?? "-"}</span>
+          <span>Age/Sex: {selectedPatient?.ageGender ?? "-"}</span>
+          <span>Bed: {selectedPatient?.bedNo ?? "-"}</span>
+          <span>Unit: {selectedPatient?.unit ?? "-"}</span>
+          <span>Doctor: {selectedPatient?.admittingDoctor ?? "-"}</span>
+          <span>Nurse: {recordedBy}</span>
+        </div>
       </div>
 
       <Card className="min-w-0 max-w-full overflow-hidden">
         <CardContent className="min-w-0 space-y-4 p-4">
-          <div className="grid min-w-0 gap-3 md:grid-cols-2 xl:grid-cols-4">
-            <label className="space-y-1 text-sm">
+          <div className="grid min-w-0 items-start gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
+            <NurseEntrySectionTitle>Patient and shift details</NurseEntrySectionTitle>
+            <label className="min-h-[66px] space-y-1 text-sm">
               <span className="font-medium text-foreground">Patient</span>
               <select className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/20" value={patientId} onChange={(event) => setPatientId(event.target.value)}>
                 {icuPatients.map((patient) => <option key={patient.id} value={patient.id}>{patient.patientName} - {patient.bedNo}</option>)}
               </select>
             </label>
-            <label className="space-y-1 text-sm">
+            <label className="min-h-[66px] space-y-1 text-sm">
               <span className="font-medium text-foreground">Date</span>
               <Input defaultValue="2026-06-05" type="date" />
             </label>
-            <label className="space-y-1 text-sm">
+            <label className="min-h-[66px] space-y-1 text-sm">
               <span className="font-medium text-foreground">Time</span>
               <Input defaultValue="15:30" type="time" />
             </label>
-            <NativeSelect label="Shift" value={shift} onChange={setShift} options={["Morning", "Afternoon", "Evening", "Night"]} />
-            <NativeSelect label="Recorded by" value={recordedBy} onChange={setRecordedBy} options={["Ward Nurse Kavita", "Ward Nurse Arjun", "Ward Nurse Neha", "Unit Nurse Priya", "Head Nurse Sana"]} />
+            <NurseEntrySelect label="Shift" value={shift} onChange={setShift} options={["Morning", "Afternoon", "Evening", "Night"]} />
+            <NurseEntrySelect label="Recorded by" value={recordedBy} onChange={setRecordedBy} options={["Ward Nurse Kavita", "Ward Nurse Arjun", "Ward Nurse Neha", "Unit Nurse Priya", "Head Nurse Sana"]} />
+
+            <NurseEntrySectionTitle>Respiratory and oxygen</NurseEntrySectionTitle>
             <VitalNumberInput label="Respiratory rate" value={respiratoryRate} onChange={setRespiratoryRate} suffix="/min" />
             <VitalNumberInput label="O2 saturation" value={o2Saturation} onChange={setO2Saturation} suffix="%" />
             <VitalNumberInput label="O2 flow rate" value={o2FlowRate} onChange={setO2FlowRate} suffix="L/min" />
             <VitalNumberInput label="FiO2" value={fio2} onChange={setFio2} suffix="%" />
+            <NurseEntrySelect label="Delivery method" value={deliveryMethod} onChange={setDeliveryMethod} options={["Room air", "Nasal cannula", "Simple mask", "NRBM", "NIV support", "Ventilator support"]} />
+
+            <NurseEntrySectionTitle>Blood pressure and pulse</NurseEntrySectionTitle>
             <BloodPressureInput dia={bpDiastolic} setDia={setBpDiastolic} setSys={setBpSystolic} sys={bpSystolic} />
-            <NativeSelect label="Delivery method" value={deliveryMethod} onChange={setDeliveryMethod} options={["Room air", "Nasal cannula", "Simple mask", "NRBM", "NIV support", "Ventilator support"]} />
-            <NativeSelect label="Pulse rhythm" value={pulseRhythm} onChange={setPulseRhythm} options={["Regular", "Irregular", "Tachycardia", "Bradycardia", "Weak pulse"]} />
+            <NurseEntrySelect label="Pulse rhythm" value={pulseRhythm} onChange={setPulseRhythm} options={["Regular", "Irregular", "Tachycardia", "Bradycardia", "Weak pulse"]} />
             <VitalNumberInput label="Pulse rate" value={pulseRate} onChange={setPulseRate} suffix="/min" />
             <VitalNumberInput label="Monitor heart rate" value={monitorHeartRate} onChange={setMonitorHeartRate} suffix="bpm" />
-            <NativeSelect label="Pulse source" value={pulseSource} onChange={setPulseSource} options={["Manual radial pulse", "Monitor", "Apex beat", "Doppler"]} />
-            <NativeSelect label="Pulse site" value={pulseSite} onChange={setPulseSite} options={["Radial", "Brachial", "Carotid", "Femoral", "Pedal"]} />
-            <NativeSelect label="Pulse quality" value={pulseQuality} onChange={setPulseQuality} options={["Normal", "Weak", "Bounding", "Thready", "Not palpable"]} />
-            <NativeSelect label="Pulse action taken" value={pulseAction} onChange={setPulseAction} options={["No immediate action", "Repeat reading", "Inform duty doctor", "Start escalation", "Document and observe"]} />
+            <NurseEntrySelect label="Pulse source" value={pulseSource} onChange={setPulseSource} options={["Manual radial pulse", "Monitor", "Apex beat", "Doppler"]} />
+            <NurseEntrySelect label="Pulse site" value={pulseSite} onChange={setPulseSite} options={["Radial", "Brachial", "Carotid", "Femoral", "Pedal"]} />
+            <NurseEntrySelect label="Pulse quality" value={pulseQuality} onChange={setPulseQuality} options={["Normal", "Weak", "Bounding", "Thready", "Not palpable"]} />
+            <NurseEntrySelect label="Pulse action taken" value={pulseAction} onChange={setPulseAction} options={["No immediate action", "Repeat reading", "Inform duty doctor", "Start escalation", "Document and observe"]} />
+
+            <NurseEntrySectionTitle>Neurology, output and status</NurseEntrySectionTitle>
             <VitalNumberInput label="Temperature" value={temperature} onChange={setTemperature} suffix="deg C" />
-            <NativeSelect label="GCS score" value={gcsScore} onChange={setGcsScore} options={["15/Awake and alert", "14/Confused", "13/Drowsy", "12/Responds to voice", "9-11/Serious", "3-8/Critical"]} />
+            <NurseEntrySelect label="GCS score" value={gcsScore} onChange={setGcsScore} options={["15/Awake and alert", "14/Confused", "13/Drowsy", "12/Responds to voice", "9-11/Serious", "3-8/Critical"]} />
             <VitalNumberInput label="Pain score" value={painScore} onChange={setPainScore} suffix="/10" />
             <VitalNumberInput label="Urine output" value={urineOutput} onChange={setUrineOutput} suffix="ml/hr" />
-            <div className="rounded-md border border-border bg-surface-muted p-3">
+            <div className="min-h-[74px] rounded-md border border-border bg-surface-muted p-3">
               <div className="text-[11px] font-medium uppercase text-muted-foreground">Pulse deficit</div>
               <div className="mt-1 text-lg font-semibold text-foreground">{pulseDeficit} bpm</div>
               <span className={`mt-2 inline-flex rounded-full border px-2 py-0.5 text-[11px] font-semibold ${pulseDeficit > 0 ? riskBadgeClass("Warning") : riskBadgeClass("Normal")}`}>
@@ -20814,7 +20563,7 @@ function NurseVitalsEntryForm() {
               </span>
             </div>
             <ObservationStatusPreview riskLevel={riskLevel} />
-            <label className="space-y-1 text-sm md:col-span-2 xl:col-span-4">
+            <label className="space-y-1 text-sm sm:col-span-2 lg:col-span-3 2xl:col-span-4">
               <span className="font-medium text-foreground">Nurse notes</span>
               <textarea className="min-h-24 w-full rounded-md border border-input bg-background p-3 text-sm outline-none focus:ring-2 focus:ring-ring/20" defaultValue="Patient monitored. Duty doctor to be informed if SpO2, BP, GCS, or urine output worsens." />
             </label>
@@ -20834,9 +20583,46 @@ function NurseVitalsEntryForm() {
   );
 }
 
+function NurseEntrySectionTitle({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="sm:col-span-2 lg:col-span-3 2xl:col-span-4">
+      <div className="border-b border-border pb-2 pt-1 text-xs font-bold uppercase tracking-wide text-muted-foreground">
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function NurseEntrySelect({
+  label,
+  value,
+  onChange,
+  options,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  options: string[];
+}) {
+  return (
+    <label className="min-h-[66px] space-y-1 text-sm">
+      <span className="font-medium text-foreground">{label}</span>
+      <select
+        className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/20"
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+      >
+        {options.map((option) => (
+          <option key={option}>{option}</option>
+        ))}
+      </select>
+    </label>
+  );
+}
+
 function VitalNumberInput({ label, value, onChange, suffix }: { label: string; value: string; onChange: (value: string) => void; suffix: string }) {
   return (
-    <label className="space-y-1 text-sm">
+    <label className="min-h-[66px] space-y-1 text-sm">
       <span className="font-medium text-foreground">{label}</span>
       <div className="flex rounded-md border border-input bg-background focus-within:ring-2 focus-within:ring-ring/20">
         <input className="h-10 min-w-0 flex-1 rounded-l-md bg-transparent px-3 text-sm outline-none" inputMode="decimal" value={value} onChange={(event) => onChange(event.target.value)} />
@@ -20848,14 +20634,13 @@ function VitalNumberInput({ label, value, onChange, suffix }: { label: string; v
 
 function BloodPressureInput({ sys, dia, setSys, setDia }: { sys: string; dia: string; setSys: (value: string) => void; setDia: (value: string) => void }) {
   return (
-    <label className="space-y-1 text-sm">
+    <label className="min-h-[66px] space-y-1 text-sm">
       <span className="font-medium text-foreground">Blood pressure</span>
       <div className="grid grid-cols-[1fr_auto_1fr] items-center rounded-md border border-input bg-background focus-within:ring-2 focus-within:ring-ring/20">
         <input className="h-10 min-w-0 rounded-l-md bg-transparent px-3 text-sm outline-none" inputMode="numeric" value={sys} onChange={(event) => setSys(event.target.value)} />
         <span className="text-xs font-semibold text-muted-foreground">/</span>
         <input className="h-10 min-w-0 rounded-r-md bg-transparent px-3 text-sm outline-none" inputMode="numeric" value={dia} onChange={(event) => setDia(event.target.value)} />
       </div>
-      <span className="text-[11px] text-muted-foreground">sys / dia mmHg</span>
     </label>
   );
 }
@@ -20870,7 +20655,7 @@ function ObservationStatusPreview({ riskLevel }: { riskLevel: ObservationRisk })
         : ["Safe", "Routine"];
 
   return (
-    <div className="rounded-md border border-border bg-surface-muted p-3">
+    <div className="min-h-[74px] rounded-md border border-border bg-surface-muted p-3">
       <div className="text-[11px] font-medium uppercase text-muted-foreground">System status</div>
       <div className="mt-2 flex flex-wrap gap-2">
         {preview.map((item) => <span className={`rounded-full border px-3 py-1 text-xs font-semibold ${riskBadgeClass(riskLevel)}`} key={item}>{item}</span>)}
@@ -25106,7 +24891,6 @@ function SupervisionNotePanel({
       <CardHeader className="border-b border-border bg-surface-muted">
         <div>
           <CardTitle>Task notes and follow-up</CardTitle>
-          <CardDescription>Structured note for head nurse review, ward nurse activity, handover, and audit trail.</CardDescription>
         </div>
       </CardHeader>
       <CardContent className="space-y-3 p-4">
@@ -25795,24 +25579,6 @@ function TransferDischarge() {
         <IcuCommandPaginationControls {...pagination} />
       </div>
 
-      <div className="grid gap-3 xl:grid-cols-3">
-        <IcuDischargeScenarioStrip
-          title="Routine ICU exit"
-          tone="success"
-          items={["Ward / HDU bed confirmed", "Doctor and nurse handover accepted", "ICU bed goes to cleaning after transfer"]}
-        />
-        <IcuDischargeScenarioStrip
-          title="High-risk movement"
-          tone="warning"
-          items={["Oxygen / ventilator support planned", "Transport equipment confirmed", "Escalate if night transfer delayed"]}
-        />
-        <IcuDischargeScenarioStrip
-          title="Exceptional workflow"
-          tone="critical"
-          items={["LAMA / DAMA consent", "Death workflow documentation", "External transfer acceptance"]}
-        />
-      </div>
-
       <IcuDischargeWorkflowDialog
         initialTab={activeWorkflow?.initialTab ?? "workflow"}
         row={activeWorkflow?.row ?? null}
@@ -25915,9 +25681,8 @@ function IcuDischargeBoardRow({
       </td>
       <td className="px-4 py-2 align-middle">
         <div className="min-h-16">
-          <p className="text-sm font-bold text-slate-950">{row.patient.diagnosis}</p>
+          <p className="text-sm font-bold text-slate-950">{row.orderType}</p>
           <p className="mt-1 text-xs text-slate-500">{row.patient.unit} | {row.patient.assignedWardNurse}</p>
-          <p className="mt-2 text-xs font-semibold text-slate-700">{row.orderType}</p>
         </div>
       </td>
       <td className="px-2 py-2 text-center align-middle">
@@ -26026,20 +25791,6 @@ function IcuDischargeActionCell({
     <button className="inline-flex w-full justify-center" type="button" onClick={onClick} title={`${title} - ${detail}`}>
       {content}
     </button>
-  );
-}
-
-function IcuDischargeScenarioStrip({ title, tone, items }: { title: string; tone: DashboardCellTone; items: string[] }) {
-  return (
-    <div className={cn("rounded-md border p-3", dashboardToneSurfaceClass(tone))}>
-      <div className="flex items-center justify-between gap-3">
-        <p className="text-sm font-bold">{title}</p>
-        <span className={cn("rounded-full border px-2.5 py-1 text-xs font-bold", dashboardTonePillClass(tone))}>{items.length} checks</span>
-      </div>
-      <div className="mt-2 grid gap-1">
-        {items.map((item) => <p className="text-xs font-medium" key={item}>{item}</p>)}
-      </div>
-    </div>
   );
 }
 

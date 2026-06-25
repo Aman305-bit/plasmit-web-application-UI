@@ -202,6 +202,7 @@ export const navigationItems: NavigationItem[] = [
         children: [
           { id: "icu-command-patient-overview", label: "Patient Overview", route: "/icu-command-center/clinical-workspace/patient-overview", status: "ready" },
           { id: "icu-command-progress-notes", label: "Progress Notes", route: "/icu-command-center/clinical-workspace/progress-notes", status: "ready" },
+          { id: "icu-command-doctor-order-entry", label: "Doctor Order Entry", route: "/icu-command-center/clinical-workspace/doctor-order-entry", status: "ready" },
           { id: "icu-command-orders-care", label: "Orders & Care Plans", route: "/icu-command-center/clinical-workspace/orders-care-plans", status: "ready" },
           { id: "icu-command-family-communication", label: "Family Communication", route: "/icu-command-center/clinical-workspace/family-communication", status: "ready" },
         ],
