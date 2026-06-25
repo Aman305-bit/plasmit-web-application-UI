@@ -1,13 +1,10 @@
 {
-  "buildCommand": "npm run build",
-  "devCommand": "npm run dev",
-  "installCommand": "npm install",
   "framework": "nextjs",
-  "env": {
-    "NEXT_PUBLIC_API_URL": ""
-  },
+  "buildCommand": "npm run build",
+  "installCommand": "npm install",
   "git": {
     "deploymentEnabled": {
+      "main": true,
       "dev": true
     }
   }
