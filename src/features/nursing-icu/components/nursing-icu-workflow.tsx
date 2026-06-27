@@ -21,6 +21,7 @@ import {
   Filter,
   HeartPulse,
   ListChecks,
+  LockKeyhole,
   MonitorDot,
   MoreHorizontal,
   Pill,
@@ -241,6 +242,7 @@ type AdmissionDraft = {
   medication: string;
   pastMedication: string;
   currentMedication: string;
+  allergy: string;
   highAlertMedications: string;
   otherRelevantInformation: string;
   procedures: string;
@@ -313,7 +315,17 @@ type AdmissionPatientCandidate = {
   handoverBy: string;
   acceptanceStatus: string;
   notes: string;
+  allergy?: string;
   duplicateBlock?: boolean;
+};
+
+type EmergencyAdmissionQuickDraft = {
+  patientName: string;
+  ageGender: string;
+  mobile: string;
+  relativeName: string;
+  diagnosis: string;
+  allergy: string;
 };
 
 type IcuAdmissionBedOption = {
@@ -742,6 +754,17 @@ function generatedAdmissionIdentity(source: string) {
   };
 }
 
+function createEmergencyAdmissionQuickDraft(patientName = ""): EmergencyAdmissionQuickDraft {
+  return {
+    patientName,
+    ageGender: "",
+    mobile: "",
+    relativeName: "",
+    diagnosis: "",
+    allergy: "",
+  };
+}
+
 function admissionDefaultPastMedication(candidate?: AdmissionPatientCandidate) {
   if (!candidate) return "Not documented";
   if (candidate.diagnosis.toLowerCase().includes("cabg")) return "Aspirin, statin, beta blocker as per cardiac history";
@@ -794,47 +817,80 @@ function admissionDefaultPlannedCare(candidate?: AdmissionPatientCandidate) {
 }
 
 function createEmptyAdmissionDraft(): AdmissionDraft {
-  const candidate = admissionPatientCandidates.find((patient) => !patient.duplicateBlock) ?? admissionPatientCandidates[0];
-  const source = candidate?.source ?? "Emergency";
+  const source = "Emergency";
+  const identity = generatedAdmissionIdentity(source);
   return {
-    patientId: candidate?.id ?? "",
-    patientName: candidate?.patientName ?? "",
-    mrn: candidate?.mrn || generatedAdmissionIdentity(source).mrn,
-    icuAdmissionNo: generatedAdmissionIdentity(source).icuAdmissionNo,
-    ageGender: candidate?.ageGender ?? "",
+    patientId: "",
+    patientName: "",
+    mrn: "",
+    icuAdmissionNo: identity.icuAdmissionNo,
+    ageGender: "",
     source,
-    currentLocation: candidate?.currentLocation ?? "",
-    patientStatus: candidate?.patientStatus ?? "ICU request pending",
-    sourceDetail: candidate?.sourceDetail ?? "",
-    handoverBy: candidate?.handoverBy ?? "",
-    diagnosis: candidate?.diagnosis ?? "",
-    condition: candidate?.condition ?? "Critical",
-    recoveryStatus: candidate?.condition === "Ready for transfer" ? "Revived" : candidate?.condition === "Stable ICU care" ? "Reviving" : "Other",
-    pendingInvestigations: admissionDefaultPendingInvestigations(candidate),
-    plannedCareTreatment: admissionDefaultPlannedCare(candidate),
-    bedNo: candidate?.bedNo ?? "ICU-C05",
-    unit: candidate?.unit ?? "Medical ICU",
-    nurse: candidate?.nurse ?? "Unit Nurse Priya",
-    doctor: candidate?.doctor ?? "Dr. Sameer Mehta",
-    admittingConsultant: candidate?.doctor ?? "Dr. Sameer Mehta",
-    admittingTeam: normalizeAdmittingUnit(candidate?.admittingTeam ?? getAdmittingTeamDefault(source, candidate?.unit)),
-    acceptanceStatus: candidate?.acceptanceStatus ?? "Pending ICU doctor acceptance",
-    ventilator: candidate?.ventilator ?? "NIV support",
-    devices: candidate?.devices ?? "Monitor, infusion pump",
-    medication: candidate?.medication ?? "Antibiotics, fluids, vasopressor review",
-    pastMedication: admissionDefaultPastMedication(candidate),
-    currentMedication: candidate?.medication ?? "Antibiotics, fluids, vasopressor review",
-    highAlertMedications: admissionDefaultHighAlertMedication(candidate),
-    otherRelevantInformation: admissionDefaultOtherRelevantInformation(candidate),
-    procedures: admissionDefaultProcedures(candidate),
-    handedOver: candidate?.handoverBy ?? "ER nurse / source unit team",
-    takenOverBy: candidate?.nurse ?? "Unit Nurse Priya",
+    currentLocation: "",
+    patientStatus: "ICU request pending",
+    sourceDetail: "",
+    handoverBy: getAdmissionHandoverOptions(source)[0],
+    diagnosis: "",
+    condition: "Critical",
+    recoveryStatus: "Other",
+    pendingInvestigations: "",
+    plannedCareTreatment: "",
+    bedNo: "ICU-C05",
+    unit: "Medical ICU",
+    nurse: "Unit Nurse Priya",
+    doctor: "Dr. Sameer Mehta",
+    admittingConsultant: "Dr. Sameer Mehta",
+    admittingTeam: normalizeAdmittingUnit(getAdmittingTeamDefault(source, "Medical ICU")),
+    acceptanceStatus: "Pending ICU doctor acceptance",
+    ventilator: "NIV support",
+    devices: "Monitor, infusion pump",
+    medication: "",
+    pastMedication: "",
+    currentMedication: "",
+    allergy: "",
+    highAlertMedications: "",
+    otherRelevantInformation: "",
+    procedures: "",
+    handedOver: "ER nurse / source unit team",
+    takenOverBy: "Unit Nurse Priya",
     signatureConfirmation: "Pending bedside confirmation",
-    nursingNotes: candidate?.notes ?? "",
-    risk: candidate?.risk ?? "High",
-    isolation: candidate?.isolation ?? "No",
+    nursingNotes: "",
+    risk: "High",
+    isolation: "No",
     readiness: admissionReadinessItems.slice(0, 4).join("|"),
-    notes: candidate?.notes ?? "",
+    notes: "",
+  };
+}
+
+function createEmergencyAdmissionCandidate(form: EmergencyAdmissionQuickDraft, index: number): AdmissionPatientCandidate {
+  const identity = generatedAdmissionIdentity("Emergency direct ICU");
+  const contactNote = [form.mobile.trim(), form.relativeName.trim()].filter(Boolean).join(" | ");
+
+  return {
+    id: `emergency-icu-${Date.now()}-${index + 1}`,
+    patientName: form.patientName.trim(),
+    mrn: identity.mrn,
+    ageGender: form.ageGender.trim(),
+    source: "Emergency direct ICU",
+    currentLocation: "Emergency triage red zone",
+    patientStatus: "Emergency direct ICU",
+    diagnosis: form.diagnosis.trim(),
+    condition: "Critical",
+    unit: "Medical ICU",
+    bedNo: "ICU-C05",
+    nurse: "Unit Nurse Priya",
+    doctor: "Dr. Sameer Mehta",
+    admittingTeam: "ER + ICU rapid admit unit",
+    ventilator: "NIV support",
+    devices: "Monitor, oxygen, suction",
+    medication: "",
+    risk: "Critical",
+    isolation: "No",
+    sourceDetail: contactNote || "Emergency direct ICU admission",
+    handoverBy: "ER nurse / source unit team",
+    acceptanceStatus: "Pending ICU doctor acceptance",
+    notes: contactNote,
+    allergy: form.allergy.trim(),
   };
 }
 
@@ -871,6 +927,7 @@ function applyAdmissionCandidate(candidate: AdmissionPatientCandidate): Admissio
     medication: candidate.medication,
     pastMedication: admissionDefaultPastMedication(candidate),
     currentMedication: candidate.medication,
+    allergy: candidate.allergy ?? "",
     highAlertMedications: admissionDefaultHighAlertMedication(candidate),
     otherRelevantInformation: admissionDefaultOtherRelevantInformation(candidate),
     procedures: admissionDefaultProcedures(candidate),
@@ -1627,13 +1684,47 @@ export function AdmissionWizardWorkspace() {
   const [step, setStep] = React.useState(0);
   const [draft, setDraft] = React.useState<AdmissionDraft>(() => createEmptyAdmissionDraft());
   const [created, setCreated] = React.useState<Array<AdmissionDraft & { id: string; status: string }>>([]);
+  const [localAdmissionCandidates, setLocalAdmissionCandidates] = React.useState<AdmissionPatientCandidate[]>([]);
   const [patientQuery, setPatientQuery] = React.useState("");
+  const [showEmergencyCreate, setShowEmergencyCreate] = React.useState(false);
+  const [emergencyDraft, setEmergencyDraft] = React.useState<EmergencyAdmissionQuickDraft>(() => createEmergencyAdmissionQuickDraft());
+
+  const admissionCandidateRows = React.useMemo(() => [...localAdmissionCandidates, ...admissionPatientCandidates], [localAdmissionCandidates]);
+  const findAdmissionCandidate = React.useCallback(
+    (patientId: string) => admissionCandidateRows.find((patient) => patient.id === patientId),
+    [admissionCandidateRows],
+  );
 
   const updateDraft = (key: keyof AdmissionDraft, value: string) => setDraft((current) => ({ ...current, [key]: value }));
   const updateAdmissionPatient = (patientId: string) => {
-    const candidate = getAdmissionCandidate(patientId);
+    const candidate = findAdmissionCandidate(patientId);
     if (!candidate) return;
     setDraft(applyAdmissionCandidate(candidate));
+    setPatientQuery(candidate.patientName);
+    setShowEmergencyCreate(false);
+  };
+  const updateEmergencyDraft = (key: keyof EmergencyAdmissionQuickDraft, value: string) => {
+    setEmergencyDraft((current) => ({ ...current, [key]: value }));
+  };
+  const openEmergencyCreate = () => {
+    setEmergencyDraft((current) => ({
+      ...current,
+      patientName: current.patientName || patientQuery.trim(),
+    }));
+    setShowEmergencyCreate(true);
+  };
+  const createEmergencyAdmission = () => {
+    if (!emergencyDraft.patientName.trim() || !emergencyDraft.ageGender.trim() || !emergencyDraft.diagnosis.trim()) {
+      toast.error("Patient name, age/sex, and diagnosis are required.");
+      return;
+    }
+    const candidate = createEmergencyAdmissionCandidate(emergencyDraft, localAdmissionCandidates.length);
+    setLocalAdmissionCandidates((current) => [candidate, ...current]);
+    setDraft(applyAdmissionCandidate(candidate));
+    setPatientQuery(candidate.patientName);
+    setEmergencyDraft(createEmergencyAdmissionQuickDraft());
+    setShowEmergencyCreate(false);
+    toast.success(`${candidate.patientName} added for ICU admission`);
   };
   const updateAdmissionSource = (source: string) => {
     setDraft((current) => ({
@@ -1657,6 +1748,8 @@ export function AdmissionWizardWorkspace() {
   const resetDraft = () => {
     setDraft(createEmptyAdmissionDraft());
     setPatientQuery("");
+    setShowEmergencyCreate(false);
+    setEmergencyDraft(createEmergencyAdmissionQuickDraft());
   };
   const toggleReadiness = (item: string) => {
     setDraft((current) => {
@@ -1667,15 +1760,12 @@ export function AdmissionWizardWorkspace() {
   };
   const filteredPatientCandidates = React.useMemo(() => {
     const query = patientQuery.trim().toLowerCase();
-    const rows = admissionPatientCandidates.filter((patient) => {
+    if (!query) return [];
+    return admissionCandidateRows.filter((patient) => {
       const text = `${patient.patientName} ${patient.mrn} ${patient.currentLocation} ${patient.patientStatus} ${patient.source} ${patient.diagnosis}`.toLowerCase();
-      return !query || text.includes(query);
+      return text.includes(query);
     });
-    return rows.some((patient) => patient.id === draft.patientId)
-      ? rows
-      : [getAdmissionCandidate(draft.patientId), ...rows].filter(Boolean) as AdmissionPatientCandidate[];
-  }, [draft.patientId, patientQuery]);
-  const selectedCandidate = getAdmissionCandidate(draft.patientId);
+  }, [admissionCandidateRows, patientQuery]);
   const availableAdmissionBeds = React.useMemo(() => getAssignableAdmissionBedsForUnit(draft.unit), [draft.unit]);
   const availableAdmissionBedOptions = React.useMemo(() => availableAdmissionBeds.map((bed) => bed.bedNo), [availableAdmissionBeds]);
   const selectedBed = getAdmissionBed(draft.bedNo);
@@ -1708,7 +1798,6 @@ export function AdmissionWizardWorkspace() {
         <CardHeader>
           <div>
             <CardTitle>ICU Admission Wizard</CardTitle>
-            <CardDescription>Patient, status, bed, device, medication, handover, and risk capture.</CardDescription>
           </div>
         </CardHeader>
         <CardContent className="space-y-3">
@@ -1739,23 +1828,36 @@ export function AdmissionWizardWorkspace() {
         <CardHeader>
           <div>
             <CardTitle>{admissionSteps[step]}</CardTitle>
-            <CardDescription>Step {step + 1} of {admissionSteps.length}</CardDescription>
           </div>
           <Badge tone={toneForStatus(step === admissionSteps.length - 1 ? "Ready" : "In progress")}>{step === admissionSteps.length - 1 ? "Review" : "In progress"}</Badge>
         </CardHeader>
         <CardContent className="space-y-4">
           {step === 0 ? (
             <FormGrid>
-              <TextField label="Search patient / MRN / location" value={patientQuery} onChange={setPatientQuery} placeholder="Search admitted, ER, ward, OT, external transfer..." wide />
-              <SelectField label="Patient / MRN" value={draft.patientId} onChange={updateAdmissionPatient} options={filteredPatientCandidates.map((patient) => patient.id)} renderOption={admissionCandidateLabel} wide />
+              <TextField label="Search patient / MRN / location" value={patientQuery} onChange={setPatientQuery} placeholder="Search patient name, MRN, ER, ward, OT, external transfer..." wide />
+              {patientQuery.trim() ? (
+                <AdmissionPatientSearchRows
+                  rows={filteredPatientCandidates}
+                  searchedText={patientQuery}
+                  selectedPatientId={draft.patientId}
+                  onCreate={openEmergencyCreate}
+                  onSelect={updateAdmissionPatient}
+                />
+              ) : null}
+              {showEmergencyCreate ? (
+                <EmergencyAdmissionCreatePanel
+                  draft={emergencyDraft}
+                  onCancel={() => setShowEmergencyCreate(false)}
+                  onChange={updateEmergencyDraft}
+                  onCreate={createEmergencyAdmission}
+                />
+              ) : null}
               <SelectField label="Admission origin" value={draft.source} onChange={updateAdmissionSource} options={admissionSourceOptions} />
-              <ReadOnlyField label="Patient name" value={draft.patientName} />
-              <ReadOnlyField label="MRN / UHID" value={draft.mrn} />
+              <ReadOnlyField label="Selected patient" value={draft.patientName && draft.mrn ? `${draft.patientName} | ${draft.mrn}` : ""} />
               <ReadOnlyField label="ICU Admission No" value={draft.icuAdmissionNo} />
               <ReadOnlyField label="Age / gender" value={draft.ageGender} />
               <ReadOnlyField label="Location" value={draft.currentLocation} />
               <ReadOnlyField label="Current status" value={draft.patientStatus} />
-              <AdmissionCandidatePanel candidate={selectedCandidate} blockReason={admissionBlockReason} />
             </FormGrid>
           ) : null}
 
@@ -1775,8 +1877,6 @@ export function AdmissionWizardWorkspace() {
                 <TextAreaField half label="Planned Care / Treatment" value={draft.plannedCareTreatment} onChange={(value) => updateDraft("plannedCareTreatment", value)} placeholder="ICU plan, treatment goal, monitoring plan, escalation plan..." />
                 <TextField label={getAdmissionScenario(draft.source).detailLabel} value={draft.sourceDetail} onChange={(value) => updateDraft("sourceDetail", value)} placeholder="Admission source context..." wide />
               </AdmissionFormSection>
-
-              <AdmissionSourceScenarioPanel source={draft.source} />
             </div>
           ) : null}
 
@@ -1796,7 +1896,6 @@ export function AdmissionWizardWorkspace() {
               <SelectField label="Admitting doctor" value={draft.doctor} onChange={(value) => updateDraft("doctor", value)} options={["Dr. Sameer Mehta", "Dr. Neha Malik", "Dr. Imran Shah", "Dr. Aman Verma"]} />
               <SelectField label="Admitting consultant" value={draft.admittingConsultant} onChange={(value) => updateDraft("admittingConsultant", value)} options={admittingConsultantOptions} />
               <SelectField label="Admitting unit" value={draft.admittingTeam} onChange={(value) => updateDraft("admittingTeam", value)} options={admittingTeamOptions} />
-              <AdmissionBedPanel bed={selectedBed} />
               <AdmissionReadinessChecklist selected={selectedReadiness} onToggle={toggleReadiness} />
             </FormGrid>
           ) : null}
@@ -1809,6 +1908,7 @@ export function AdmissionWizardWorkspace() {
                   updateDraft("currentMedication", value);
                   updateDraft("medication", value);
                 }} placeholder="Antibiotics, infusions, emergency medicines, active ICU medicines..." />
+                <TextAreaField half label="Allergy" value={draft.allergy} onChange={(value) => updateDraft("allergy", value)} placeholder="Drug, food, latex, contrast, or no known allergy..." />
                 <TextAreaField half label="High-Alert Medications" value={draft.highAlertMedications} onChange={(value) => updateDraft("highAlertMedications", value)} placeholder="Insulin, vasopressor, anticoagulant, concentrated electrolytes, narcotics..." />
                 <TextAreaField half label="Other Relevant Information" value={draft.otherRelevantInformation} onChange={(value) => updateDraft("otherRelevantInformation", value)} placeholder="Allergy, implants, NPO, infection risk, family instruction, consent context..." />
               </AdmissionFormSection>
@@ -4051,12 +4151,6 @@ function doctorEntryStatusTone(status: DoctorEntryOrderStatus): StatusTone {
   return "muted";
 }
 
-function doctorEntryPriorityTone(priority: DoctorEntryOrderPriority): StatusTone {
-  if (priority === "STAT") return "danger";
-  if (priority === "High") return "warning";
-  return "info";
-}
-
 function doctorEntryPrimaryLabel(category: DoctorEntryOrderCategory) {
   if (category === "Medication") return "Medicine";
   if (category === "Investigation") return "Test / panel";
@@ -4604,7 +4698,10 @@ export function MedicationTimelineWorkspace() {
 }
 
 export function DoctorOrderEntryWorkspace() {
-  const [selectedPatientId, setSelectedPatientId] = React.useState(icuPatients[0]?.id ?? "");
+  const searchParams = useSearchParams();
+  const queryPatientId = searchParams.get("patientId") ?? "";
+  const initialPatientId = icuPatients.some((patient) => patient.id === queryPatientId) ? queryPatientId : (icuPatients[0]?.id ?? "");
+  const [selectedPatientId, setSelectedPatientId] = React.useState(initialPatientId);
   const [category, setCategory] = React.useState<DoctorEntryOrderCategory>("Medication");
   const [draft, setDraft] = React.useState<DoctorEntryDraft>(() => createDoctorEntryDraft("Medication"));
   const [orders, setOrders] = React.useState<DoctorEntryOrder[]>(initialDoctorEntryOrders);
@@ -4635,6 +4732,12 @@ export function DoctorOrderEntryWorkspace() {
       doctor: patient?.admittingDoctor ?? patient?.dutyDoctor ?? current.doctor,
     }));
   };
+
+  React.useEffect(() => {
+    if (queryPatientId && queryPatientId !== selectedPatientId && icuPatients.some((patient) => patient.id === queryPatientId)) {
+      syncPatient(queryPatientId);
+    }
+  }, [queryPatientId, selectedPatientId]);
 
   const syncCategory = (nextCategory: DoctorEntryOrderCategory) => {
     setCategory(nextCategory);
@@ -4704,21 +4807,21 @@ export function DoctorOrderEntryWorkspace() {
       ) : null}
 
       <Card className="overflow-hidden">
-        <CardContent className="grid gap-3 p-4 lg:grid-cols-[minmax(260px,1fr)_220px_180px_180px] lg:items-end">
-          <label className="space-y-1 text-sm">
+        <CardContent className="grid gap-3 p-4 lg:grid-cols-[minmax(260px,1fr)_220px_180px] lg:items-end">
+          <div className="space-y-1 text-sm">
             <span className="font-medium text-foreground">Patient / bed</span>
-            <select
-              className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/20"
-              value={selectedPatientId}
-              onChange={(event) => syncPatient(event.target.value)}
-            >
-              {icuPatients.map((patient) => (
-                <option key={patient.id} value={patient.id}>{patient.bedNo} - {patient.patientName}</option>
-              ))}
-            </select>
-          </label>
-          <SelectField label="Doctor" value={draft.doctor} onChange={(value) => setDraft((current) => ({ ...current, doctor: value }))} options={["Dr. Sameer Mehta", "Dr. Neha Malik", "Dr. Imran Shah", "Dr. Aman Verma"]} />
-          <SelectField label="Priority" value={draft.priority} onChange={(value) => setDraft((current) => ({ ...current, priority: value as DoctorEntryOrderPriority }))} options={["Routine", "High", "STAT"]} />
+            <div className="flex h-10 items-center justify-between rounded-md border border-input bg-surface-muted px-3 text-sm">
+              <span className="truncate font-semibold text-foreground">{selectedPatient?.bedNo} - {selectedPatient?.patientName}</span>
+              <LockKeyhole className="h-4 w-4 shrink-0 text-muted-foreground" />
+            </div>
+          </div>
+          <div className="space-y-1 text-sm">
+            <span className="font-medium text-foreground">Doctor</span>
+            <div className="flex h-10 items-center justify-between rounded-md border border-input bg-surface-muted px-3 text-sm">
+              <span className="truncate font-semibold text-foreground">{draft.doctor}</span>
+              <LockKeyhole className="h-4 w-4 shrink-0 text-muted-foreground" />
+            </div>
+          </div>
           <SelectField label="Send to" value={draft.assignedTo} onChange={(value) => setDraft((current) => ({ ...current, assignedTo: value }))} options={doctorEntryAssignments} />
         </CardContent>
       </Card>
@@ -4744,7 +4847,6 @@ export function DoctorOrderEntryWorkspace() {
           <CardHeader className="border-b border-border bg-white">
             <CardTitle>New order</CardTitle>
             <div className="flex items-center gap-2">
-              <StatusPill tone={doctorEntryPriorityTone(draft.priority)}>{draft.priority}</StatusPill>
               <Button aria-label="Toggle new order" size="sm" variant="ghost" onClick={() => setNewOrderOpen((open) => !open)}>
                 <ChevronDown className={cn("h-4 w-4 transition-transform", newOrderOpen ? "rotate-180" : "")} />
               </Button>
@@ -4781,7 +4883,6 @@ export function DoctorOrderEntryWorkspace() {
                             </p>
                             <p className="mt-1 line-clamp-1 text-xs text-muted-foreground">{template.instruction}</p>
                           </div>
-                          <StatusPill tone={doctorEntryPriorityTone(template.priority)}>{template.priority}</StatusPill>
                         </div>
                         <div className="mt-2 flex flex-wrap gap-2 text-xs text-muted-foreground">
                           <span>{template.timing}</span>
@@ -7358,6 +7459,112 @@ function AdmissionReadinessChecklist({ selected, onToggle }: { selected: string[
   );
 }
 
+function AdmissionPatientSearchRows({
+  rows,
+  searchedText,
+  selectedPatientId,
+  onCreate,
+  onSelect,
+}: {
+  rows: AdmissionPatientCandidate[];
+  searchedText: string;
+  selectedPatientId: string;
+  onCreate: () => void;
+  onSelect: (patientId: string) => void;
+}) {
+  if (!rows.length) {
+    return (
+      <div className="flex flex-col gap-3 rounded-md border border-dashed border-border bg-surface p-4 text-sm md:col-span-2 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <p className="font-semibold text-foreground">No matching patient found</p>
+          <p className="mt-1 text-xs text-muted-foreground">{searchedText.trim()}</p>
+        </div>
+        <Button type="button" onClick={onCreate}>Create Emergency ICU Admission</Button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="overflow-hidden rounded-md border border-border bg-background md:col-span-2">
+      <div className="flex items-center justify-between gap-3 border-b border-border bg-surface px-3 py-2">
+        <p className="text-xs font-semibold text-muted-foreground">{rows.length} match(es)</p>
+        <Button type="button" variant="outline" onClick={onCreate}>Create Emergency ICU Admission</Button>
+      </div>
+      <div className="grid grid-cols-[minmax(180px,1.2fr)_minmax(180px,1fr)_minmax(160px,0.8fr)_120px] gap-3 border-b border-border bg-surface-muted px-3 py-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+        <span>Patient</span>
+        <span>Location</span>
+        <span>Status</span>
+        <span className="text-right">Select</span>
+      </div>
+      <div className="max-h-72 overflow-auto">
+        {rows.map((patient) => {
+          const selected = patient.id === selectedPatientId;
+          return (
+            <button
+              className={cn(
+                "grid w-full grid-cols-[minmax(180px,1.2fr)_minmax(180px,1fr)_minmax(160px,0.8fr)_120px] gap-3 border-b border-border px-3 py-3 text-left text-sm last:border-b-0 hover:bg-primary/5",
+                selected ? "bg-primary/5" : "bg-background",
+              )}
+              key={patient.id}
+              type="button"
+              onClick={() => onSelect(patient.id)}
+            >
+              <span className="min-w-0">
+                <span className="block truncate font-semibold text-foreground">{patient.patientName}</span>
+                <span className="block truncate text-xs text-muted-foreground">{patient.mrn} | {patient.ageGender}</span>
+              </span>
+              <span className="min-w-0">
+                <span className="block truncate font-medium text-foreground">{patient.currentLocation}</span>
+                <span className="block truncate text-xs text-muted-foreground">{patient.source}</span>
+              </span>
+              <span className="flex items-center">
+                <StatusPill tone={admissionPatientTone(patient.patientStatus)}>{patient.patientStatus}</StatusPill>
+              </span>
+              <span className="flex justify-end">
+                <span className={cn("rounded-md border px-3 py-1 text-xs font-semibold", selected ? "border-primary bg-primary text-primary-foreground" : "border-border bg-background text-foreground")}>
+                  {selected ? "Selected" : "Select"}
+                </span>
+              </span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function EmergencyAdmissionCreatePanel({
+  draft,
+  onCancel,
+  onChange,
+  onCreate,
+}: {
+  draft: EmergencyAdmissionQuickDraft;
+  onCancel: () => void;
+  onChange: (key: keyof EmergencyAdmissionQuickDraft, value: string) => void;
+  onCreate: () => void;
+}) {
+  return (
+    <div className="rounded-md border border-primary/30 bg-primary/5 p-3 md:col-span-2">
+      <div className="mb-3 flex flex-col gap-2 border-b border-primary/20 pb-3 sm:flex-row sm:items-center sm:justify-between">
+        <p className="text-sm font-semibold text-foreground">Create Emergency ICU Admission</p>
+        <div className="flex gap-2">
+          <Button type="button" variant="outline" onClick={onCancel}>Cancel</Button>
+          <Button type="button" onClick={onCreate}>Create & Select</Button>
+        </div>
+      </div>
+      <div className="grid gap-3 md:grid-cols-2">
+        <TextField label="Patient name" value={draft.patientName} onChange={(value) => onChange("patientName", value)} placeholder="Patient name" />
+        <TextField label="Age / sex" value={draft.ageGender} onChange={(value) => onChange("ageGender", value)} placeholder="45/M" />
+        <TextField label="Mobile" value={draft.mobile} onChange={(value) => onChange("mobile", value)} placeholder="Mobile number" />
+        <TextField label="Relative / attendant" value={draft.relativeName} onChange={(value) => onChange("relativeName", value)} placeholder="Relative name" />
+        <TextAreaField half label="Diagnosis / reason" value={draft.diagnosis} onChange={(value) => onChange("diagnosis", value)} placeholder="Reason for direct ICU admission" />
+        <TextAreaField half label="Allergy" value={draft.allergy} onChange={(value) => onChange("allergy", value)} placeholder="Known allergy or no known allergy" />
+      </div>
+    </div>
+  );
+}
+
 function AdmissionReview({ draft, blockReason, bed }: { draft: AdmissionDraft; blockReason: string; bed?: IcuAdmissionBedOption }) {
   const readiness = getReadinessValues(draft.readiness);
   return (
@@ -7416,6 +7623,7 @@ function AdmissionReview({ draft, blockReason, bed }: { draft: AdmissionDraft; b
           ["Risk", draft.risk],
           ["Isolation", draft.isolation],
           ["Current medication", draft.currentMedication],
+          ["Allergy", draft.allergy],
           ["High-alert medications", draft.highAlertMedications],
         ]} />
         <InfoPanel title="Medication history" rows={[

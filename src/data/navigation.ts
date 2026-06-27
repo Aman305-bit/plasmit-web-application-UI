@@ -191,6 +191,7 @@ export const navigationItems: NavigationItem[] = [
           { id: "icu-command-device-monitoring", label: "Device Monitoring", route: "/icu-command-center/critical-care/device-monitoring", status: "ready" },
           { id: "icu-command-alerts", label: "Clinical Alerts", route: "/icu-command-center/critical-care/clinical-alerts", status: "ready" },
           { id: "icu-command-rounds", label: "ICU Rounds", route: "/icu-command-center/critical-care/rounds", status: "ready" },
+          { id: "icu-command-round-2", label: "ICU Round 2", route: "/icu-command-center/critical-care/icu-round-2", status: "ready" },
           { id: "icu-command-escalation", label: "Escalation Center", route: "/icu-command-center/critical-care/escalation-center", status: "ready" },
         ],
       },
@@ -202,7 +203,6 @@ export const navigationItems: NavigationItem[] = [
         children: [
           { id: "icu-command-patient-overview", label: "Patient Overview", route: "/icu-command-center/clinical-workspace/patient-overview", status: "ready" },
           { id: "icu-command-progress-notes", label: "Progress Notes", route: "/icu-command-center/clinical-workspace/progress-notes", status: "ready" },
-          { id: "icu-command-doctor-order-entry", label: "Doctor Order Entry", route: "/icu-command-center/clinical-workspace/doctor-order-entry", status: "ready" },
           { id: "icu-command-orders-care", label: "Orders & Care Plans", route: "/icu-command-center/clinical-workspace/orders-care-plans", status: "ready" },
           { id: "icu-command-family-communication", label: "Family Communication", route: "/icu-command-center/clinical-workspace/family-communication", status: "ready" },
         ],
