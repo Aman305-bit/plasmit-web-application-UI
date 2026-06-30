@@ -61,6 +61,7 @@ import {
   WorkflowReportsWorkspace,
 } from "@/features/nursing-icu/components/nursing-icu-workflow";
 import { IntakeOutputWorkspace } from "@/features/nursing-icu/components/intake-output-workspace";
+import { VentilationChartWorkspace } from "@/features/nursing-icu/components/ventilation-chart";
 import { NotesPage } from "@/features/notes/notes-page";
 import { FamilyCommunicationWorkspace } from "@/features/nursing-icu/components/family-communication-workspace";
 import {
@@ -161,7 +162,7 @@ type NursingIcuPageId =
   | "reports";
 
 type IcuPatientDetailTab = "overview" | "monitoring" | "results" | "graph" | "orders" | "events" | "shift-summary" | "collaborate";
-type IcuMonitoringSubTab = "monitoring-overview" | "24h-chart" | "intake-output" | "device-snapshot";
+type IcuMonitoringSubTab = "monitoring-overview" | "24h-chart" | "ventilation" | "intake-output" | "device-snapshot";
 
 const pageMeta: Record<NursingIcuPageId, { title: string; description: string; icon: typeof HeartPulse }> = {
   dashboard: { title: "ICU Dashboard", description: "ICU census, alerts, bed occupancy, workload, pending activities, and shift summary.", icon: HeartPulse },
@@ -224,7 +225,7 @@ const pageMeta: Record<NursingIcuPageId, { title: string; description: string; i
   "iv-fluids": { title: "IV Fluid & Infusion Management", description: "Infusion pump, fluid rate, volume, remaining balance, pause/resume/stop, and completion alerts.", icon: Syringe },
   "blood-transfusion": { title: "Blood Transfusion", description: "Blood unit issue, crossmatch, start/end, pre/during/post vitals, reaction monitoring, and acknowledgements.", icon: Droplets },
   "doctor-rounds": { title: "Doctor Rounds", description: "Admitting doctor rounds, result review, care plan, discharge, transfer, surgery, and continue-ICU decisions.", icon: Stethoscope },
-  "icu-round-2": { title: "ICU Round 2", description: "Patient file, doctor orders, pending work, and round sign-off in one ICU doctor workflow.", icon: Stethoscope },
+  "icu-round-2": { title: "ICU Round", description: "Patient file, doctor orders, pending work, and round sign-off in one ICU doctor workflow.", icon: Stethoscope },
   "doctor-instructions": { title: "Doctor Instructions", description: "Instructions from admitting, consulting, and duty doctors assigned to nurses with due time and completion tracking.", icon: FileText },
   "lab-results": { title: "Lab Orders & Results", description: "ICU lab order status, sample status, result availability, critical result alerts, doctor review, and nurse follow-up.", icon: TestTube2 },
   "radiology-reports": { title: "Radiology Orders & Reports", description: "ICU radiology order status, modality, report availability, doctor review, and nursing follow-up.", icon: Activity },
@@ -294,7 +295,7 @@ const nursingIcuTabGroups: Array<{
     title: "Doctor",
     tabs: [
       { id: "doctor-rounds", label: "Rounds", route: "/nursing-icu/doctor-rounds" },
-      { id: "icu-round-2", label: "ICU Round 2", route: "/nursing-icu/icu-round-2" },
+      { id: "icu-round-2", label: "ICU Round", route: "/nursing-icu/icu-round-2" },
       { id: "doctor-instructions", label: "Instructions", route: "/nursing-icu/doctor-instructions" },
       { id: "duty-doctor-monitoring", label: "Duty Doctor", route: "/nursing-icu/duty-doctor-monitoring" },
     ],
@@ -408,7 +409,7 @@ function NursingIcuModulePageInner({
   const chromeLessPage = page === "transfer-discharge";
   const cleanCommandPages: NursingIcuPageId[] = ["operational-analytics", "clinical-analytics", "device-analytics", "pilot-outcome", "adoption-analytics", "users-roles", "configuration", "audit-logs"];
   const isCleanCommandPage = cleanCommandPages.includes(page);
-  const hiddenModuleTabPages: NursingIcuPageId[] = ["dashboard", "executive-dashboard", "executive-drilldown", "executive-documentation", "executive-owner", "executive-action", "notifications-tasks", "patient-search", "patient-overview", "progress-notes", "doctor-order-entry", "orders-care-plans", "family-communication", "arrival-bed-allocation", "smart-bed-view", "icu-operations", "device-monitoring", "edge-device-management", "device-mapping", "connectivity-dashboard", "signal-health", "patient-risk-center", "patient-risk-drilldown", "early-warning-scores", "alerts", "doctor-rounds", "icu-round-2", "escalation-center", "remote-command-center", "remote-consultations", "escalated-cases", "tele-icu-readiness", "tele-icu-local-team", "tele-icu-remote-md", "tele-icu-sla", "escalated-trigger", "escalated-severity", "escalated-source", "escalated-owner-chain", "escalated-sla", "escalated-action", "escalated-outcome", "head-nurse-console", "ward-nurse-activities", "shift-handover", "tasks", "medication-administration", "patient-medication"];
+  const hiddenModuleTabPages: NursingIcuPageId[] = ["dashboard", "executive-dashboard", "executive-drilldown", "executive-documentation", "executive-owner", "executive-action", "notifications-tasks", "patient-search", "patient-overview", "progress-notes", "doctor-order-entry", "orders-care-plans", "family-communication", "arrival-bed-allocation", "smart-bed-view", "icu-operations", "device-monitoring", "edge-device-management", "connectivity-dashboard", "signal-health", "patient-risk-center", "patient-risk-drilldown", "early-warning-scores", "alerts", "doctor-rounds", "icu-round-2", "escalation-center", "remote-command-center", "remote-consultations", "escalated-cases", "tele-icu-readiness", "tele-icu-local-team", "tele-icu-remote-md", "tele-icu-sla", "escalated-trigger", "escalated-severity", "escalated-source", "escalated-owner-chain", "escalated-sla", "escalated-action", "escalated-outcome", "head-nurse-console", "ward-nurse-activities", "shift-handover", "tasks", "medication-administration", "patient-medication"];
   const useNurseEntryReviewTabs = page === "vitals" || page === "nurse-review";
   const hideModuleTabs = chromeLessPage || hiddenModuleTabPages.includes(page) || useNurseEntryReviewTabs || isCleanCommandPage;
   const streamlinedPage = (hideModuleTabs && !isCleanCommandPage) || page === "intake-output" || page === "head-nurse-console" || page === "ward-nurse-activities";
@@ -6193,18 +6194,15 @@ function ClinicalAlertsCommand() {
           </div>
         </div>
         <div className="max-h-[650px] overflow-auto">
-          <table className="w-full min-w-[1480px] border-collapse bg-white text-sm">
+          <table className="w-full min-w-[980px] border-collapse bg-white text-sm">
             <thead className="sticky top-0 z-20 bg-white">
               <tr className="border-b border-slate-300 text-[11px] uppercase text-sky-700">
                 <th className="sticky left-0 z-40 min-w-[190px] bg-white px-3 py-3 text-left">Patient</th>
-                <th className="min-w-[240px] px-3 py-3 text-left">Trigger</th>
+                <th className="min-w-[280px] px-3 py-3 text-left">Alert</th>
                 <th className="min-w-[130px] px-2 py-3 text-center">Severity</th>
-                <th className="min-w-[150px] px-2 py-3 text-center">Source</th>
-                <th className="min-w-[140px] px-2 py-3 text-center">Owner</th>
-                <th className="min-w-[130px] px-2 py-3 text-center">SLA</th>
+                <th className="min-w-[140px] px-2 py-3 text-center">Source</th>
                 <th className="min-w-[130px] px-2 py-3 text-center">Status</th>
-                <th className="min-w-[160px] px-2 py-3 text-center">Route</th>
-                <th className="min-w-[130px] px-2 py-3 text-center">Action</th>
+                <th className="min-w-[120px] px-2 py-3 text-center">Review</th>
               </tr>
             </thead>
             <tbody>
@@ -6226,23 +6224,20 @@ function ClinicalAlertsCommand() {
                   </td>
                   <td className="px-2 py-2 text-center align-middle"><IcuOpsMatrixCell icon={AlertTriangle} title={row.severity} detail={row.scenario} tone={row.tone} showDetail={false} onClick={() => setActiveAction({ row, kind: "severity" })} /></td>
                   <td className="px-2 py-2 text-center align-middle"><IcuOpsMatrixCell icon={FileText} title={row.source} detail="Alert source" tone={clinicalAlertSourceTone(row.source)} showDetail={false} onClick={() => setActiveAction({ row, kind: "source" })} /></td>
-                  <td className="px-2 py-2 text-center align-middle"><IcuOpsMatrixCell icon={UserRound} title={row.owner} detail="Responsible owner" tone={row.status === "Acknowledged" ? "info" : row.tone} showDetail={false} onClick={() => setActiveAction({ row, kind: "owner" })} /></td>
-                  <td className="px-2 py-2 text-center align-middle"><IcuOpsMatrixCell icon={Clock3} title={row.sla} detail={row.createdAt} tone={row.slaTone} showDetail={false} onClick={() => setActiveAction({ row, kind: "sla" })} /></td>
                   <td className="px-2 py-2 text-center align-middle"><IcuOpsMatrixCell icon={CheckCircle2} title={row.status} detail="Alert state" tone={row.statusTone} showDetail={false} onClick={() => setActiveAction({ row, kind: "status" })} /></td>
-                  <td className="px-2 py-2 text-center align-middle"><IcuOpsMatrixCell icon={ArrowRightLeft} title={row.routeTo} detail="Escalation route" tone={row.tone} showDetail={false} onClick={() => setActiveAction({ row, kind: "route" })} /></td>
                   <td className="px-2 py-2 text-center align-middle">
                     <button className="group flex w-full flex-col items-center justify-center" type="button" onClick={() => setActiveAction({ row, kind: "action" })}>
                       <span className={cn("inline-flex h-10 w-10 items-center justify-center rounded-full text-white shadow-[0_3px_8px_rgba(0,0,0,0.28)] transition group-hover:brightness-95", dashboardToneSolidClass(row.tone))}>
                         <ClipboardCheck className="h-4 w-4" />
                       </span>
-                      <span className="mt-1 text-xs font-bold text-slate-800">{row.action}</span>
+                      <span className="mt-1 text-xs font-bold text-slate-800">Open</span>
                     </button>
                   </td>
                 </tr>
               ))}
               {!filteredRows.length ? (
                 <tr>
-                  <td className="px-4 py-12 text-center text-sm text-slate-500" colSpan={9}>No clinical alert matched the selected filters.</td>
+                  <td className="px-4 py-12 text-center text-sm text-slate-500" colSpan={6}>No clinical alert matched the selected filters.</td>
                 </tr>
               ) : null}
             </tbody>
@@ -6587,11 +6582,7 @@ function EscalationCenterCommand() {
           summary={`${unit} | ${severity} | ${source} | ${visibleRows.length} escalation(s)`}
           title="Escalation metrics & filters"
         >
-          <div className="flex flex-col gap-3 border-b border-slate-200 px-4 py-3 lg:flex-row lg:items-start lg:justify-between">
-            <div>
-              <p className="text-base font-black text-slate-950">Escalation command center</p>
-              <p className="mt-1 text-xs text-slate-500">Clinical alerts, overdue tasks, doctor orders, and medication delays routed by SLA and owner.</p>
-            </div>
+          <div className="flex justify-end border-b border-slate-200 px-4 py-3">
             <IcuLegend />
           </div>
           <div className="grid gap-2 border-b border-slate-200 bg-slate-50 px-4 py-3 sm:grid-cols-2 xl:grid-cols-5">
@@ -6619,24 +6610,21 @@ function EscalationCenterCommand() {
 
         <div className="overflow-hidden rounded-sm border border-slate-300 bg-white shadow-sm">
           <div className="max-h-[660px] overflow-auto">
-            <table className="w-full min-w-[1280px] border-collapse bg-white text-sm">
+            <table className="w-full min-w-[980px] border-collapse bg-white text-sm">
               <thead className="sticky top-0 z-20 bg-white text-[11px] uppercase text-sky-700 shadow-[0_1px_0_rgba(148,163,184,0.45)]">
                 <tr>
                   <th className="sticky left-0 z-40 min-w-[210px] bg-white px-3 py-3 text-left">Patient</th>
-                  <th className="min-w-[122px] px-3 py-3 text-center">Priority</th>
-                  <th className="min-w-[150px] px-3 py-3 text-center">Trigger</th>
-                  <th className="min-w-[130px] px-3 py-3 text-center">Source</th>
+                  <th className="min-w-[260px] px-3 py-3 text-left">Escalation issue</th>
                   <th className="min-w-[145px] px-3 py-3 text-center">Assigned To</th>
-                  <th className="min-w-[125px] px-3 py-3 text-center">SLA</th>
+                  <th className="min-w-[125px] px-3 py-3 text-center">Due / SLA</th>
                   <th className="min-w-[130px] px-3 py-3 text-center">Status</th>
-                  <th className="min-w-[130px] px-3 py-3 text-center">Review</th>
+                  <th className="min-w-[130px] px-3 py-3 text-center">Action</th>
                 </tr>
               </thead>
               <tbody>
                 {pagination.pageRows.map((group) => {
                   const row = group.top;
                   const highRiskCount = group.rows.filter((item) => item.severity === "Critical" || item.severity === "High").length;
-                  const sourceKinds = Array.from(new Set(group.rows.map((item) => item.sourceKind)));
                   const owners = Array.from(new Set(group.rows.map((item) => item.owner)));
                   const statusSummary = group.rows.some((item) => item.status === "Open" || item.status === "Overdue" || item.status === "Late") ? "Needs action" : row.status;
                   return (
@@ -6644,14 +6632,16 @@ function EscalationCenterCommand() {
                       <td className="sticky left-0 z-10 bg-white px-3 py-2 align-middle shadow-[8px_0_14px_-15px_rgba(15,23,42,0.45)]">
                         <EscalationPatientCell group={group} />
                       </td>
-                      <td className="px-2 py-2 align-middle text-center">
-                        <IcuOpsMatrixCell icon={ShieldAlert} title={row.severity} detail={`${highRiskCount} high / ${group.rows.length} total`} tone={row.tone} showDetail={false} onClick={() => openEscalation(row, "priority")} />
-                      </td>
-                      <td className="px-2 py-2 align-middle text-center">
-                        <IcuOpsMatrixCell icon={AlertTriangle} title={row.category} detail={row.trigger} tone={row.tone} showDetail={false} onClick={() => openEscalation(row, "trigger")} />
-                      </td>
-                      <td className="px-2 py-2 align-middle text-center">
-                        <DoctorRoundLinkMatrixCell href={escalationSourceHref(row)} icon={FileText} title={sourceKinds[0] ?? "Source"} detail={sourceKinds.length > 1 ? `${sourceKinds.length} sources` : row.source} tone={sourceKinds.length > 1 ? "info" : row.statusTone} showDetail={false} />
+                      <td className="px-3 py-2 align-middle">
+                        <button className="min-h-20 w-full rounded-md p-2 text-left transition hover:bg-sky-50" type="button" onClick={() => openEscalation(row, "trigger")}>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className={cn("text-sm font-bold", dashboardToneTextClass(row.tone))}>{row.category}</span>
+                            <Badge tone={remoteConsultBadgeTone(escalationSeverityTone(row.severity))}>{row.severity}</Badge>
+                            {highRiskCount > 1 ? <Badge tone="warning">{highRiskCount} high-risk</Badge> : null}
+                          </div>
+                          <p className="mt-1 text-xs leading-relaxed text-slate-600">{row.trigger}</p>
+                          <p className="mt-1 text-[11px] font-semibold text-slate-500">{row.sourceKind} | {row.createdAt}</p>
+                        </button>
                       </td>
                       <td className="px-2 py-2 align-middle text-center">
                         <IcuOpsMatrixCell icon={UserRound} title={owners[0] ?? row.owner} detail={owners.length > 1 ? `${owners.length} owners` : row.routeTo} tone={owners.length > 1 ? "warning" : "info"} showDetail={false} onClick={() => openEscalation(row, "owner")} />
@@ -6670,7 +6660,7 @@ function EscalationCenterCommand() {
                 })}
                 {!patientGroups.length ? (
                   <tr>
-                    <td className="px-4 py-10 text-center text-sm text-slate-500" colSpan={8}>No escalation matched the selected filters.</td>
+                    <td className="px-4 py-10 text-center text-sm text-slate-500" colSpan={6}>No escalation matched the selected filters.</td>
                   </tr>
                 ) : null}
               </tbody>
@@ -7264,7 +7254,7 @@ function PatientOverviewCommand({ patients }: { patients: IcuPatient[] }) {
       title: patient?.ventilatorStatus ?? "Support",
       detail: `${deviceRow?.monitor ?? "Monitor not mapped"} | ${deviceRow?.signal ?? "Signal pending"}`,
       tone: patient?.ventilatorStatus === "Room air" ? "success" as DashboardCellTone : "purple" as DashboardCellTone,
-      href: icuPatientDetailHref(patient.id, "monitoring", "device-snapshot"),
+      href: icuPatientDetailHref(patient.id, "monitoring", "ventilation"),
     },
     {
       key: "intake-output",
@@ -7338,41 +7328,6 @@ function PatientOverviewCommand({ patients }: { patients: IcuPatient[] }) {
             <DashboardCommandMetric label="I/O balance" value={`${balance >= 0 ? "+" : ""}${balance} ml`} tone={Math.abs(balance) > 1000 ? "warning" : "success"} />
           </div>
         </CollapsibleCommandPanel>
-        <CollapsibleCommandPanel
-          summary={`${patient?.bedNo ?? "-"} - ${patient?.patientName ?? "Patient"} | score ${patient?.criticalityScore ?? "-"}`}
-          title="One-minute patient summary"
-        >
-          <div className="border-b border-slate-200 p-4">
-            <div className={cn("rounded-md border p-4", dashboardToneSurfaceClass(statusDashboardTone))}>
-              <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-                <div>
-                  <p className="text-xs font-bold uppercase text-slate-500">One-minute patient summary</p>
-                  <h3 className="mt-1 text-xl font-black text-slate-950">{patient?.bedNo} - {patient?.patientName}</h3>
-                  <p className="mt-1 text-sm text-slate-600">{patient?.mrn} | {patient?.ageGender} | {patient?.unit} | admitted {patient?.admissionTime}</p>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  <StatusPill tone={statusTone}>{patient?.currentStatus ?? "ICU patient"}</StatusPill>
-                  <StatusPill tone={patient?.ventilatorStatus === "Room air" ? "success" : "warning"}>{patient?.ventilatorStatus ?? "Support pending"}</StatusPill>
-                </div>
-              </div>
-              <div className="mt-4 grid gap-3 md:grid-cols-4">
-                <InfoLine label="Admitting doctor" value={patient?.admittingDoctor ?? "-"} />
-                <InfoLine label="Duty doctor" value={patient?.dutyDoctor ?? "-"} />
-                <InfoLine label="Unit nurse" value={patient?.assignedUnitNurse ?? "-"} />
-                <InfoLine label="Ward nurse" value={patient?.assignedWardNurse ?? "-"} />
-              </div>
-              <div className="mt-4 flex flex-wrap gap-2">
-                <Link className="inline-flex h-9 items-center justify-center rounded-md border border-sky-300 bg-white px-3 text-sm font-bold text-sky-700 hover:bg-sky-50" href={icuPatientDailyChartHref(patient.id)}>
-                  Open ICU Daily Chart
-                </Link>
-                <Link className="inline-flex h-9 items-center justify-center rounded-md border border-slate-300 bg-white px-3 text-sm font-bold text-slate-700 hover:bg-slate-50" href={icuPatientDetailHref(patient.id, "monitoring", "24h-chart")}>
-                  Open 24h Chart
-                </Link>
-              </div>
-            </div>
-          </div>
-        </CollapsibleCommandPanel>
-
         <div className="overflow-hidden border-b border-slate-200">
           <div className="overflow-x-auto">
             <table className="w-full min-w-[1180px] border-collapse bg-white text-sm">
@@ -9223,7 +9178,7 @@ function RemoteCommandMatrix({ rows, onAction }: { rows: RemoteCommandRow[]; onA
                 <td className="px-2 py-2 align-middle text-center"><RemoteMatrixCell href={teleIcuScenarioHref("readiness", row.patientId)} icon={ClipboardCheck} title={`${row.readinessScore}%`} detail={row.videoStatus} tone={remoteReadinessTone(row)} /></td>
                 <td className="px-2 py-2 align-middle text-center"><RemoteMatrixCell href={icuPatientDetailHref(row.patientId, "monitoring", "24h-chart")} icon={HeartPulse} title={row.vitals} detail="Latest trend" tone={row.priority === "Critical" ? "danger" : "success"} /></td>
                 <td className="px-2 py-2 align-middle text-center"><RemoteMatrixCell href={icuPatientDetailHref(row.patientId, "results")} icon={TestTube2} title={row.diagnostics} detail="Reports" tone={row.status === "Waiting diagnostics" ? "warning" : "success"} /></td>
-                <td className="px-2 py-2 align-middle text-center"><RemoteMatrixCell href={icuPatientDetailHref(row.patientId, "monitoring", "device-snapshot")} icon={Activity} title={row.ventilator} detail="Support" tone={row.ventilator.toLowerCase().includes("vent") || row.ventilator.toLowerCase().includes("niv") ? "purple" : "success"} /></td>
+                <td className="px-2 py-2 align-middle text-center"><RemoteMatrixCell href={icuPatientDetailHref(row.patientId, "monitoring", "ventilation")} icon={Activity} title={row.ventilator} detail="Support" tone={row.ventilator.toLowerCase().includes("vent") || row.ventilator.toLowerCase().includes("niv") ? "purple" : "success"} /></td>
                 <td className="px-2 py-2 align-middle text-center"><RemoteCircleCell href={teleIcuScenarioHref("local-team", row.patientId)} icon={UserRound} title={row.localDoctor} detail={row.wardNurse} tone="info" /></td>
                 <td className="px-2 py-2 align-middle text-center"><RemoteCircleCell href={teleIcuScenarioHref("remote-md", row.patientId)} icon={Stethoscope} title={row.remoteIntensivist} detail={row.status} tone={remoteStatusTone(row.status)} /></td>
                 <td className="px-2 py-2 align-middle text-center"><RemoteMatrixCell href={teleIcuScenarioHref("sla", row.patientId)} icon={Clock3} title={remoteSlaLabel(row)} detail={`${row.waitingMinutes} min wait`} tone={remoteSlaTone(row)} /></td>
@@ -9681,7 +9636,7 @@ function TeleIcuReadinessTable({ consultByPatient, rows }: { consultByPatient: M
                 <td className="px-3 py-3 text-xs text-slate-700">{row.videoStatus}</td>
                 <td className="px-3 py-3"><TeleIcuPlainLink href={icuPatientDetailHref(row.patientId, "monitoring", "24h-chart")} label={row.vitals} detail="24h chart" /></td>
                 <td className="px-3 py-3"><TeleIcuPlainLink href={icuPatientDetailHref(row.patientId, "results")} label={row.diagnostics} detail={consult?.documents ?? "Results"} /></td>
-                <td className="px-3 py-3"><TeleIcuPlainLink href={icuPatientDetailHref(row.patientId, "monitoring", "device-snapshot")} label={row.ventilator} detail="Device snapshot" /></td>
+                <td className="px-3 py-3"><TeleIcuPlainLink href={icuPatientDetailHref(row.patientId, "monitoring", "ventilation")} label={row.ventilator} detail="Ventilation chart" /></td>
                 <td className="px-3 py-3 text-xs text-slate-700"><p className="font-semibold text-slate-900">{row.localDoctor}</p><p>{row.wardNurse}</p></td>
                 <td className="px-3 py-3 text-xs text-slate-700"><p className="font-semibold text-slate-900">{row.remoteIntensivist}</p><p>{consult?.specialty ?? row.status}</p></td>
                 <td className="px-3 py-3"><TeleIcuScorePill value={remoteSlaLabel(row)} tone={remoteSlaTone(row)} detail={`${row.waitingMinutes} min wait`} /></td>
@@ -11058,7 +11013,7 @@ function escalatedCaseSourceHref(row: EscalatedCaseRow) {
   if (!row.patientId) return "/icu-command-center/tele-icu/escalated-cases";
   if (lower.includes("diagnostic") || lower.includes("lab")) return icuPatientDetailHref(row.patientId, "results");
   if (lower.includes("pharmacy") || lower.includes("medication")) return icuPatientDetailHref(row.patientId, "orders", undefined, "ordersTab=medicine-chart");
-  if (lower.includes("ventilator") || lower.includes("respiratory")) return icuPatientDetailHref(row.patientId, "monitoring", "device-snapshot");
+  if (lower.includes("ventilator") || lower.includes("respiratory")) return icuPatientDetailHref(row.patientId, "monitoring", "ventilation");
   if (lower.includes("clinical")) return icuPatientDetailHref(row.patientId, "monitoring", "24h-chart");
   return icuPatientDetailHref(row.patientId, "events");
 }
@@ -14719,7 +14674,7 @@ function normalizeIcuPatientDetailTab(tab?: string): IcuPatientDetailTab {
 }
 
 function normalizeIcuMonitoringSubTab(subtab?: string): IcuMonitoringSubTab {
-  if (subtab === "24h-chart" || subtab === "intake-output" || subtab === "device-snapshot") return subtab;
+  if (subtab === "24h-chart" || subtab === "ventilation" || subtab === "intake-output" || subtab === "device-snapshot") return subtab;
   return "monitoring-overview";
 }
 
@@ -15402,6 +15357,7 @@ function IcuPatientCommandProfile({
             <TabsList className="flex h-auto w-full min-w-max gap-2 overflow-x-auto rounded-xl bg-slate-100 p-2">
               <IcuPatientTabLink active={initialMonitoringTab === "monitoring-overview"} href={icuPatientDetailHref(patient.id, "monitoring", "monitoring-overview")}>Monitoring Overview</IcuPatientTabLink>
               <IcuPatientTabLink active={initialMonitoringTab === "24h-chart"} href={icuPatientDetailHref(patient.id, "monitoring", "24h-chart")}>24h Chart</IcuPatientTabLink>
+              <IcuPatientTabLink active={initialMonitoringTab === "ventilation"} href={icuPatientDetailHref(patient.id, "monitoring", "ventilation")}>Ventilation</IcuPatientTabLink>
               <IcuPatientTabLink active={initialMonitoringTab === "intake-output"} href={icuPatientDetailHref(patient.id, "monitoring", "intake-output")}>Intake Output</IcuPatientTabLink>
               <IcuPatientTabLink active={initialMonitoringTab === "device-snapshot"} href={icuPatientDetailHref(patient.id, "monitoring", "device-snapshot")}>Device Snapshot</IcuPatientTabLink>
             </TabsList>
@@ -15419,6 +15375,10 @@ function IcuPatientCommandProfile({
 
             <TabsContent className="mt-4 space-y-4" value="24h-chart">
               <IcuPatientMonitoring24HourChart patient={patient} />
+            </TabsContent>
+
+            <TabsContent className="mt-4 space-y-4" value="ventilation">
+              <VentilationChartWorkspace patient={patient} />
             </TabsContent>
 
             <TabsContent className="mt-4 space-y-4" value="intake-output">
@@ -19723,7 +19683,7 @@ function buildDashboardCells(patient: IcuPatient): Record<string, DashboardCell>
       detail: runningInfusion ? runningInfusion.alert : patient.lastVitalsTime,
       tone: patient.ventilatorStatus === "Room air" ? "success" : "purple",
       icon: Activity,
-      route: icuPatientDetailHref(patient.id, "monitoring", "24h-chart"),
+      route: icuPatientDetailHref(patient.id, "monitoring", "ventilation"),
     },
     "Intake / Output": {
       title: `${balance} ml`,
@@ -21727,9 +21687,12 @@ type IcuRound2DialogState =
   | { kind: "file"; patient: IcuPatient }
   | { kind: "work"; patient: IcuPatient }
   | { kind: "note"; patient: IcuPatient }
+  | { kind: "handover"; patient: IcuPatient }
   | null;
 
 function IcuRound2Command() {
+  const searchParams = useSearchParams();
+  const focusedPatientId = searchParams.get("patientId")?.trim() ?? "";
   const [query, setQuery] = React.useState("");
   const [unit, setUnit] = React.useState("All ICU units");
   const [doctor, setDoctor] = React.useState("All doctors");
@@ -21737,6 +21700,7 @@ function IcuRound2Command() {
   const [signedNotes, setSignedNotes] = React.useState<IcuRound2SignedNote[]>([]);
   const unitOptions = React.useMemo(() => ["All ICU units", ...Array.from(new Set(icuPatients.map((patient) => patient.unit))).sort()], []);
   const doctorOptions = React.useMemo(() => ["All doctors", ...Array.from(new Set(icuPatients.flatMap((patient) => [patient.admittingDoctor, patient.dutyDoctor, patient.consultingDoctor]))).sort()], []);
+  const focusedPatient = React.useMemo(() => icuPatients.find((patient) => patient.id === focusedPatientId) ?? null, [focusedPatientId]);
   const rows = React.useMemo(() => {
     const search = query.trim().toLowerCase();
     return icuPatients
@@ -21746,12 +21710,45 @@ function IcuRound2Command() {
           && (unit === "All ICU units" || patient.unit === unit)
           && (doctor === "All doctors" || [patient.admittingDoctor, patient.dutyDoctor, patient.consultingDoctor].includes(doctor));
       })
-      .sort((first, second) => second.criticalityScore - first.criticalityScore);
-  }, [doctor, query, unit]);
+      .sort((first, second) => {
+        if (focusedPatientId) {
+          if (first.id === focusedPatientId) return -1;
+          if (second.id === focusedPatientId) return 1;
+        }
+        return second.criticalityScore - first.criticalityScore;
+      });
+  }, [doctor, focusedPatientId, query, unit]);
   const pagination = useIcuCommandPagination(rows);
 
   return (
     <div className="min-w-0 max-w-full space-y-4 overflow-hidden">
+      {focusedPatient ? (
+        <section className="rounded-md border border-sky-200 bg-white px-4 py-3 shadow-sm">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className={cn("text-sm font-black", dashboardToneTextClass(patientDashboardTone(focusedPatient)))}>{focusedPatient.bedNo} - {focusedPatient.patientName}</p>
+              <p className="mt-1 text-xs font-semibold text-slate-500">{focusedPatient.mrn} | {focusedPatient.ageGender} | {focusedPatient.unit} | {focusedPatient.diagnosis}</p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Button className="h-8 px-3 text-xs" variant="outline" onClick={() => setDialog({ kind: "file", patient: focusedPatient })}>
+                <FileText className="h-4 w-4" />
+                Patient file
+              </Button>
+              <Button asChild className="h-8 px-3 text-xs">
+                <Link href={`/icu-command-center/clinical-workspace/doctor-order-entry?patientId=${focusedPatient.id}`}>
+                  <ClipboardCheck className="h-4 w-4" />
+                  Doctor order
+                </Link>
+              </Button>
+              <Button className="h-8 px-3 text-xs" variant="outline" onClick={() => setDialog({ kind: "handover", patient: focusedPatient })}>
+                <ArrowRightLeft className="h-4 w-4" />
+                Doctor handover
+              </Button>
+            </div>
+          </div>
+        </section>
+      ) : null}
+
       <CollapsibleCommandPanel summary={`${unit} | ${doctor} | ${rows.length} patient(s)`} title="Round filters">
         <div className="grid items-end gap-3 p-3 md:grid-cols-2 xl:grid-cols-[minmax(260px,1.4fr)_repeat(2,minmax(180px,1fr))_auto]">
           <label className="space-y-1 text-sm">
@@ -21774,7 +21771,7 @@ function IcuRound2Command() {
       <section className="overflow-hidden rounded-sm border border-slate-300 bg-white shadow-sm">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 bg-white px-3 py-3">
           <div>
-            <h2 className="text-sm font-bold text-slate-950">ICU Round 2</h2>
+            <h2 className="text-sm font-bold text-slate-950">ICU Round</h2>
           </div>
           <IcuLegend />
         </div>
@@ -21788,6 +21785,7 @@ function IcuRound2Command() {
                 <th className="min-w-[150px] px-3 py-3 text-center">Doctor Order</th>
                 <th className="min-w-[150px] px-3 py-3 text-center">Pending Work</th>
                 <th className="min-w-[150px] px-3 py-3 text-center">Round Note</th>
+                <th className="min-w-[160px] px-3 py-3 text-center">Doctor Handover</th>
               </tr>
             </thead>
             <tbody>
@@ -21797,11 +21795,14 @@ function IcuRound2Command() {
                 return (
                   <tr className="border-b border-slate-200 last:border-b-0 hover:bg-sky-50/40" key={patient.id}>
                     <td className="sticky left-0 z-10 bg-white px-3 py-3 align-middle shadow-[8px_0_14px_-15px_rgba(15,23,42,0.45)]">
-                      <div className="min-h-16">
+                      <Link
+                        className="block min-h-16 rounded-md px-1 py-1 transition hover:bg-sky-50 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                        href={icuPatientDetailHref(patient.id, "overview")}
+                      >
                         <p className={cn("text-sm font-bold", dashboardToneTextClass(snapshot.riskTone))}>{patient.patientName}</p>
                         <p className="mt-1 text-xs font-semibold text-slate-700">{patient.bedNo} | {patient.unit}</p>
                         <p className="mt-1 text-xs text-slate-500">{patient.mrn} | {patient.ageGender}</p>
-                      </div>
+                      </Link>
                     </td>
                     <td className="px-3 py-3 align-middle">
                       <p className="text-sm font-bold text-slate-900">{patient.dutyDoctor}</p>
@@ -21832,12 +21833,18 @@ function IcuRound2Command() {
                         {signed ? "Signed" : "Open"}
                       </Button>
                     </td>
+                    <td className="px-3 py-3 text-center align-middle">
+                      <Button className="h-9 px-3 text-xs" variant="outline" onClick={() => setDialog({ kind: "handover", patient })}>
+                        <ArrowRightLeft className="h-4 w-4" />
+                        Prepare
+                      </Button>
+                    </td>
                   </tr>
                 );
               })}
               {!rows.length ? (
                 <tr>
-                  <td className="px-4 py-12 text-center text-sm text-slate-500" colSpan={6}>No patient matched the selected filters.</td>
+                  <td className="px-4 py-12 text-center text-sm text-slate-500" colSpan={7}>No patient matched the selected filters.</td>
                 </tr>
               ) : null}
             </tbody>
@@ -21926,7 +21933,7 @@ function IcuRound2Dialog({
             <div className="flex items-start justify-between gap-3 border-b border-slate-200 px-4 py-3">
               <div>
                 <Dialog.Title className="text-base font-bold text-slate-950">
-                  {dialog.kind === "file" ? "Patient File" : dialog.kind === "work" ? "Pending Work" : "Round Note & Sign"}
+                  {dialog.kind === "file" ? "Patient File" : dialog.kind === "work" ? "Pending Work" : dialog.kind === "handover" ? "Doctor Handover" : "Round Note & Sign"}
                 </Dialog.Title>
                 <Dialog.Description className="mt-1 text-xs text-slate-500">
                   {dialog.patient.bedNo} | {dialog.patient.patientName} | {dialog.patient.unit}
@@ -21939,6 +21946,7 @@ function IcuRound2Dialog({
             <div className="min-h-0 flex-1 overflow-auto p-4">
               {dialog.kind === "file" ? <IcuRound2PatientFile patient={dialog.patient} /> : null}
               {dialog.kind === "work" ? <IcuRound2PendingWork patient={dialog.patient} /> : null}
+              {dialog.kind === "handover" ? <IcuRound2DoctorHandover patient={dialog.patient} /> : null}
               {dialog.kind === "note" ? <IcuRound2NoteSign existing={signedNotes.find((note) => note.patientId === dialog.patient.id)} patient={dialog.patient} onSign={onSign} /> : null}
             </div>
           </Dialog.Content>
@@ -21949,6 +21957,8 @@ function IcuRound2Dialog({
 }
 
 function IcuRound2PatientFile({ patient }: { patient: IcuPatient }) {
+  const sheetRef = React.useRef<HTMLDivElement>(null);
+  const [downloading, setDownloading] = React.useState(false);
   const snapshot = buildIcuRound2Snapshot(patient);
   const ioRows = intakeOutputRows.filter((row) => row.patientId === patient.id);
   const intake = ioRows.reduce((sum, row) => sum + row.intakeMl, 0);
@@ -21956,74 +21966,303 @@ function IcuRound2PatientFile({ patient }: { patient: IcuPatient }) {
   const balance = ioRows.reduce((sum, row) => sum + row.balanceMl, 0);
   const patientInfusions = infusionRows.filter((row) => row.patientId === patient.id);
   const patientMeds = medicationRows.filter((row) => row.patientId === patient.id);
+  const latestVitals = icuVitals.filter((row) => row.patientId === patient.id).slice(-6).reverse();
+  const latestVital = snapshot.latestVital;
+  const pendingRows = [
+    ...snapshot.activeAlerts.map((row) => ({ id: row.id, type: "Alert", item: row.message, owner: row.owner, status: row.status })),
+    ...snapshot.dueMeds.map((row) => ({ id: row.id, type: "Medication", item: `${row.medication} ${row.dose}`, owner: row.administeredBy || patient.assignedWardNurse, status: row.status })),
+    ...snapshot.activeTasks.map((row) => ({ id: row.id, type: row.taskType, item: row.title, owner: row.assignedTo, status: row.status })),
+    ...snapshot.results.filter((row) => row.status === "Pending" || row.status === "Critical").map((row) => ({ id: row.id, type: row.category, item: row.reportName, owner: patient.dutyDoctor, status: row.status })),
+  ].slice(0, 8);
+  const documentTitle = `${patient.bedNo} ${patient.patientName} ICU patient file`;
+
+  const downloadSheet = async () => {
+    if (!sheetRef.current) return;
+    setDownloading(true);
+    try {
+      await downloadIcuRound2PatientFilePdf(sheetRef.current, `${patient.bedNo}-${patient.patientName.replace(/\s+/g, "-")}-icu-file.pdf`);
+      toast.success("Patient file PDF downloaded");
+    } catch {
+      toast.error("Unable to download patient file");
+    } finally {
+      setDownloading(false);
+    }
+  };
 
   return (
-    <div className="grid gap-4 xl:grid-cols-[minmax(0,1.1fr)_minmax(320px,0.9fr)]">
-      <div className="space-y-4">
-        <div className="grid gap-3 sm:grid-cols-2">
-          <IcuRound2Info label="Diagnosis" value={patient.diagnosis} />
-          <IcuRound2Info label="Care team" value={`${patient.dutyDoctor} | ${patient.assignedWardNurse}`} />
-          <IcuRound2Info label="Latest vitals" value={snapshot.latestVital ? `T ${snapshot.latestVital.temperature}, BP ${snapshot.latestVital.bp}, SpO2 ${snapshot.latestVital.spo2}%, GCS ${snapshot.latestVital.gcs}` : "No vitals"} />
-          <IcuRound2Info label="I/O balance" value={`${intake} ml in / ${output} ml out / ${balance >= 0 ? "+" : ""}${balance} ml`} />
-        </div>
-
-        <IcuRound2Table title="Reports" columns={["Report", "Status", "Time", "Summary"]}>
-          {snapshot.results.slice(0, 5).map((row) => (
-            <tr className="border-b border-slate-100 last:border-b-0" key={row.id}>
-              <td className="px-3 py-2 font-semibold text-slate-950">{row.reportName}</td>
-              <td className="px-3 py-2"><span className={cn("rounded-full border px-2 py-0.5 text-xs font-bold", dashboardTonePillClass(toneForPatientResult(row.status)))}>{row.status}</span></td>
-              <td className="px-3 py-2 text-slate-600">{row.reportedAt}</td>
-              <td className="px-3 py-2 text-slate-700">{row.summary}</td>
-            </tr>
-          ))}
-        </IcuRound2Table>
-
-        <IcuRound2Table title="Medication" columns={["Medicine", "Dose", "Time", "Status"]}>
-          {patientMeds.slice(0, 5).map((row) => (
-            <tr className="border-b border-slate-100 last:border-b-0" key={row.id}>
-              <td className="px-3 py-2 font-semibold text-slate-950">{row.medication}</td>
-              <td className="px-3 py-2 text-slate-700">{row.dose} | {row.route}</td>
-              <td className="px-3 py-2 text-slate-700">{row.scheduledTime}</td>
-              <td className="px-3 py-2"><StatusPill tone={row.status === "Late" ? "danger" : row.status === "Due" ? "warning" : "success"}>{row.status}</StatusPill></td>
-            </tr>
-          ))}
-        </IcuRound2Table>
+    <div className="space-y-3">
+      <div className="flex flex-wrap justify-end gap-2 print:hidden">
+        <Button variant="outline" onClick={() => printIcuRound2PatientFile(sheetRef.current, documentTitle)}>
+          <Printer className="h-4 w-4" />
+          Print
+        </Button>
+        <Button onClick={downloadSheet} disabled={downloading}>
+          <Download className="h-4 w-4" />
+          {downloading ? "Preparing" : "Download PDF"}
+        </Button>
       </div>
 
-      <div className="space-y-4">
-        <IcuRound2Table title="Vitals trend" columns={["Time", "BP", "SpO2", "Note"]}>
-          {icuVitals.filter((row) => row.patientId === patient.id).slice(-5).reverse().map((row) => (
-            <tr className="border-b border-slate-100 last:border-b-0" key={row.id}>
-              <td className="px-3 py-2 font-semibold text-slate-950">{row.time}</td>
-              <td className="px-3 py-2 text-slate-700">{row.bp}</td>
-              <td className="px-3 py-2 text-slate-700">{row.spo2}%</td>
-              <td className="px-3 py-2 text-slate-700">{row.note}</td>
-            </tr>
-          ))}
-        </IcuRound2Table>
+      <div className="overflow-auto rounded-lg bg-slate-100 p-4">
+        <div ref={sheetRef} className="mx-auto min-h-[1123px] w-[794px] max-w-full bg-white p-8 text-[12px] leading-snug text-slate-950 shadow-[0_0_0_1px_rgba(15,23,42,0.12),0_18px_45px_rgba(15,23,42,0.16)]">
+          <div className="border-b-2 border-slate-900 pb-3">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500">Plasmit Hospital</p>
+                <h1 className="mt-1 text-xl font-black uppercase tracking-wide text-slate-950">ICU Patient File</h1>
+              </div>
+              <div className="text-right text-[11px] font-semibold text-slate-700">
+                <p>Date: 27/06/2026</p>
+                <p>Round: ICU Round</p>
+                <p>Sheet: A4 clinical review</p>
+              </div>
+            </div>
+          </div>
 
-        <IcuRound2Table title="Infusions / devices" columns={["Item", "Status", "Detail"]}>
-          {[...patientInfusions.map((row) => ({ id: row.id, item: row.fluidName, status: row.status, detail: `${row.rate} | ${row.pumpNo}` })), { id: `${patient.id}-vent`, item: "Ventilation", status: patient.ventilatorStatus, detail: patient.lastVitalsTime }].map((row) => (
-            <tr className="border-b border-slate-100 last:border-b-0" key={row.id}>
-              <td className="px-3 py-2 font-semibold text-slate-950">{row.item}</td>
-              <td className="px-3 py-2 text-slate-700">{row.status}</td>
-              <td className="px-3 py-2 text-slate-700">{row.detail}</td>
-            </tr>
-          ))}
-        </IcuRound2Table>
+          <IcuRound2A4Section title="Patient header">
+            <div className="grid grid-cols-4 border-l border-t border-slate-300">
+              <IcuRound2A4Field label="Name" value={patient.patientName} />
+              <IcuRound2A4Field label="MRN" value={patient.mrn} />
+              <IcuRound2A4Field label="Age / Sex" value={patient.ageGender} />
+              <IcuRound2A4Field label="Bed / Unit" value={`${patient.bedNo} / ${patient.unit}`} />
+              <IcuRound2A4Field label="Admission source" value={patient.admissionSource} />
+              <IcuRound2A4Field label="Admission time" value={patient.admissionTime} />
+              <IcuRound2A4Field label="Status" value={patient.currentStatus} />
+              <IcuRound2A4Field label="Risk score" value={`${patient.criticalityScore}/10`} />
+              <IcuRound2A4Field className="col-span-2" label="Diagnosis" value={patient.diagnosis} />
+              <IcuRound2A4Field label="Consultant" value={patient.consultingDoctor} />
+              <IcuRound2A4Field label="Duty doctor" value={patient.dutyDoctor} />
+            </div>
+          </IcuRound2A4Section>
 
-        <IcuRound2Table title="Alerts / tasks" columns={["Type", "Item", "Assigned to"]}>
-          {[...snapshot.activeAlerts.map((row) => ({ id: row.id, type: row.severity, item: row.message, owner: row.owner })), ...snapshot.activeTasks.map((row) => ({ id: row.id, type: row.priority, item: row.title, owner: row.assignedTo }))].slice(0, 6).map((row) => (
-            <tr className="border-b border-slate-100 last:border-b-0" key={row.id}>
-              <td className="px-3 py-2 font-semibold text-slate-950">{row.type}</td>
-              <td className="px-3 py-2 text-slate-700">{row.item}</td>
-              <td className="px-3 py-2 text-slate-700">{row.owner}</td>
-            </tr>
-          ))}
-        </IcuRound2Table>
+          <div className="grid grid-cols-2 gap-3">
+            <IcuRound2A4Section title="Latest clinical status">
+              <IcuRound2A4Table columns={["Parameter", "Value"]}>
+                <tr><td>Temperature</td><td>{latestVital?.temperature ?? "-"}</td></tr>
+                <tr><td>Pulse / BP</td><td>{latestVital ? `${latestVital.pulse}/min | ${latestVital.bp}` : "-"}</td></tr>
+                <tr><td>RR / SpO2</td><td>{latestVital ? `${latestVital.respiratoryRate}/min | ${latestVital.spo2}%` : "-"}</td></tr>
+                <tr><td>GCS / Pain</td><td>{latestVital ? `${latestVital.gcs} / ${latestVital.painScore}` : "-"}</td></tr>
+                <tr><td>Oxygen</td><td>{latestVital?.oxygenFlow ?? patient.ventilatorStatus}</td></tr>
+                <tr><td>Urine output</td><td>{latestVital ? `${latestVital.urineOutput} ml/hr` : "-"}</td></tr>
+              </IcuRound2A4Table>
+            </IcuRound2A4Section>
+
+            <IcuRound2A4Section title="Ventilation / oxygen">
+              <IcuRound2A4Table columns={["Item", "Detail"]}>
+                <tr><td>Current support</td><td>{patient.ventilatorStatus}</td></tr>
+                <tr><td>Last review</td><td>{patient.lastVitalsTime}</td></tr>
+                <tr><td>Oxygen flow</td><td>{latestVital?.oxygenFlow ?? "-"}</td></tr>
+                <tr><td>Weaning status</td><td>{patient.ventilatorStatus === "Room air" ? "Not on support" : patient.criticalityScore >= 8 ? "Not ready" : "Review during round"}</td></tr>
+                <tr><td>Respiratory note</td><td>{latestVital?.note ?? patient.currentStatus}</td></tr>
+              </IcuRound2A4Table>
+            </IcuRound2A4Section>
+          </div>
+
+          <IcuRound2A4Section title="Investigation summary">
+            <IcuRound2A4Table columns={["Report", "Status", "Time", "Summary"]}>
+              {snapshot.results.slice(0, 6).map((row) => (
+                <tr key={row.id}>
+                  <td>{row.reportName}</td>
+                  <td>{row.status}</td>
+                  <td>{row.reportedAt}</td>
+                  <td>{row.summary}</td>
+                </tr>
+              ))}
+            </IcuRound2A4Table>
+          </IcuRound2A4Section>
+
+          <div className="grid grid-cols-2 gap-3">
+            <IcuRound2A4Section title="Medication / infusions">
+              <IcuRound2A4Table columns={["Medicine / fluid", "Dose / rate", "Time", "Status"]}>
+                {patientMeds.slice(0, 4).map((row) => (
+                  <tr key={row.id}>
+                    <td>{row.medication}</td>
+                    <td>{row.dose} {row.route}</td>
+                    <td>{row.scheduledTime}</td>
+                    <td>{row.status}</td>
+                  </tr>
+                ))}
+                {patientInfusions.slice(0, 2).map((row) => (
+                  <tr key={row.id}>
+                    <td>{row.fluidName}</td>
+                    <td>{row.rate}</td>
+                    <td>{row.startTime}</td>
+                    <td>{row.status}</td>
+                  </tr>
+                ))}
+              </IcuRound2A4Table>
+            </IcuRound2A4Section>
+
+            <IcuRound2A4Section title="Intake / output">
+              <IcuRound2A4Table columns={["Component", "Value"]}>
+                <tr><td>Total intake</td><td>{intake} ml</td></tr>
+                <tr><td>Total output</td><td>{output} ml</td></tr>
+                <tr><td>Net balance</td><td>{balance >= 0 ? "+" : ""}{balance} ml</td></tr>
+                <tr><td>Latest urine</td><td>{latestVital ? `${latestVital.urineOutput} ml/hr` : "-"}</td></tr>
+                <tr><td>Fluid concern</td><td>{balance > 800 ? "Positive balance watch" : output < 250 ? "Low output watch" : "Routine review"}</td></tr>
+              </IcuRound2A4Table>
+            </IcuRound2A4Section>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <IcuRound2A4Section title="Devices / lines">
+              <IcuRound2A4Table columns={["Device", "Status"]}>
+                <tr><td>Respiratory support</td><td>{patient.ventilatorStatus}</td></tr>
+                <tr><td>Monitor</td><td>Online</td></tr>
+                <tr><td>Infusion pump</td><td>{patientInfusions.length ? patientInfusions.map((row) => row.pumpNo).join(", ") : "Not running"}</td></tr>
+                <tr><td>Foley / urine monitoring</td><td>{latestVital ? "Active" : "Review"}</td></tr>
+                <tr><td>Device review</td><td>{patient.criticalityScore >= 8 ? "Round verification required" : "Routine"}</td></tr>
+              </IcuRound2A4Table>
+            </IcuRound2A4Section>
+
+            <IcuRound2A4Section title="Safety bundle">
+              <IcuRound2A4Table columns={["Checklist", "Status"]}>
+                <tr><td>VAP / oxygen bundle</td><td>{patient.ventilatorStatus === "Room air" ? "Not applicable" : "Review due"}</td></tr>
+                <tr><td>CLABSI / line review</td><td>Check during round</td></tr>
+                <tr><td>CAUTI / catheter review</td><td>Check during round</td></tr>
+                <tr><td>DVT prophylaxis</td><td>Medication chart review</td></tr>
+                <tr><td>Nutrition / pressure sore</td><td>Nurse checklist review</td></tr>
+              </IcuRound2A4Table>
+            </IcuRound2A4Section>
+          </div>
+
+          <IcuRound2A4Section title="Vitals trend">
+            <IcuRound2A4Table columns={["Time", "Temp", "Pulse", "BP", "RR", "SpO2", "GCS", "Urine", "Nurse note"]}>
+              {latestVitals.map((row) => (
+                <tr key={row.id}>
+                  <td>{row.time}</td>
+                  <td>{row.temperature}</td>
+                  <td>{row.pulse}</td>
+                  <td>{row.bp}</td>
+                  <td>{row.respiratoryRate}</td>
+                  <td>{row.spo2}%</td>
+                  <td>{row.gcs}</td>
+                  <td>{row.urineOutput}</td>
+                  <td>{row.note}</td>
+                </tr>
+              ))}
+            </IcuRound2A4Table>
+          </IcuRound2A4Section>
+
+          <div className="grid grid-cols-3 gap-3">
+            <IcuRound2A4List title="Active problems" items={[patient.diagnosis, patient.currentStatus, ...patient.alerts].slice(0, 6)} />
+            <IcuRound2A4List title="Nursing events" items={[latestVital?.note ?? "Latest nursing note unavailable", ...snapshot.activeAlerts.map((row) => row.message)].slice(0, 6)} />
+            <IcuRound2A4List title="Pending work" items={pendingRows.length ? pendingRows.map((row) => `${row.type}: ${row.item} (${row.owner})`) : ["No pending work"]} />
+          </div>
+
+          <IcuRound2A4Section title="Doctor round plan">
+            <div className="grid grid-cols-2 border-l border-t border-slate-300">
+              <IcuRound2A4Field label="Clinical assessment" value={`${patient.diagnosis}. Current status: ${patient.currentStatus}.`} />
+              <IcuRound2A4Field label="Medication plan" value={snapshot.dueMeds.length ? "Review due/late medicines and pharmacy availability." : "Continue current medication plan."} />
+              <IcuRound2A4Field label="Ventilation plan" value={patient.ventilatorStatus === "Room air" ? "Continue room air monitoring." : "Review oxygen/ventilator support and weaning readiness."} />
+              <IcuRound2A4Field label="Investigation plan" value={snapshot.pendingReports ? "Follow pending reports and critical result sign-off." : "Routine result review."} />
+              <IcuRound2A4Field label="Escalation plan" value={snapshot.activeAlerts.length ? "Escalate unresolved critical alerts to duty doctor/senior." : "No active escalation."} />
+              <IcuRound2A4Field label="Next review" value={patient.criticalityScore >= 8 ? "Senior review this shift" : "Next scheduled ICU round"} />
+            </div>
+          </IcuRound2A4Section>
+
+          <IcuRound2A4Section title="Round sign-off">
+            <div className="grid grid-cols-4 border-l border-t border-slate-300">
+              <IcuRound2A4Field label="Rounded by" value={patient.dutyDoctor} />
+              <IcuRound2A4Field label="Unit nurse" value={patient.assignedUnitNurse} />
+              <IcuRound2A4Field label="Ward nurse" value={patient.assignedWardNurse} />
+              <IcuRound2A4Field label="Signature / time" value="____________________" />
+            </div>
+          </IcuRound2A4Section>
+        </div>
       </div>
     </div>
   );
+}
+
+function IcuRound2A4Section({ children, title }: { children: React.ReactNode; title: string }) {
+  return (
+    <section className="mt-3 break-inside-avoid">
+      <div className="border border-slate-300 bg-slate-100 px-2 py-1 text-[11px] font-black uppercase tracking-wide text-slate-800">{title}</div>
+      <div className="border-x border-b border-slate-300 bg-white">{children}</div>
+    </section>
+  );
+}
+
+function IcuRound2A4Field({ className, label, value }: { className?: string; label: string; value: React.ReactNode }) {
+  return (
+    <div className={cn("min-h-12 border-b border-r border-slate-300 px-2 py-1.5", className)}>
+      <p className="text-[9px] font-black uppercase tracking-wide text-slate-500">{label}</p>
+      <div className="mt-1 font-semibold text-slate-950">{value}</div>
+    </div>
+  );
+}
+
+function IcuRound2A4Table({ children, columns }: { children: React.ReactNode; columns: string[] }) {
+  return (
+    <table className="w-full border-collapse text-left text-[11px]">
+      <thead>
+        <tr className="border-b border-slate-300 bg-white text-[9px] uppercase tracking-wide text-slate-500">
+          {columns.map((column) => <th className="border-r border-slate-300 px-2 py-1.5 last:border-r-0" key={column}>{column}</th>)}
+        </tr>
+      </thead>
+      <tbody className="[&_td]:border-r [&_td]:border-slate-200 [&_td]:px-2 [&_td]:py-1.5 [&_td:last-child]:border-r-0 [&_tr]:border-b [&_tr]:border-slate-200 [&_tr:last-child]:border-b-0">
+        {children}
+      </tbody>
+    </table>
+  );
+}
+
+function IcuRound2A4List({ items, title }: { items: string[]; title: string }) {
+  return (
+    <IcuRound2A4Section title={title}>
+      <ul className="min-h-28 list-disc space-y-1 px-5 py-2 text-[11px] font-medium text-slate-900">
+        {items.map((item, index) => <li key={`${title}-${index}`}>{item}</li>)}
+      </ul>
+    </IcuRound2A4Section>
+  );
+}
+
+function printIcuRound2PatientFile(element: HTMLElement | null, title: string) {
+  if (!element) return;
+  const printWindow = window.open("", "_blank", "width=900,height=1200");
+  if (!printWindow) {
+    toast.error("Unable to open print window");
+    return;
+  }
+  const styles = Array.from(document.querySelectorAll('link[rel="stylesheet"], style')).map((node) => node.outerHTML).join("\n");
+  printWindow.document.write(`<!doctype html><html><head><title>${title}</title>${styles}<style>@page{size:A4;margin:10mm}body{margin:0;background:#fff}.print-sheet{box-shadow:none!important;width:190mm!important;min-height:277mm!important;margin:0 auto!important;padding:0!important}</style></head><body><div class="print-sheet">${element.outerHTML}</div></body></html>`);
+  printWindow.document.close();
+  printWindow.focus();
+  window.setTimeout(() => {
+    printWindow.print();
+    printWindow.close();
+  }, 350);
+}
+
+async function downloadIcuRound2PatientFilePdf(element: HTMLElement, fileName: string) {
+  const [{ default: html2canvas }, { jsPDF }] = await Promise.all([
+    import("html2canvas"),
+    import("jspdf"),
+  ]);
+  const canvas = await html2canvas(element, {
+    backgroundColor: "#ffffff",
+    scale: 2,
+    useCORS: true,
+  });
+  const imgData = canvas.toDataURL("image/png");
+  const pdf = new jsPDF("p", "mm", "a4");
+  const pageWidth = 210;
+  const pageHeight = 297;
+  const imgHeight = (canvas.height * pageWidth) / canvas.width;
+  let heightLeft = imgHeight;
+  let position = 0;
+
+  pdf.addImage(imgData, "PNG", 0, position, pageWidth, imgHeight);
+  heightLeft -= pageHeight;
+
+  while (heightLeft > 0) {
+    position = heightLeft - imgHeight;
+    pdf.addPage();
+    pdf.addImage(imgData, "PNG", 0, position, pageWidth, imgHeight);
+    heightLeft -= pageHeight;
+  }
+
+  pdf.save(fileName);
 }
 
 function IcuRound2PendingWork({ patient }: { patient: IcuPatient }) {
@@ -22053,6 +22292,158 @@ function IcuRound2PendingWork({ patient }: { patient: IcuPatient }) {
       ) : null}
     </IcuRound2Table>
   );
+}
+
+function IcuRound2DoctorHandover({ patient }: { patient: IcuPatient }) {
+  const snapshot = buildIcuRound2Snapshot(patient);
+  const latestVital = snapshot.latestVital;
+  const doctorOptions = Array.from(new Set([patient.dutyDoctor, patient.admittingDoctor, patient.consultingDoctor, "Dr. Sameer Mehta", "Dr. Aman Verma", "Dr. Leena Rao"]));
+  const [fromDoctor, setFromDoctor] = React.useState(patient.dutyDoctor);
+  const [toDoctor, setToDoctor] = React.useState(doctorOptions.find((doctor) => doctor !== patient.dutyDoctor) ?? patient.consultingDoctor);
+  const [handoverType, setHandoverType] = React.useState(patient.criticalityScore >= 8 ? "Critical duty handover" : "Routine duty handover");
+  const [clinicalSummary, setClinicalSummary] = React.useState(
+    `${patient.patientName} is in ${patient.unit} with ${patient.diagnosis}. Current status: ${patient.currentStatus}. ${latestVital ? `Latest vitals: SpO2 ${latestVital.spo2}%, BP ${latestVital.bp}, pulse ${latestVital.pulse}/min, urine ${latestVital.urineOutput} ml/hr.` : "Latest vitals need review."}`,
+  );
+  const [pendingDecision, setPendingDecision] = React.useState(buildIcuRound2DoctorPendingDecision(patient, snapshot));
+  const [nextAction, setNextAction] = React.useState(buildIcuRound2DoctorNextAction(patient, snapshot));
+  const [escalationTrigger, setEscalationTrigger] = React.useState(buildIcuRound2DoctorEscalationTrigger(patient, snapshot));
+  const handoverRows = buildIcuRound2DoctorHandoverRows(patient, snapshot);
+
+  return (
+    <div className="space-y-4">
+      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+        <IcuRound2Info label="Patient" value={`${patient.patientName} | ${patient.bedNo}`} />
+        <IcuRound2Info label="Diagnosis" value={patient.diagnosis} />
+        <IcuRound2Info label="Current status" value={patient.currentStatus} />
+        <IcuRound2Info label="Risk score" value={`${patient.criticalityScore}/10`} />
+      </div>
+
+      <section className="rounded-md border border-slate-200 bg-white">
+        <div className="border-b border-slate-200 px-3 py-2">
+          <h3 className="text-sm font-bold text-slate-950">Doctor-to-doctor handover</h3>
+        </div>
+        <div className="grid gap-3 p-3 md:grid-cols-2 xl:grid-cols-4">
+          <label className="space-y-1 text-sm">
+            <span className="font-semibold text-slate-800">From doctor</span>
+            <select className="h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-sky-200" value={fromDoctor} onChange={(event) => setFromDoctor(event.target.value)}>
+              {doctorOptions.map((doctor) => <option key={doctor}>{doctor}</option>)}
+            </select>
+          </label>
+          <label className="space-y-1 text-sm">
+            <span className="font-semibold text-slate-800">To doctor</span>
+            <select className="h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-sky-200" value={toDoctor} onChange={(event) => setToDoctor(event.target.value)}>
+              {doctorOptions.map((doctor) => <option key={doctor}>{doctor}</option>)}
+            </select>
+          </label>
+          <label className="space-y-1 text-sm">
+            <span className="font-semibold text-slate-800">Handover type</span>
+            <select className="h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-sky-200" value={handoverType} onChange={(event) => setHandoverType(event.target.value)}>
+              {["Routine duty handover", "Critical duty handover", "Night duty handover", "Senior review handover", "Step-down handover"].map((item) => <option key={item}>{item}</option>)}
+            </select>
+          </label>
+          <IcuRound2Info label="Prepared at" value="Now" />
+        </div>
+      </section>
+
+      <IcuRound2Table title="Clinical carry-forward" columns={["Area", "Status", "Doctor action"]}>
+        {handoverRows.map((row) => (
+          <tr className="border-b border-slate-100 last:border-b-0" key={row.area}>
+            <td className="px-3 py-2 font-semibold text-slate-950">{row.area}</td>
+            <td className="px-3 py-2 text-slate-700">{row.status}</td>
+            <td className="px-3 py-2 text-slate-700">{row.action}</td>
+          </tr>
+        ))}
+      </IcuRound2Table>
+
+      <div className="grid gap-3 xl:grid-cols-2">
+        <label className="block space-y-1 text-sm">
+          <span className="font-semibold text-slate-800">Clinical summary</span>
+          <textarea className="min-h-28 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-sky-200" value={clinicalSummary} onChange={(event) => setClinicalSummary(event.target.value)} />
+        </label>
+        <label className="block space-y-1 text-sm">
+          <span className="font-semibold text-slate-800">Pending doctor decision</span>
+          <textarea className="min-h-28 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-sky-200" value={pendingDecision} onChange={(event) => setPendingDecision(event.target.value)} />
+        </label>
+        <label className="block space-y-1 text-sm">
+          <span className="font-semibold text-slate-800">Next doctor action</span>
+          <textarea className="min-h-24 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-sky-200" value={nextAction} onChange={(event) => setNextAction(event.target.value)} />
+        </label>
+        <label className="block space-y-1 text-sm">
+          <span className="font-semibold text-slate-800">Escalation trigger</span>
+          <textarea className="min-h-24 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-sky-200" value={escalationTrigger} onChange={(event) => setEscalationTrigger(event.target.value)} />
+        </label>
+      </div>
+
+      <div className="flex flex-wrap justify-end gap-2 border-t border-slate-200 pt-3">
+        <Button variant="outline" onClick={() => toast.success("Doctor handover draft saved")}>Save draft</Button>
+        <Button variant="outline" onClick={() => toast.success(`Doctor handover copied for ${toDoctor}`)}>Copy summary</Button>
+        <Button onClick={() => toast.success(`Doctor handover signed for ${patient.patientName}`)}>
+          <CheckCircle2 className="h-4 w-4" />
+          Sign handover
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+function buildIcuRound2DoctorHandoverRows(patient: IcuPatient, snapshot: ReturnType<typeof buildIcuRound2Snapshot>) {
+  const latestVital = snapshot.latestVital;
+  const criticalReports = snapshot.results.filter((row) => row.status === "Critical");
+  const pendingReports = snapshot.results.filter((row) => row.status === "Pending");
+  const lateMeds = snapshot.dueMeds.filter((row) => row.status === "Late");
+  return [
+    {
+      area: "Current condition",
+      status: latestVital ? `SpO2 ${latestVital.spo2}%, BP ${latestVital.bp}, urine ${latestVital.urineOutput} ml/hr` : patient.currentStatus,
+      action: patient.criticalityScore >= 8 ? "Senior review and close monitoring" : "Continue planned ICU review",
+    },
+    {
+      area: "Ventilation / oxygen",
+      status: patient.ventilatorStatus,
+      action: patient.ventilatorStatus === "Room air" ? "Continue observation" : "Review support, ABG, and weaning readiness",
+    },
+    {
+      area: "Medication",
+      status: lateMeds.length ? `${lateMeds.length} late medicine(s)` : snapshot.dueMeds.length ? `${snapshot.dueMeds.length} due medicine(s)` : "No due medicine",
+      action: lateMeds.length ? "Resolve delay and document decision" : "Continue MAR review",
+    },
+    {
+      area: "Reports",
+      status: criticalReports.length ? `${criticalReports.length} critical report(s)` : pendingReports.length ? `${pendingReports.length} pending report(s)` : "No pending report",
+      action: criticalReports.length ? "Doctor sign-off required" : pendingReports.length ? "Follow report availability" : "Routine review",
+    },
+    {
+      area: "Alerts / tasks",
+      status: `${snapshot.activeAlerts.length} alert(s), ${snapshot.activeTasks.length} task(s)`,
+      action: snapshot.activeAlerts.length ? "Close critical alerts or escalate" : "Track pending task closure",
+    },
+  ];
+}
+
+function buildIcuRound2DoctorPendingDecision(patient: IcuPatient, snapshot: ReturnType<typeof buildIcuRound2Snapshot>) {
+  const pendingReports = snapshot.results.filter((row) => row.status === "Pending" || row.status === "Critical").map((row) => row.reportName);
+  if (patient.criticalityScore >= 8) return `Senior review required. Decide escalation plan, ventilation support, medication changes, and report sign-off. Pending reports: ${pendingReports.length ? pendingReports.join(", ") : "none"}.`;
+  if (patient.currentStatus === "Ready for transfer") return "Confirm step-down readiness, receiving team plan, medication reconciliation, and pending report follow-up.";
+  return `Continue ICU care. Review ${snapshot.pendingWork || "no"} pending item(s) during next doctor review.`;
+}
+
+function buildIcuRound2DoctorNextAction(patient: IcuPatient, snapshot: ReturnType<typeof buildIcuRound2Snapshot>) {
+  if (snapshot.activeAlerts.some((row) => row.severity === "Critical")) return "Review unresolved critical alert, document action, and update escalation status.";
+  if (snapshot.results.some((row) => row.status === "Critical")) return "Review critical investigation result and document treatment decision.";
+  if (snapshot.dueMeds.some((row) => row.status === "Late")) return "Resolve late medication with nurse/pharmacy and document hold/give decision.";
+  if (patient.ventilatorStatus !== "Room air") return "Review respiratory support, ABG need, and weaning plan.";
+  return "Continue current ICU plan and review again in next round.";
+}
+
+function buildIcuRound2DoctorEscalationTrigger(patient: IcuPatient, snapshot: ReturnType<typeof buildIcuRound2Snapshot>) {
+  const latestVital = snapshot.latestVital;
+  const triggers = [
+    latestVital && latestVital.spo2 < 92 ? "SpO2 below 92%" : "",
+    latestVital && latestVital.urineOutput < 30 ? "urine output below 30 ml/hr" : "",
+    snapshot.results.some((row) => row.reportName.toLowerCase().includes("lactate") && row.status === "Critical") ? "lactate/ABG deterioration" : "",
+    snapshot.activeAlerts.some((row) => row.severity === "Critical") ? "unresolved critical alert" : "",
+  ].filter(Boolean);
+  return triggers.length ? `Escalate if ${triggers.join(", ")} persists or worsens.` : "Escalate if vitals deteriorate, new critical report arrives, or clinical status changes.";
 }
 
 function IcuRound2NoteSign({ existing, patient, onSign }: { existing?: IcuRound2SignedNote; patient: IcuPatient; onSign: (note: IcuRound2SignedNote) => void }) {
@@ -23008,7 +23399,7 @@ function DoctorRoundQueuePanel({
                   <DoctorRoundLinkMatrixCell href={icuPatientDetailHref(patient.id, "monitoring", "24h-chart")} icon={HeartPulse} title={latestVital ? `SpO2 ${latestVital.spo2}%` : "No vitals"} detail={latestVital ? `BP ${latestVital.bp}` : "Chart pending"} tone={latestVital?.abnormal ? "danger" : "success"} showDetail={false} />
                 </td>
                 <td className="px-2 py-2 text-center align-middle">
-                  <DoctorRoundLinkMatrixCell href={icuPatientDetailHref(patient.id, "monitoring", "device-snapshot")} icon={Activity} title={patient.ventilatorStatus} detail={patient.ventilatorStatus === "Room air" ? "No support" : "Device tab"} tone={patient.ventilatorStatus === "Room air" ? "success" : "purple"} showDetail={false} />
+                  <DoctorRoundLinkMatrixCell href={icuPatientDetailHref(patient.id, "monitoring", "ventilation")} icon={Activity} title={patient.ventilatorStatus} detail={patient.ventilatorStatus === "Room air" ? "No support" : "Ventilation chart"} tone={patient.ventilatorStatus === "Room air" ? "success" : "purple"} showDetail={false} />
                 </td>
                 <td className="px-2 py-2 text-center align-middle">
                   <DoctorRoundLinkMatrixCell href={icuPatientDetailHref(patient.id, "events")} icon={AlertTriangle} title={`${openAlertCount}`} detail={openAlertCount ? "Open alert" : "Clear"} tone={openAlertCount ? "danger" : "success"} showDetail={false} />

@@ -586,10 +586,8 @@ const admissionHandoverOptions: Record<string, string[]> = {
   "Direct ICU admission": ["Admission coordinator", "ICU duty doctor", "Billing + admission desk", "Consultant secretary"],
 };
 const alertStatusFlow: WorkflowAlertStatus[] = ["New", "Acknowledged", "Assigned", "Resolved", "Closed"];
-const medicationStatuses: Array<"All status" | WorkflowMedicationStatus> = ["All status", "Due", "Late", "Upcoming", "Administered", "Held", "Skipped", "Missed", "Refused", "Running", "Paused", "Stopped"];
 const medicationDepartments: MedicationDepartment[] = ["ICU", "Emergency", "Cardiology", "Neurology", "Pediatrics", "Surgery", "Anesthesia"];
 const medicationShiftOptions = ["All shifts", "Morning", "Evening", "Night"] as const;
-const medicationHourOptions = ["All hours", ...Array.from({ length: 24 }, (_, hour) => `${String(hour).padStart(2, "0")}:00`)] as const;
 
 type NurseTaskSource =
   | "Doctor order"
@@ -1492,9 +1490,6 @@ function buildSeedMedicationOrders() {
 }
 
 const seededDoctorMedicationOrders = buildSeedMedicationOrders();
-
-const orderTypeOptions: Array<"All types" | MedicationOrderType> = ["All types", "Scheduled", "STAT", "PRN", "Continuous", "One-time"];
-const pharmacyOptions: Array<"All pharmacy" | PharmacyStatus> = ["All pharmacy", "Available", "Pending dispense", "Low stock", "Out of stock", "Restricted", "Shortage", "Substitution requested"];
 
 function deriveDoseStatus(order: DoctorMedicationOrder, scheduledTime: string, index: number): WorkflowMedicationStatus {
   if (order.status === "Held by doctor") return "Held";
@@ -4179,12 +4174,8 @@ export function MedicationTimelineWorkspace() {
   const [doses, setDoses] = React.useState<MedicationDoseRow[]>(() => buildMedicationDoseRows(seededDoctorMedicationOrders));
   const [patientId, setPatientId] = React.useState("All patients");
   const [unitFilter, setUnitFilter] = React.useState(queryUnit || "All ICU units");
-  const [status, setStatus] = React.useState<(typeof medicationStatuses)[number]>("All status");
-  const [orderType, setOrderType] = React.useState<(typeof orderTypeOptions)[number]>("All types");
-  const [pharmacy, setPharmacy] = React.useState<(typeof pharmacyOptions)[number]>("All pharmacy");
   const [medicationDate, setMedicationDate] = React.useState("2026-06-08");
   const [shift, setShift] = React.useState<(typeof medicationShiftOptions)[number]>("All shifts");
-  const [hour, setHour] = React.useState<(typeof medicationHourOptions)[number]>("All hours");
   const [query, setQuery] = React.useState("");
   const [emarQueue, setEmarQueue] = React.useState<MedicationEmarQueue>("Due Now");
   const [selectedDoseId, setSelectedDoseId] = React.useState<string | null>(null);
@@ -4192,8 +4183,6 @@ export function MedicationTimelineWorkspace() {
   const [pendingOrderAction, setPendingOrderAction] = React.useState<{ orderId: string; action: DoctorOrderStatusAction } | null>(null);
   const [pendingAmendOrderId, setPendingAmendOrderId] = React.useState<string | null>(null);
   const [draft, setDraft] = React.useState<MedicationOrderDraft>(() => createMedicationOrderDraft());
-
-  const medicationUnitOptions = React.useMemo(() => ["All ICU units", ...Array.from(new Set(icuPatients.map((patient) => patient.unit)))], []);
 
   React.useEffect(() => {
     if (queryUnit) {
@@ -4206,23 +4195,18 @@ export function MedicationTimelineWorkspace() {
 
   React.useEffect(() => {
     if (queryFocus === "medication") {
-      setStatus("All status");
+      setEmarQueue("Due Now");
     }
   }, [queryFocus]);
 
   const visibleDoses = doses.filter((row) => {
     const patient = icuPatients.find((item) => item.id === row.patientId);
     const searchable = `${patient?.patientName ?? ""} ${row.bedNo} ${row.medication} ${row.reason} ${row.doctor} ${row.indication} ${row.scheduledDate} ${row.shift}`.toLowerCase();
-    const rowHour = row.scheduledTime.match(/^\d{2}:/)?.[0]?.slice(0, 2);
     return searchable.includes(query.toLowerCase())
       && (unitFilter === "All ICU units" || patient?.unit === unitFilter)
       && (patientId === "All patients" || row.patientId === patientId)
-      && (status === "All status" || row.status === status)
-      && (orderType === "All types" || row.orderType === orderType)
-      && (pharmacy === "All pharmacy" || row.pharmacyStatus === pharmacy)
       && (!medicationDate || row.scheduledDate === medicationDate)
-      && (shift === "All shifts" || row.shift === shift)
-      && (hour === "All hours" || rowHour === hour.slice(0, 2));
+      && (shift === "All shifts" || row.shift === shift);
   }).sort((left, right) => {
     const focusRank = medicationExecutiveFocusRank(right, queryFocus) - medicationExecutiveFocusRank(left, queryFocus);
     return focusRank || medicationChartSortValue(left).localeCompare(medicationChartSortValue(right));
@@ -4230,7 +4214,6 @@ export function MedicationTimelineWorkspace() {
 
   const emarDoses = React.useMemo(() => visibleDoses.filter((dose) => medicationDoseMatchesEmarQueue(dose, emarQueue)), [emarQueue, visibleDoses]);
   const selectedDose = emarDoses.find((dose) => dose.id === selectedDoseId) ?? emarDoses[0];
-  const activeDoseCount = visibleDoses.filter((dose) => dose.orderStatus === "Active").length;
   const dueCount = visibleDoses.filter((dose) => isMedicationDueStatus(dose.status)).length;
   const administeredCount = visibleDoses.filter((dose) => dose.status === "Administered").length;
   const heldSkippedCount = visibleDoses.filter((dose) => ["Held", "Skipped", "Missed", "Refused"].includes(dose.status)).length;
@@ -4241,11 +4224,10 @@ export function MedicationTimelineWorkspace() {
   const hasBlockingDoctorScenario = doctorOrderScenarios.some((scenario) => scenario.blocking);
   const selectedFilterPatient = patientId === "All patients" ? undefined : icuPatients.find((patient) => patient.id === patientId);
   const medicationFilterSummary = [
-    unitFilter,
     selectedFilterPatient ? `${selectedFilterPatient.bedNo} - ${selectedFilterPatient.patientName}` : "All patients",
     medicationDate || "All dates",
-    emarQueue,
-    status,
+    shift,
+    unitFilter,
   ].join(" | ");
   const emarQueueCounts: Record<MedicationEmarQueue, number> = {
     "Due Now": dueCount,
@@ -4255,7 +4237,6 @@ export function MedicationTimelineWorkspace() {
     "PRN": visibleDoses.filter((dose) => dose.orderType === "PRN").length,
     "History": visibleDoses.filter((dose) => ["Administered", "Held", "Skipped", "Missed", "Refused", "Paused", "Stopped"].includes(dose.status)).length,
   };
-
   const updateDoseStatus = (
     doseId: string,
     nextStatus: WorkflowMedicationStatus,
@@ -4528,70 +4509,50 @@ export function MedicationTimelineWorkspace() {
 
   return (
     <div className="space-y-4">
-      <MedicationPatientStrip
-        activeDoseCount={activeDoseCount}
-        dueCount={dueCount}
-        highRiskCount={highRiskCount}
-        patient={selectedFilterPatient}
-        pharmacyIssueCount={pharmacyIssueCount}
-        unitFilter={unitFilter}
-      />
-
-      <details className="group overflow-hidden rounded-md border border-border bg-background shadow-sm">
+      <details className="group overflow-hidden rounded-md border border-border bg-white shadow-sm">
         <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-left transition hover:bg-surface-muted [&::-webkit-details-marker]:hidden">
           <span className="min-w-0">
-            <span className="block text-sm font-semibold text-foreground">Medication filters</span>
+            <span className="block text-sm font-semibold text-foreground">Medication controls</span>
             <span className="mt-0.5 block truncate text-xs text-muted-foreground">{medicationFilterSummary}</span>
           </span>
           <ChevronDown className="h-5 w-5 shrink-0 text-muted-foreground transition-transform group-open:rotate-180" />
         </summary>
-        <div className="space-y-3 border-t border-border p-4">
-          <div className="grid gap-3 lg:grid-cols-[minmax(260px,1fr)_minmax(200px,260px)_minmax(240px,360px)]">
+        <div className="grid gap-3 border-t border-border p-4 md:grid-cols-2 xl:grid-cols-[minmax(240px,1fr)_220px_180px_220px_auto] xl:items-end">
+          <label className="space-y-1 text-sm md:col-span-2 xl:col-span-1">
+            <span className="font-medium text-foreground">Patient</span>
+            <select
+              className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/20"
+              value={patientId}
+              onChange={(event) => setPatientId(event.target.value)}
+            >
+              <option value="All patients">All patients</option>
+              {icuPatients.map((patient) => (
+                <option key={patient.id} value={patient.id}>{patient.bedNo} - {patient.patientName}</option>
+              ))}
+            </select>
+          </label>
+          <label className="space-y-1 text-sm">
+            <span className="font-medium text-foreground">Medication date</span>
+            <Input type="date" value={medicationDate} onChange={(event) => setMedicationDate(event.target.value)} />
+          </label>
+          <MedicationLabeledSelect label="Shift" value={shift} onChange={(value) => setShift(value as (typeof medicationShiftOptions)[number])} options={[...medicationShiftOptions]} />
+          <div className="space-y-1 text-sm">
+            <span className="font-medium text-foreground">Search</span>
             <label className="space-y-1 text-sm">
-              <span className="font-medium text-foreground">Search dose</span>
               <div className="relative">
                 <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input className="pl-9" placeholder="Medicine, patient, bed, doctor..." value={query} onChange={(event) => setQuery(event.target.value)} />
               </div>
             </label>
-            <MedicationLabeledSelect label="ICU unit" value={unitFilter} onChange={setUnitFilter} options={medicationUnitOptions} />
-            <label className="space-y-1 text-sm">
-              <span className="font-medium text-foreground">Patient</span>
-              <select
-                className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/20"
-                value={patientId}
-                onChange={(event) => setPatientId(event.target.value)}
-              >
-                <option value="All patients">All patients</option>
-                {icuPatients.map((patient) => (
-                  <option key={patient.id} value={patient.id}>{patient.bedNo} - {patient.patientName}</option>
-                ))}
-              </select>
-            </label>
           </div>
-          <div className="grid min-w-0 gap-3 sm:grid-cols-2 xl:grid-cols-4 xl:items-end">
-            <label className="space-y-1 text-sm">
-              <span className="font-medium text-foreground">Medication date</span>
-              <Input type="date" value={medicationDate} onChange={(event) => setMedicationDate(event.target.value)} />
-            </label>
-            <MedicationLabeledSelect label="Shift" value={shift} onChange={(value) => setShift(value as (typeof medicationShiftOptions)[number])} options={[...medicationShiftOptions]} />
-            <MedicationLabeledSelect label="Hour" value={hour} onChange={(value) => setHour(value as (typeof medicationHourOptions)[number])} options={[...medicationHourOptions]} />
-            <MedicationLabeledSelect label="Dose status" value={status} onChange={(value) => setStatus(value as (typeof medicationStatuses)[number])} options={medicationStatuses} />
-            <MedicationLabeledSelect label="Order type" value={orderType} onChange={(value) => setOrderType(value as (typeof orderTypeOptions)[number])} options={orderTypeOptions} />
-            <MedicationLabeledSelect label="Pharmacy" value={pharmacy} onChange={(value) => setPharmacy(value as (typeof pharmacyOptions)[number])} options={pharmacyOptions} />
-            <Button className="w-full" variant="outline" onClick={() => {
-              setQuery("");
-              setUnitFilter("All ICU units");
-              setPatientId("All patients");
-              setStatus("All status");
-              setOrderType("All types");
-              setPharmacy("All pharmacy");
-              setMedicationDate("2026-06-08");
-              setShift("All shifts");
-              setHour("All hours");
-              setEmarQueue("Due Now");
-            }}><Filter className="h-4 w-4" />Reset</Button>
-          </div>
+          <Button className="w-full" variant="outline" onClick={() => {
+            setQuery("");
+            setUnitFilter(queryUnit || "All ICU units");
+            setPatientId("All patients");
+            setMedicationDate("2026-06-08");
+            setShift("All shifts");
+            setEmarQueue("Due Now");
+          }}><Filter className="h-4 w-4" />Reset</Button>
         </div>
       </details>
 
@@ -4623,10 +4584,15 @@ export function MedicationTimelineWorkspace() {
 
         <Card className="overflow-hidden border-slate-200 bg-white shadow-sm">
           <CardHeader className="border-b border-slate-200 bg-white">
-            <div>
+            <div className="min-w-0">
               <CardTitle>Medication administration</CardTitle>
             </div>
-            <Badge tone="info">{emarDoses.length} dose(s)</Badge>
+            <div className="flex flex-wrap justify-end gap-2">
+              <Badge tone="warning">{dueCount} due/late</Badge>
+              <Badge tone="critical">{highRiskCount} verify</Badge>
+              <Badge tone="info">{pharmacyIssueCount} pharmacy</Badge>
+              <Badge tone="info">{emarDoses.length} dose(s)</Badge>
+            </div>
           </CardHeader>
           <CardContent className="p-0">
             <MedicationChartTable
@@ -6059,7 +6025,7 @@ function MedicationChartTable({
   }, [doses]);
 
   if (!orderedDoses.length) {
-    return <EmptyPanel title="No medicine found" detail="No dose is available for the selected filters." />;
+    return <EmptyPanel title="No medicine found" detail="No dose is available for the current selection." />;
   }
 
   return (
