@@ -3,6 +3,7 @@
 import * as React from "react";
 
 import { useUiPreference } from "@/components/providers/ui-preference-provider";
+import { IcuNursingRouteGuard } from "@/components/providers/icu-nursing-route-guard";
 import { AppFooter } from "@/components/shell/app-footer";
 import { AppSidebar } from "@/components/shell/app-sidebar";
 import { TopHeader } from "@/components/shell/top-header";
@@ -28,7 +29,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <AppSidebar collapsed={sidebarCollapsed} onCollapsedChange={handleCollapsedChange} />
         <div className="flex min-w-0 flex-1 flex-col">
           <TopHeader />
-          <main className="min-w-0 max-w-full flex-1 px-3 pb-8 pt-3 md:px-5 md:pt-4">{children}</main>
+          <main className="min-w-0 max-w-full flex-1 px-3 pb-8 pt-3 md:px-5 md:pt-4">
+            <IcuNursingRouteGuard>{children}</IcuNursingRouteGuard>
+          </main>
           <AppFooter />
         </div>
       </div>

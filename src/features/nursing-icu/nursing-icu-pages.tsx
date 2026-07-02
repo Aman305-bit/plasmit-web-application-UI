@@ -19,6 +19,8 @@ import {
   Clock3,
   Download,
   Droplets,
+  ExternalLink,
+  Eye,
   FileText,
   HeartPulse,
   ListChecks,
@@ -37,6 +39,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
+import { useRole } from "@/components/providers/role-provider";
 import { PageHeader } from "@/components/shell/page-header";
 import { AlertBanner } from "@/components/ui/alert-banner";
 import { Badge } from "@/components/ui/badge";
@@ -64,6 +67,7 @@ import { IntakeOutputWorkspace } from "@/features/nursing-icu/components/intake-
 import { VentilationChartWorkspace } from "@/features/nursing-icu/components/ventilation-chart";
 import { NotesPage } from "@/features/notes/notes-page";
 import { FamilyCommunicationWorkspace } from "@/features/nursing-icu/components/family-communication-workspace";
+import { getNursingRolePermission } from "@/data/icu-nursing-role-permissions";
 import {
   activityLogs,
   doctorInstructions,
@@ -163,6 +167,17 @@ type NursingIcuPageId =
 
 type IcuPatientDetailTab = "overview" | "monitoring" | "results" | "graph" | "orders" | "events" | "shift-summary" | "collaborate";
 type IcuMonitoringSubTab = "monitoring-overview" | "24h-chart" | "ventilation" | "intake-output" | "device-snapshot";
+
+const icuPatientDetailTabs: Array<{ id: IcuPatientDetailTab; label: string }> = [
+  { id: "overview", label: "Patient Overview" },
+  { id: "monitoring", label: "Monitoring" },
+  { id: "results", label: "Results" },
+  { id: "graph", label: "Vital Graph" },
+  { id: "orders", label: "Medication & Orders" },
+  { id: "events", label: "Events" },
+  { id: "shift-summary", label: "Shift Summary" },
+  { id: "collaborate", label: "Collaborate" },
+];
 
 const pageMeta: Record<NursingIcuPageId, { title: string; description: string; icon: typeof HeartPulse }> = {
   dashboard: { title: "ICU Dashboard", description: "ICU census, alerts, bed occupancy, workload, pending activities, and shift summary.", icon: HeartPulse },
@@ -7200,6 +7215,16 @@ function EscalationActionDialogContent({ action, onOpenChange }: { action: Escal
 }
 
 function PatientOverviewCommand({ patients }: { patients: IcuPatient[] }) {
+  const { role } = useRole();
+
+  if (role === "Ward Nurse") {
+    return <WardNurseAssignedPatientsCommand patients={patients} />;
+  }
+
+  return <PatientOverviewDetailCommand patients={patients} />;
+}
+
+function PatientOverviewDetailCommand({ patients }: { patients: IcuPatient[] }) {
   const [patientId, setPatientId] = React.useState(patients[0]?.id ?? icuPatients[0]?.id ?? "");
   const patient = patients.find((item) => item.id === patientId) ?? icuPatients.find((item) => item.id === patientId) ?? icuPatients[0];
   const patientVitals = icuVitals.filter((row) => row.patientId === patient?.id);
@@ -7416,6 +7441,217 @@ function PatientOverviewCommand({ patients }: { patients: IcuPatient[] }) {
       </div>
     </div>
   );
+}
+
+type WardNursePatientWorkRow = {
+  patient: IcuPatient;
+  latestVital?: IcuVital;
+  openAlerts: typeof icuAlerts;
+  activeTasks: typeof icuTasks;
+  dueMeds: typeof medicationRows;
+  activeOrders: typeof doctorInstructions;
+  pendingIo: typeof intakeOutputRows;
+};
+
+function WardNurseAssignedPatientsCommand({ patients }: { patients: IcuPatient[] }) {
+  const sourcePatients = patients.length ? patients : icuPatients;
+  const activeWardNurse = getActiveWardNurseName();
+  const activeWardUnit = getActiveWardNurseUnit();
+  const assignedPatients = sourcePatients.filter((patient) => patient.assignedWardNurse === activeWardNurse);
+  const rows = assignedPatients.map(buildWardNursePatientWorkRow);
+  const pageSize = 10;
+  const [page, setPage] = React.useState(1);
+  const totalPages = Math.max(1, Math.ceil(rows.length / pageSize));
+  const pageStart = (page - 1) * pageSize;
+  const visibleRows = rows.slice(pageStart, pageStart + pageSize);
+
+  React.useEffect(() => {
+    setPage(1);
+  }, [activeWardNurse, assignedPatients.length]);
+
+  return (
+    <div className="space-y-2">
+      <div className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+        <div className="flex flex-col gap-2 border-b border-slate-200 bg-white px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h2 className="text-xl font-black tracking-tight text-slate-950">My Assigned Patients</h2>
+            <p className="mt-0.5 text-sm font-semibold text-slate-500">{activeWardNurse} | {activeWardUnit}</p>
+          </div>
+          <span className="inline-flex w-fit items-center rounded-full border border-sky-200 bg-sky-50 px-3 py-1.5 text-sm font-black text-sky-700">{assignedPatients.length} patient(s)</span>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[1320px] border-collapse bg-white text-sm">
+            <thead className="border-b border-slate-200 bg-slate-50 text-[11px] uppercase tracking-wide text-slate-950">
+              <tr>
+                <th className="w-[220px] px-5 py-3.5 text-left">Patient / Bed</th>
+                <th className="w-[170px] px-3 py-3.5 text-center">Profile Verification</th>
+                <th className="w-[190px] px-3 py-3.5 text-center">Assessment / Vitals</th>
+                <th className="w-[160px] px-3 py-3.5 text-center">Medication</th>
+                <th className="w-[205px] px-3 py-3.5 text-center">Doctor Orders</th>
+                <th className="w-[180px] px-3 py-3.5 text-center">I/O & Events</th>
+                <th className="w-[180px] px-3 py-3.5 text-center">Handover / Issue</th>
+                <th className="w-[155px] px-3 py-3.5 text-center">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {visibleRows.map((row) => {
+                const profileTone: WardNurseCompactTone = row.latestVital ? "success" : "warning";
+                const assessmentTone: WardNurseCompactTone = row.latestVital?.abnormal ? "danger" : row.latestVital ? "success" : "warning";
+                const medicationTone: WardNurseCompactTone = row.dueMeds.some((med) => med.status === "Late") ? "danger" : row.dueMeds.length ? "warning" : "success";
+                const orderTone: WardNurseCompactTone = row.activeOrders.length + row.activeTasks.length ? "warning" : "success";
+                const eventTone: WardNurseCompactTone = row.openAlerts.length ? "danger" : row.pendingIo.length ? "warning" : "success";
+                const handoverTone: WardNurseCompactTone = row.openAlerts.length || row.activeTasks.length ? "warning" : "success";
+
+                return (
+                  <tr className="border-b border-slate-200 align-middle last:border-b-0 hover:bg-slate-50/70" key={row.patient.id}>
+                    <td className={cn("border-r border-slate-200 px-5 py-4", "border-l-4", wardNurseRowAccentClass(patientDashboardTone(row.patient)))}>
+                      <Link className="block rounded-md p-1 transition hover:bg-white hover:shadow-sm" href={icuPatientDetailHref(row.patient.id, "overview")}>
+                        <p className={cn("truncate text-base font-black", dashboardToneTextClass(patientDashboardTone(row.patient)))}>{row.patient.patientName}</p>
+                        <p className="mt-2 truncate text-sm font-black text-slate-950">{row.patient.bedNo} | {activeWardUnit}</p>
+                        <p className="mt-1 truncate text-sm font-semibold text-slate-500">{row.patient.mrn} | {row.patient.ageGender}</p>
+                      </Link>
+                    </td>
+                    <td className="px-3 py-4 text-center">
+                      <WardNurseQueueCell
+                        detail={row.latestVital ? `${row.patient.assignedWardNurse} | allergies checked` : "Initial assessment pending"}
+                        href={icuPatientDetailHref(row.patient.id, "overview")}
+                        title={row.latestVital ? "Verified" : "Verify now"}
+                        tone={profileTone}
+                      />
+                    </td>
+                    <td className="px-3 py-4 text-center">
+                      <WardNurseQueueCell
+                        detail={row.latestVital ? `${row.latestVital.time} | SpO2 ${row.latestVital.spo2}% | BP ${row.latestVital.bp}` : "No vitals entered"}
+                        href={`/icu-command-center/nursing/nurse-entry?patientId=${row.patient.id}`}
+                        title={row.latestVital?.abnormal ? "Review vitals" : row.latestVital ? "Updated" : "Enter vitals"}
+                        tone={assessmentTone}
+                      />
+                    </td>
+                    <td className="px-3 py-4 text-center">
+                      <WardNurseQueueCell
+                        detail={row.dueMeds[0] ? `${row.dueMeds[0].scheduledTime} | ${row.dueMeds[0].medication}` : "No due medicine"}
+                        href={`/icu-command-center/nursing/medication-administration?patientId=${row.patient.id}`}
+                        title={row.dueMeds.length ? `${row.dueMeds.length} due` : "Clear"}
+                        tone={medicationTone}
+                      />
+                    </td>
+                    <td className="px-3 py-4 text-center">
+                      <WardNurseQueueCell
+                        detail={row.activeOrders[0]?.instruction ?? row.activeTasks[0]?.title ?? "No open order"}
+                        href={`/icu-command-center/nursing/tasks-assessments?taskTab=dashboard&patientId=${row.patient.id}`}
+                        title={`${row.activeOrders.length + row.activeTasks.length} item(s)`}
+                        tone={orderTone}
+                      />
+                    </td>
+                    <td className="px-3 py-4 text-center">
+                      <WardNurseQueueCell
+                        detail={row.openAlerts[0]?.message ?? (row.pendingIo.length ? "I/O needs review" : "No open event")}
+                        href={icuPatientDetailHref(row.patient.id, "events")}
+                        title={row.openAlerts.length ? `${row.openAlerts.length} alert(s)` : row.pendingIo.length ? "I/O review" : "Clear"}
+                        tone={eventTone}
+                      />
+                    </td>
+                    <td className="px-3 py-4 text-center">
+                      <WardNurseQueueCell
+                        detail={row.openAlerts.length || row.activeTasks.length ? "Carry forward if not closed" : "Ready for handover"}
+                        href={icuPatientDetailHref(row.patient.id, "shift-summary")}
+                        title={row.openAlerts.length || row.activeTasks.length ? "Pending" : "Ready"}
+                        tone={handoverTone}
+                      />
+                    </td>
+                    <td className="px-3 py-4 text-center">
+                      <div className="flex items-center justify-center gap-3">
+                        <Link className="group flex flex-col items-center gap-1.5" href={icuPatientDetailHref(row.patient.id, "overview")}>
+                          <span className="inline-flex size-10 items-center justify-center rounded-full bg-slate-800 text-white shadow-sm transition group-hover:bg-sky-700">
+                            <Eye className="size-4" aria-hidden="true" />
+                          </span>
+                          <span className="text-[11px] font-bold text-slate-700">Open</span>
+                        </Link>
+                        <Link className="group flex flex-col items-center gap-1.5" href={icuPatientDetailHref(row.patient.id, "collaborate")}>
+                          <span className="inline-flex size-10 items-center justify-center rounded-full bg-slate-800 text-white shadow-sm transition group-hover:bg-sky-700">
+                            <ExternalLink className="size-4" aria-hidden="true" />
+                          </span>
+                          <span className="text-[11px] font-bold text-slate-700">Raise issue</span>
+                        </Link>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+              {!rows.length ? (
+                <tr>
+                  <td className="px-3 py-10 text-center text-sm font-semibold text-slate-500" colSpan={8}>No ICU patient is assigned to {activeWardNurse}.</td>
+                </tr>
+              ) : null}
+            </tbody>
+          </table>
+        </div>
+        {rows.length > pageSize ? (
+          <div className="flex flex-col gap-2 border-t border-slate-200 px-3 py-3 text-xs font-semibold text-slate-600 sm:flex-row sm:items-center sm:justify-between">
+            <span>
+              Showing {pageStart + 1}-{Math.min(pageStart + visibleRows.length, rows.length)} of {rows.length}
+            </span>
+            <div className="flex items-center gap-2">
+              <Button size="sm" variant="outline" disabled={page === 1} onClick={() => setPage((currentPage) => Math.max(1, currentPage - 1))}>
+                Previous
+              </Button>
+              <span className="px-2 text-slate-900">Page {page} / {totalPages}</span>
+              <Button size="sm" variant="outline" disabled={page === totalPages} onClick={() => setPage((currentPage) => Math.min(totalPages, currentPage + 1))}>
+                Next
+              </Button>
+            </div>
+          </div>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
+function buildWardNursePatientWorkRow(patient: IcuPatient): WardNursePatientWorkRow {
+  const patientVitals = icuVitals.filter((row) => row.patientId === patient.id);
+  return {
+    patient,
+    latestVital: [...patientVitals].reverse()[0],
+    openAlerts: icuAlerts.filter((row) => row.patientId === patient.id && row.status !== "Resolved"),
+    activeTasks: icuTasks.filter((row) => row.patientId === patient.id && row.status !== "Completed"),
+    dueMeds: medicationRows.filter((row) => row.patientId === patient.id && ["Due", "Late", "Received", "Verified"].includes(row.status)),
+    activeOrders: doctorInstructions.filter((row) => row.patientId === patient.id && row.status !== "Completed"),
+    pendingIo: intakeOutputRows.filter((row) => row.patientId === patient.id && row.status !== "Signed"),
+  };
+}
+
+type WardNurseCompactTone = "success" | "warning" | "danger" | "neutral";
+
+function getActiveWardNurseName() {
+  return "Ward Nurse Kavita";
+}
+
+function getActiveWardNurseUnit() {
+  return "General ICU";
+}
+
+function WardNurseQueueCell({ detail, href, title, tone }: { detail: string; href: string; title: string; tone: WardNurseCompactTone }) {
+  void detail;
+  return (
+    <Link className="mx-auto flex min-h-10 max-w-[170px] items-center justify-center rounded-md px-1.5 py-1 text-center transition hover:bg-slate-50" href={href}>
+      <span className={cn("mx-auto inline-flex min-w-20 items-center justify-center rounded-md px-3 py-1.5 text-xs font-black text-white shadow-sm", wardNurseSolidToneClass(tone))}>{title}</span>
+    </Link>
+  );
+}
+
+function wardNurseSolidToneClass(tone: WardNurseCompactTone) {
+  if (tone === "danger") return "bg-red-600";
+  if (tone === "warning") return "bg-amber-500";
+  if (tone === "success") return "bg-green-700";
+  return "bg-slate-700";
+}
+
+function wardNurseRowAccentClass(tone: DashboardCellTone) {
+  if (tone === "critical" || tone === "danger") return "border-l-red-500";
+  if (tone === "warning") return "border-l-amber-500";
+  if (tone === "success") return "border-l-green-600";
+  if (tone === "purple") return "border-l-violet-500";
+  return "border-l-sky-500";
 }
 
 function ProgressNotesCommand() {
@@ -15269,8 +15505,14 @@ function IcuPatientCommandProfile({
   initialResultType?: string;
   initialShiftFocus: IcuShiftFocus;
 }) {
+  const { role } = useRole();
   const [previewResultId, setPreviewResultId] = React.useState<string | null>(null);
   const [ordersSubTab, setOrdersSubTab] = React.useState<MedicationOrdersSubTab>(initialOrdersSubTab);
+  const nursingPermission = getNursingRolePermission(role);
+  const visiblePatientTabs = nursingPermission
+    ? icuPatientDetailTabs.filter((tab) => nursingPermission.patientTabs.includes(tab.id))
+    : icuPatientDetailTabs;
+  const safeInitialTab = visiblePatientTabs.some((tab) => tab.id === initialTab) ? initialTab : visiblePatientTabs[0]?.id ?? "overview";
 
   if (!patient) {
     return (
@@ -15325,16 +15567,13 @@ function IcuPatientCommandProfile({
 
   return (
     <div className="overflow-hidden rounded-xl border border-sky-200 bg-white shadow-sm">
-      <Tabs className="p-0" value={initialTab}>
+      <Tabs className="p-0" value={safeInitialTab}>
         <TabsList className="flex h-auto w-full min-w-max gap-2 overflow-x-auto rounded-none border-b border-slate-200 bg-slate-100 px-4 py-2">
-          <IcuPatientTabLink active={initialTab === "overview"} href={icuPatientDetailHref(patient.id, "overview")}>Patient Overview</IcuPatientTabLink>
-          <IcuPatientTabLink active={initialTab === "monitoring"} href={icuPatientDetailHref(patient.id, "monitoring")}>Monitoring</IcuPatientTabLink>
-          <IcuPatientTabLink active={initialTab === "results"} href={icuPatientDetailHref(patient.id, "results")}>Results</IcuPatientTabLink>
-          <IcuPatientTabLink active={initialTab === "graph"} href={icuPatientDetailHref(patient.id, "graph")}>Vital Graph</IcuPatientTabLink>
-          <IcuPatientTabLink active={initialTab === "orders"} href={icuPatientDetailHref(patient.id, "orders")}>Medication & Orders</IcuPatientTabLink>
-          <IcuPatientTabLink active={initialTab === "events"} href={icuPatientDetailHref(patient.id, "events")}>Events</IcuPatientTabLink>
-          <IcuPatientTabLink active={initialTab === "shift-summary"} href={icuPatientDetailHref(patient.id, "shift-summary")}>Shift Summary</IcuPatientTabLink>
-          <IcuPatientTabLink active={initialTab === "collaborate"} href={icuPatientDetailHref(patient.id, "collaborate")}>Collaborate</IcuPatientTabLink>
+          {visiblePatientTabs.map((tab) => (
+            <IcuPatientTabLink active={safeInitialTab === tab.id} href={icuPatientDetailHref(patient.id, tab.id)} key={tab.id}>
+              {tab.label}
+            </IcuPatientTabLink>
+          ))}
         </TabsList>
 
         <TabsContent className="space-y-4 px-4 pb-4 pt-4" value="overview">
@@ -16438,14 +16677,13 @@ function IcuPatientEventsWorkspace({ initialFocus, patient, results }: { initial
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[1320px] border-collapse text-left text-sm">
+          <table className="w-full min-w-[1180px] border-collapse text-left text-sm">
             <thead className="border-b border-slate-200 bg-white text-xs uppercase text-slate-500">
               <tr>
                 <th className="px-3 py-3">Time</th>
                 <th className="px-3 py-3">Event Type</th>
                 <th className="px-3 py-3">Classification</th>
                 <th className="px-3 py-3">Severity</th>
-                <th className="px-3 py-3">Status</th>
                 <th className="px-3 py-3">Event</th>
                 <th className="px-3 py-3">Details</th>
                 <th className="px-3 py-3">Owner</th>
@@ -16462,9 +16700,6 @@ function IcuPatientEventsWorkspace({ initialFocus, patient, results }: { initial
                   <td className="px-3 py-3 text-sm font-semibold text-slate-800">{event.classification}</td>
                   <td className="px-3 py-3">
                     <span className={cn("inline-flex rounded-full border px-2.5 py-1 text-xs font-bold", dashboardTonePillClass(icuPatientEventSeverityTone(event.severity)))}>{event.severity}</span>
-                  </td>
-                  <td className="px-3 py-3">
-                    <span className="inline-flex rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-bold text-slate-700">{event.status}</span>
                   </td>
                   <td className="px-3 py-3 text-sm font-bold text-slate-950">{event.title}</td>
                   <td className="px-3 py-3 text-xs leading-5 text-slate-500">{event.detail}</td>
@@ -20363,7 +20598,10 @@ function NurseReview() {
 }
 
 function NurseVitalsEntryForm() {
-  const [patientId, setPatientId] = React.useState(icuPatients[0]?.id ?? "");
+  const searchParams = useSearchParams();
+  const requestedPatientId = searchParams.get("patientId") ?? "";
+  const initialPatientId = icuPatients.some((patient) => patient.id === requestedPatientId) ? requestedPatientId : (icuPatients[0]?.id ?? "");
+  const [patientId, setPatientId] = React.useState(initialPatientId);
   const [respiratoryRate, setRespiratoryRate] = React.useState("20");
   const [o2Saturation, setO2Saturation] = React.useState("97");
   const [o2FlowRate, setO2FlowRate] = React.useState("0");
@@ -20395,6 +20633,12 @@ function NurseVitalsEntryForm() {
     painScore: Number(painScore || 0),
     gcs: Number(gcsScore.split("/")[0] || 15),
   });
+
+  React.useEffect(() => {
+    if (requestedPatientId && icuPatients.some((patient) => patient.id === requestedPatientId)) {
+      setPatientId(requestedPatientId);
+    }
+  }, [requestedPatientId]);
 
   return (
     <div className="min-w-0 space-y-3">

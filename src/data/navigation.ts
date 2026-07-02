@@ -21,12 +21,23 @@ import {
   Syringe,
 } from "lucide-react";
 
-import type { NavigationItem, Role } from "@/types";
+import type { NavigationChildItem, NavigationItem, Role } from "@/types";
+import { getNursingRoleNavigation } from "@/data/icu-nursing-role-permissions";
 
 export const roles: Role[] = [
   "Super Admin",
   "Hospital Admin",
   "Doctor",
+  "Doctor ICU",
+  "Ward Nurse",
+  "Unit Nurse",
+  "Head Nurse",
+  "ICU Bed Coordinator",
+  "Diagnostics Team",
+  "Tele ICU Doctor",
+  "Biomedical Engineer",
+  "ICU Pharmacist",
+  "Quality Audit",
   "Nurse",
   "Receptionist",
   "Lab Technician",
@@ -37,7 +48,166 @@ export const roles: Role[] = [
   "Management",
 ];
 
-const allRoles = roles;
+const icuPersonaRoles: Role[] = [
+  "Doctor ICU",
+  "Ward Nurse",
+  "Unit Nurse",
+  "Head Nurse",
+  "ICU Bed Coordinator",
+  "Diagnostics Team",
+  "Tele ICU Doctor",
+  "Biomedical Engineer",
+  "ICU Pharmacist",
+  "Quality Audit",
+];
+
+export const icuCommandSwitcherRoles: Role[] = ["Hospital Admin", ...icuPersonaRoles];
+
+const allRoles = roles.filter((role) => !icuPersonaRoles.includes(role));
+
+const icuCommandAllowedRoles: Role[] = [
+  "Super Admin",
+  "Hospital Admin",
+  ...icuPersonaRoles,
+];
+
+function navChild(id: string, label: string, route: string, children?: NavigationChildItem[]): NavigationChildItem {
+  return { id, label, route, status: "ready", children };
+}
+
+function icuPersonaIcon(label: string) {
+  if (label === "Patients" || label === "Patient Review") return IdCard;
+  if (label === "Critical Care" || label === "Clinical Intelligence") return HeartPulse;
+  if (label === "Clinical Workspace") return FilePenLine;
+  if (label === "Nursing") return ClipboardList;
+  if (label === "Diagnostics") return ScanSearch;
+  if (label === "Tele ICU") return Activity;
+  if (label === "Device Operations") return Package;
+  if (label === "Analytics") return LayoutDashboard;
+  if (label === "Administration") return Settings;
+  return HeartPulse;
+}
+
+function icuPersonaItem(role: Role, child: NavigationChildItem): NavigationItem {
+  return {
+    id: `icu-persona-${child.id}`,
+    label: child.label,
+    icon: icuPersonaIcon(child.label),
+    route: child.route,
+    group: "ICU",
+    allowedRoles: [role],
+    status: child.status,
+    children: child.children,
+  };
+}
+
+const icuPersonaNavigation: Partial<Record<Role, NavigationChildItem[]>> = {
+  "Doctor ICU": [
+    navChild("doctor-icu-critical-care", "Critical Care", "/icu-command-center/critical-care/clinical-alerts", [
+      navChild("doctor-icu-clinical-alerts", "Clinical Alerts", "/icu-command-center/critical-care/clinical-alerts"),
+      navChild("doctor-icu-round-2", "ICU Round", "/icu-command-center/critical-care/icu-round-2"),
+      navChild("doctor-icu-escalation", "Escalation Center", "/icu-command-center/critical-care/escalation-center"),
+    ]),
+    navChild("doctor-icu-clinical-workspace", "Clinical Workspace", "/icu-command-center/clinical-workspace/progress-notes", [
+      navChild("doctor-icu-progress-notes", "Progress Notes", "/icu-command-center/clinical-workspace/progress-notes"),
+      navChild("doctor-icu-family-communication", "Family Communication", "/icu-command-center/clinical-workspace/family-communication"),
+    ]),
+    navChild("doctor-icu-patient-review", "Patient Review", "/icu-command-center/patients/icu-001?tab=monitoring", [
+      navChild("doctor-icu-monitoring", "Monitoring", "/icu-command-center/patients/icu-001?tab=monitoring"),
+      navChild("doctor-icu-results", "Results", "/icu-command-center/patients/icu-001?tab=results"),
+      navChild("doctor-icu-vital-graph", "Vital Graph", "/icu-command-center/patients/icu-001?tab=graph"),
+    ]),
+  ],
+  "Ward Nurse": getNursingRoleNavigation("Ward Nurse")!,
+  "Unit Nurse": getNursingRoleNavigation("Unit Nurse")!,
+  "Head Nurse": getNursingRoleNavigation("Head Nurse")!,
+  "ICU Bed Coordinator": [
+    navChild("bed-coordinator-command", "Command", "/icu-command-center", [
+      navChild("bed-coordinator-command-center", "Command Center", "/icu-command-center"),
+    ]),
+    navChild("bed-coordinator-patients", "Patients", "/icu-command-center/patients/search", [
+      navChild("bed-coordinator-patient-search", "Patient Search", "/icu-command-center/patients/search"),
+      navChild("bed-coordinator-smart-bed", "Smart Bed View", "/icu-command-center/patients/smart-bed-view"),
+      navChild("bed-coordinator-admissions", "Admissions", "/icu-command-center/patients/admissions"),
+      navChild("bed-coordinator-discharges", "Discharges", "/icu-command-center/patients/discharges"),
+    ]),
+    navChild("bed-coordinator-critical-care", "Critical Care", "/icu-command-center/critical-care/operations", [
+      navChild("bed-coordinator-operations", "ICU Operations", "/icu-command-center/critical-care/operations"),
+    ]),
+  ],
+  "Diagnostics Team": [
+    navChild("diagnostics-team-diagnostics", "Diagnostics", "/icu-command-center/diagnostics/hub", [
+      navChild("diagnostics-team-hub", "Diagnostics Hub", "/icu-command-center/diagnostics/hub"),
+      navChild("diagnostics-team-upload", "Report Upload & Extract", "/icu-command-center/diagnostics/investigation-entry"),
+    ]),
+    navChild("diagnostics-team-patient-review", "Patient Review", "/icu-command-center/patients/icu-001?tab=results", [
+      navChild("diagnostics-team-results", "Results", "/icu-command-center/patients/icu-001?tab=results"),
+    ]),
+  ],
+  "Tele ICU Doctor": [
+    navChild("tele-doctor-tele-icu", "Tele ICU", "/icu-command-center/tele-icu/remote-command-center", [
+      navChild("tele-doctor-remote-command", "Remote Command Center", "/icu-command-center/tele-icu/remote-command-center"),
+      navChild("tele-doctor-consults", "Remote Consultations", "/icu-command-center/tele-icu/remote-consultations"),
+      navChild("tele-doctor-escalated", "Escalated Cases", "/icu-command-center/tele-icu/escalated-cases"),
+    ]),
+    navChild("tele-doctor-patient-review", "Patient Review", "/icu-command-center/patients/icu-001?tab=monitoring", [
+      navChild("tele-doctor-monitoring", "Monitoring", "/icu-command-center/patients/icu-001?tab=monitoring"),
+      navChild("tele-doctor-results", "Results", "/icu-command-center/patients/icu-001?tab=results"),
+      navChild("tele-doctor-vital-graph", "Vital Graph", "/icu-command-center/patients/icu-001?tab=graph"),
+    ]),
+    navChild("tele-doctor-critical-care", "Critical Care", "/icu-command-center/critical-care/escalation-center", [
+      navChild("tele-doctor-alerts", "Clinical Alerts", "/icu-command-center/critical-care/clinical-alerts"),
+      navChild("tele-doctor-escalation", "Escalation Center", "/icu-command-center/critical-care/escalation-center"),
+    ]),
+  ],
+  "Biomedical Engineer": [
+    navChild("biomed-critical-care", "Critical Care", "/icu-command-center/critical-care/device-monitoring", [
+      navChild("biomed-device-monitoring", "Device Monitoring", "/icu-command-center/critical-care/device-monitoring"),
+    ]),
+    navChild("biomed-devices", "Device Operations", "/icu-command-center/device-operations/edge-device-management", [
+      navChild("biomed-edge-devices", "Edge Device Management", "/icu-command-center/device-operations/edge-device-management"),
+      navChild("biomed-device-mapping", "Device Mapping", "/icu-command-center/device-operations/device-mapping"),
+      navChild("biomed-connectivity", "Connectivity Dashboard", "/icu-command-center/device-operations/connectivity-dashboard"),
+      navChild("biomed-signal-health", "Signal Health", "/icu-command-center/device-operations/signal-health"),
+    ]),
+    navChild("biomed-analytics", "Analytics", "/icu-command-center/analytics/device", [
+      navChild("biomed-device-analytics", "Device Analytics", "/icu-command-center/analytics/device"),
+    ]),
+  ],
+  "ICU Pharmacist": [
+    navChild("icu-pharmacist-command", "Command", "/icu-command-center/notifications-tasks", [
+      navChild("icu-pharmacist-notifications", "Notifications & Tasks", "/icu-command-center/notifications-tasks"),
+    ]),
+    navChild("icu-pharmacist-nursing", "Nursing", "/icu-command-center/nursing/medication-administration", [
+      navChild("icu-pharmacist-medication", "Medication Administration", "/icu-command-center/nursing/medication-administration"),
+      navChild("icu-pharmacist-med-chart", "Patient Medication Chart", "/icu-command-center/nursing/patient-medication"),
+    ]),
+    navChild("icu-pharmacist-clinical", "Clinical Workspace", "/icu-command-center/clinical-workspace/orders-care-plans", [
+      navChild("icu-pharmacist-orders-care", "Orders & Care Plans", "/icu-command-center/clinical-workspace/orders-care-plans"),
+    ]),
+    navChild("icu-pharmacist-patient-review", "Patient Review", "/icu-command-center/patients/icu-001?tab=orders", [
+      navChild("icu-pharmacist-med-orders", "Medication & Orders", "/icu-command-center/patients/icu-001?tab=orders"),
+    ]),
+  ],
+  "Quality Audit": [
+    navChild("quality-command", "Command", "/icu-command-center/executive-dashboard", [
+      navChild("quality-executive", "Executive Dashboard", "/icu-command-center/executive-dashboard"),
+    ]),
+    navChild("quality-intelligence", "Clinical Intelligence", "/icu-command-center/clinical-intelligence/patient-risk-center", [
+      navChild("quality-risk", "Patient Risk Center", "/icu-command-center/clinical-intelligence/patient-risk-center"),
+      navChild("quality-ews", "Early Warning Scores", "/icu-command-center/clinical-intelligence/early-warning-scores"),
+    ]),
+    navChild("quality-analytics", "Analytics", "/icu-command-center/analytics/clinical", [
+      navChild("quality-operational", "Operational Analytics", "/icu-command-center/analytics/operational"),
+      navChild("quality-clinical", "Clinical Analytics", "/icu-command-center/analytics/clinical"),
+      navChild("quality-pilot", "Pilot Outcome Dashboard", "/icu-command-center/analytics/pilot-outcome"),
+      navChild("quality-adoption", "Adoption Analytics", "/icu-command-center/analytics/adoption"),
+    ]),
+    navChild("quality-administration", "Administration", "/icu-command-center/administration/audit-logs", [
+      navChild("quality-audit-logs", "Audit Logs", "/icu-command-center/administration/audit-logs"),
+    ]),
+  ],
+};
 
 export const navigationItems: NavigationItem[] = [
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, route: "/dashboard", group: "Command", allowedRoles: allRoles, status: "ready" },
@@ -155,7 +325,7 @@ export const navigationItems: NavigationItem[] = [
     icon: HeartPulse,
     route: "/icu-command-center",
     group: "Clinical",
-    allowedRoles: ["Super Admin", "Hospital Admin", "Doctor", "Nurse", "Lab Technician", "Radiologist", "Pharmacist", "Billing Executive", "Management"],
+    allowedRoles: icuCommandAllowedRoles,
     status: "ready",
     children: [
       {
@@ -191,7 +361,7 @@ export const navigationItems: NavigationItem[] = [
           { id: "icu-command-device-monitoring", label: "Device Monitoring", route: "/icu-command-center/critical-care/device-monitoring", status: "ready" },
           { id: "icu-command-alerts", label: "Clinical Alerts", route: "/icu-command-center/critical-care/clinical-alerts", status: "ready" },
           { id: "icu-command-rounds", label: "ICU Rounds", route: "/icu-command-center/critical-care/rounds", status: "ready" },
-          { id: "icu-command-round-2", label: "ICU Round 2", route: "/icu-command-center/critical-care/icu-round-2", status: "ready" },
+          { id: "icu-command-round-2", label: "ICU Round", route: "/icu-command-center/critical-care/icu-round-2", status: "ready" },
           { id: "icu-command-escalation", label: "Escalation Center", route: "/icu-command-center/critical-care/escalation-center", status: "ready" },
         ],
       },
@@ -353,6 +523,17 @@ export const navigationItems: NavigationItem[] = [
   { id: "settings", label: "UI Settings", icon: Settings, route: "/settings/ui", group: "Command", allowedRoles: allRoles, status: "ready" },
   { id: "preview", label: "Components Preview", icon: Archive, route: "/components-preview", group: "Command", allowedRoles: ["Super Admin", "Hospital Admin"], status: "ready" },
 ];
+
+export function getNavigationItemsForRole(role: Role): NavigationItem[] {
+  const visibleItems = navigationItems.filter((item) => item.allowedRoles.includes(role));
+  const icuPersonaChildren = icuPersonaNavigation[role];
+
+  if (!icuPersonaChildren) {
+    return visibleItems;
+  }
+
+  return icuPersonaChildren.map((child) => icuPersonaItem(role, child));
+}
 
 export const dashboardQuickActions = [
   { id: "register", label: "Register patient", icon: IdCard, route: "/patients/register" },

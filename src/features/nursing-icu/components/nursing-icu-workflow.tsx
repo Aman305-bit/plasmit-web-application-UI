@@ -2570,11 +2570,13 @@ export function NursingTaskBoardWorkspace() {
   const searchParams = useSearchParams();
   const requestedTaskTab = normalizeTaskBoardTab(searchParams.get("taskTab"));
   const requestedPatientId = searchParams.get("patientId") ?? undefined;
+  const focusedPatient = requestedPatientId ? icuPatients.find((patient) => patient.id === requestedPatientId) : undefined;
+  const focusedPatientLabel = focusedPatient ? taskPatientLabel(focusedPatient) : undefined;
   const [tasks, setTasks] = React.useState<IcuTask[]>(icuTasks);
   const [query, setQuery] = React.useState("");
   const [owner, setOwner] = React.useState("All nurses");
   const [source, setSource] = React.useState("All sources");
-  const [patientFilter, setPatientFilter] = React.useState("All patients");
+  const [patientFilter, setPatientFilter] = React.useState(focusedPatientLabel ?? "All patients");
   const [unitFilter, setUnitFilter] = React.useState("All ICU units");
   const [priorityFilter, setPriorityFilter] = React.useState("All priority");
   const [statusFilter, setStatusFilter] = React.useState("Open tasks");
@@ -2590,6 +2592,7 @@ export function NursingTaskBoardWorkspace() {
     const taskSource = task.source ?? task.createdBy;
     const searchable = `${task.patientName} ${task.bedNo} ${task.title} ${task.remarks} ${task.createdBy} ${task.assignedBy ?? ""} ${task.assignedTo} ${taskSource} ${task.taskType} ${task.assignmentReason ?? ""}`.toLowerCase();
     return searchable.includes(query.toLowerCase())
+      && (!focusedPatient || task.patientId === focusedPatient.id)
       && (owner === "All nurses" || task.assignedTo === owner)
       && (source === "All sources" || taskSource === source)
       && (patientFilter === "All patients" || taskPatientLabel(patient) === patientFilter)
@@ -2666,11 +2669,17 @@ export function NursingTaskBoardWorkspace() {
     setQuery("");
     setOwner("All nurses");
     setSource("All sources");
-    setPatientFilter("All patients");
+    setPatientFilter(focusedPatientLabel ?? "All patients");
     setUnitFilter("All ICU units");
     setPriorityFilter("All priority");
     setStatusFilter("Open tasks");
   };
+
+  React.useEffect(() => {
+    if (focusedPatientLabel) {
+      setPatientFilter(focusedPatientLabel);
+    }
+  }, [focusedPatientLabel]);
 
   return (
     <div className="space-y-4">
@@ -2679,7 +2688,7 @@ export function NursingTaskBoardWorkspace() {
           <span className="min-w-0">
             <span className="block text-sm font-semibold text-foreground">Tasks & assessments summary</span>
             <span className="mt-0.5 block truncate text-xs text-muted-foreground">
-              {patientFilter} | {unitFilter} | {priorityFilter} | {visibleTasks.length} visible
+              {(focusedPatientLabel ?? patientFilter)} | {unitFilter} | {priorityFilter} | {visibleTasks.length} visible
             </span>
           </span>
           <ChevronDown className="h-5 w-5 shrink-0 text-muted-foreground transition-transform group-open:rotate-180" />
@@ -2700,7 +2709,12 @@ export function NursingTaskBoardWorkspace() {
                 <Input className="pl-9" placeholder="Patient, bed, task, source..." value={query} onChange={(event) => setQuery(event.target.value)} />
               </div>
             </label>
-            <NativeSelect label="Patient" value={patientFilter} onChange={setPatientFilter} options={patientOptions} />
+            <NativeSelect
+              label="Patient"
+              value={focusedPatientLabel ?? patientFilter}
+              onChange={focusedPatientLabel ? () => undefined : setPatientFilter}
+              options={focusedPatientLabel ? [focusedPatientLabel] : patientOptions}
+            />
             <NativeSelect label="ICU unit" value={unitFilter} onChange={setUnitFilter} options={unitOptions} />
             <NativeSelect label="Priority" value={priorityFilter} onChange={setPriorityFilter} options={["All priority", "Critical", "High", "Medium", "Routine"]} />
             <NativeSelect label="Status" value={statusFilter} onChange={setStatusFilter} options={["Open tasks", "Due / attention", "All status", "Assigned", "Accepted", "Pending", "In progress", "Overdue", "Escalated", "Completed"]} />
@@ -4170,9 +4184,11 @@ export function MedicationTimelineWorkspace() {
   const searchParams = useSearchParams();
   const queryUnit = searchParams.get("unit")?.trim() ?? "";
   const queryFocus = searchParams.get("focus")?.trim() ?? "";
+  const requestedPatientId = searchParams.get("patientId") ?? "";
+  const focusedPatient = requestedPatientId ? icuPatients.find((patient) => patient.id === requestedPatientId) : undefined;
   const [orders, setOrders] = React.useState<DoctorMedicationOrder[]>(seededDoctorMedicationOrders);
   const [doses, setDoses] = React.useState<MedicationDoseRow[]>(() => buildMedicationDoseRows(seededDoctorMedicationOrders));
-  const [patientId, setPatientId] = React.useState("All patients");
+  const [patientId, setPatientId] = React.useState(focusedPatient?.id ?? "All patients");
   const [unitFilter, setUnitFilter] = React.useState(queryUnit || "All ICU units");
   const [medicationDate, setMedicationDate] = React.useState("2026-06-08");
   const [shift, setShift] = React.useState<(typeof medicationShiftOptions)[number]>("All shifts");
@@ -4187,11 +4203,19 @@ export function MedicationTimelineWorkspace() {
   React.useEffect(() => {
     if (queryUnit) {
       setUnitFilter(queryUnit);
-      setPatientId("All patients");
+      setPatientId(focusedPatient?.id ?? "All patients");
       setSelectedDoseId(null);
       setQuery("");
     }
-  }, [queryUnit]);
+  }, [focusedPatient?.id, queryUnit]);
+
+  React.useEffect(() => {
+    if (focusedPatient) {
+      setPatientId(focusedPatient.id);
+      setSelectedDoseId(null);
+      setQuery("");
+    }
+  }, [focusedPatient?.id]);
 
   React.useEffect(() => {
     if (queryFocus === "medication") {
@@ -4203,6 +4227,7 @@ export function MedicationTimelineWorkspace() {
     const patient = icuPatients.find((item) => item.id === row.patientId);
     const searchable = `${patient?.patientName ?? ""} ${row.bedNo} ${row.medication} ${row.reason} ${row.doctor} ${row.indication} ${row.scheduledDate} ${row.shift}`.toLowerCase();
     return searchable.includes(query.toLowerCase())
+      && (!focusedPatient || row.patientId === focusedPatient.id)
       && (unitFilter === "All ICU units" || patient?.unit === unitFilter)
       && (patientId === "All patients" || row.patientId === patientId)
       && (!medicationDate || row.scheduledDate === medicationDate)
@@ -4522,11 +4547,13 @@ export function MedicationTimelineWorkspace() {
             <span className="font-medium text-foreground">Patient</span>
             <select
               className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/20"
-              value={patientId}
-              onChange={(event) => setPatientId(event.target.value)}
+              value={focusedPatient?.id ?? patientId}
+              onChange={(event) => {
+                if (!focusedPatient) setPatientId(event.target.value);
+              }}
             >
-              <option value="All patients">All patients</option>
-              {icuPatients.map((patient) => (
+              {focusedPatient ? null : <option value="All patients">All patients</option>}
+              {(focusedPatient ? [focusedPatient] : icuPatients).map((patient) => (
                 <option key={patient.id} value={patient.id}>{patient.bedNo} - {patient.patientName}</option>
               ))}
             </select>
@@ -4548,7 +4575,7 @@ export function MedicationTimelineWorkspace() {
           <Button className="w-full" variant="outline" onClick={() => {
             setQuery("");
             setUnitFilter(queryUnit || "All ICU units");
-            setPatientId("All patients");
+            setPatientId(focusedPatient?.id ?? "All patients");
             setMedicationDate("2026-06-08");
             setShift("All shifts");
             setEmarQueue("Due Now");

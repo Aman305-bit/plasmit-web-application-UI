@@ -7,7 +7,7 @@ import { ChevronDown, ChevronLeft, ChevronRight, Hospital } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useRole } from "@/components/providers/role-provider";
-import { navigationItems } from "@/data/navigation";
+import { getNavigationItemsForRole } from "@/data/navigation";
 import { cn } from "@/lib/utils";
 import type { NavigationChildItem } from "@/types";
 
@@ -29,7 +29,7 @@ export function AppSidebar({
 }) {
   const pathname = usePathname();
   const { role } = useRole();
-  const visibleItems = navigationItems.filter((item) => item.allowedRoles.includes(role));
+  const visibleItems = getNavigationItemsForRole(role);
   const groups = Array.from(new Set(visibleItems.map((item) => item.group)));
 
   function renderChild(child: NavigationChildItem, depth = 0) {

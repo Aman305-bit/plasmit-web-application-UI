@@ -9,7 +9,7 @@ import { ChevronDown, Hospital, Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useRole } from "@/components/providers/role-provider";
 import { RoleSwitcher } from "@/components/shell/role-switcher";
-import { navigationItems } from "@/data/navigation";
+import { getNavigationItemsForRole } from "@/data/navigation";
 import { cn } from "@/lib/utils";
 import type { NavigationChildItem } from "@/types";
 
@@ -26,7 +26,7 @@ export function MobileNavigation() {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
   const { role } = useRole();
-  const visibleItems = navigationItems.filter((item) => item.allowedRoles.includes(role));
+  const visibleItems = getNavigationItemsForRole(role);
 
   function renderChild(child: NavigationChildItem, depth = 0) {
     const hasNestedChildren = Boolean(child.children?.length);
